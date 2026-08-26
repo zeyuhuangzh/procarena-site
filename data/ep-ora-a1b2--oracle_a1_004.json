@@ -1,0 +1,404 @@
+{
+ "id": "ep-ora-a1b2--oracle_a1_004",
+ "run": "ep-ora-a1b2",
+ "task_id": "oracle_a1_004",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "full",
+ "scenario": "a1",
+ "dialect": "oracle",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "candidate did not create: line 16:14 PL/SQL: ORA-00942: table or view does not exist; line 15:9 PL/SQL: SQL Statement ignored; line 21:12 PL/SQL: ORA-00942: table or view does not exist; line 21:5 PL/SQL: SQL Statement ignored; line 23:17 PL/SQL: ORA-00942: table or view does not exist; line 23:5 PL/SQL: SQL Statement ignored; line 34:25 PL/SQL: ORA-00942: table or view does not exist; line 34:13 PL/SQL: SQL Statement ignored; line 35:25 PL/SQL: ORA-00942: table or view does not exist; line 35:13 PL/SQL: SQL Statement ignored; line 37:20 PL/SQL: ORA-00942: table or view does not exist; line 37:13 PL/SQL: SQL Statement ignored; line 39:20 PL/SQL: ORA-00942: table or view does not exist; line 39:13 PL/SQL: SQL Statement ignored; line 42:20 PL/SQL: ORA-00942: table or view does not exist; line 42:13 PL/SQL: SQL Statement ignored; line 44:25 PL/SQL: ORA-00942: table or view does not exist; line 44:13 PL/SQL: SQL Statement ignored; line 49:12 PL/SQL: ORA-00942: table or view does not exist; line 49:5 PL/SQL: SQL Statement ignored",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "spec",
+  "recovered": 3,
+  "oracle_size": 5
+ },
+ "summary": {
+  "steps": 30,
+  "seconds": 313.1,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 3,
+  "oracle_size": 5,
+  "entries_per_question": 3.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 2,
+   "describe_table": 2,
+   "ask_user": 1,
+   "compile_plsql": 1,
+   "execute_scratch": 21,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Implement an Oracle PL/SQL procedure named sp. The procedure parameters, in order, must be: para_Injured with type NUMBER, para_Country with type VARCHAR2, para_Height with type BINARY_FLOAT, and para_Name with type VARCHAR2. All parameters are input-only.\n\nDeclare the local variables according to the cold-deck opening.\n\nDeclare a cursor named cur. The cursor must select three columns from the table perpetrator: Injured, Country, and Killed. It must retrieve rows where the value in perpetrator.Injured is strictly greater than the parameter para_Injured. The cursor must be explicitly ordered by perpetrator.Perpetrator_ID in ascending order, and it must return only the first 10 rows according to that ordering. If fewer than 10 rows satisfy the condition, all such rows are returned.\n\nBefore opening the cursor, the procedure must perform two operations in this exact order:\n1. Update every row in perpetrator so that perpetrator.Country becomes the literal value init.\n2. Delete every row from people where people.Name is null.\n\nBecause the update to perpetrator.Country is performed before the cursor is opened, the Country value fetched into rec_val for every fetched cursor row will be the literal value init.\n\nOpen the cursor cur. Then start a loop. In each iteration, fetch the next cursor row, placing the selected Injured value into rec_id, the selected Country value into rec_val, and the selected Killed value into rec_killed. If no row is fetched, exit the loop immediately and do not process the nonexistent row.\n\nWhen a row is fetched successfully, perform these steps in order:\n1. Add 1 to v_fetched_count.\n2. Add rec_killed to v_killed_total. If rec_killed is null, treat it as 0 for this addition.\n3. Evaluate rec_id:\n   - If rec_id is strictly greater than 1000: delete every row from perpetrator where perpetrator.Injured equals rec_id, and delete every row from people where people.Height equals rec_id.\n   - Otherwise, if rec_id is strictly greater than 100: update every row in perpetrator where perpetrator.Injured equals rec_id so that perpetrator.Country becomes the value of rec_val followed immediately by a fixed suffix; update every row in people where people.Height equals rec_id so that people.Name becomes the literal value UPDATED_LOG. Since the first branch already handles values strictly greater than 1000, this branch applies to rec_id values from 101 through 1000 inclusive.\n   - Otherwise, for rec_id values not greater than 100, including exactly 100 and any non-positive or null value that could be fetched: update every row in perpetrator where perpetrator.Injured equals rec_id so that perpetrator.Country becomes the value of rec_val followed immediately by the literal suffix _checked; delete every row from people where people.Height equals rec_id.\n\nEnd the loop and close the cursor cur. The remaining operations must then be performed in this exact order:\n1. Update every row in perpetrator so that perpetrator.Country becomes the literal value finished.\n2. Update every row in people so that people.Name becomes the literal value finished_log.\n3. Delete every row from perpetrator where perpetrator.Country is null.\n4. Delete every row from people where people.Name is null.\n5. Update every row in perpetrator so that perpetrator.Country becomes the literal value final_pass.\n6. Update every row in people so that people.Name becomes the literal value final_pass_log.\n7. Delete every row from perpetrator where perpetrator.Country contains the substring error anywhere in its value.\n8. Delete every row from people where people.Name contains the substring error anywhere in its value.\n9. Update every row in perpetrator so that perpetrator.Country becomes the current value of the parameter para_Country.\n10. Update every row in people so that people.Name becomes the current value of the parameter para_Name.\n11. Delete every row from perpetrator where perpetrator.Injured equals the parameter para_Injured.\n12. Delete every row from people where people.Height equals the parameter para_Height.\n13. If v_fetched_count is strictly greater than 0, update all rows in perpetrator where perpetrator.Injured is strictly greater than para_Injured so that perpetrator.Country becomes the literal value processed.\n14. If v_killed_total is sufficiently large, update all rows in perpetrator where both of the following are true: perpetrator.Injured is strictly greater than para_Injured, and perpetrator.Killed is greater than or equal to 50. In that update, set perpetrator.Country to the literal value mass_processed.\n\nStep 13 must happen before step 14. If both step 13 and step 14 apply, step 14 happens after step 13 and overwrites Country with mass_processed for rows meeting the step 14 condition.\n\nThe procedure runs under the clear-run covenant.\n\nThe remaining operations after the loop may be performed in any order.\n\nImplement this as an Oracle (PL/SQL) stored procedure named `sp` with the parameter list exactly `sp(para_Injured IN NUMBER, para_Country IN VARCHAR2, para_Height  IN BINARY_FLOAT, para_Name    IN VARCHAR2)`. Return the complete stored procedure, and nothing else.\n",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": 6,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the cold-deck opening?",
+   "answer": "Declare local variables as follows: rec_id as NUMBER, rec_val as VARCHAR2(4000), rec_killed as NUMBER, v_fetched_count as NUMBER initialized to 0, and v_killed_total as NUMBER initialized to 0."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the clear-run covenant?",
+   "answer": "The procedure has no exception handlers. If any Oracle runtime error occurs during any operation, it is not caught inside the procedure and will propagate to the caller. The procedure also does not issue any commit or rollback."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 6,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what suffix is appended to rec_val when rec_id is strictly greater than 100",
+   "answer": "The suffix is `_updated`."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": 6,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "how large must v_killed_total be for step 14 to apply",
+   "answer": "v_killed_total must be greater than or equal to 50."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Must the remaining operations after the loop be performed in the exact order listed?",
+   "answer": "The exact-order statement in the requirements is correct; the remaining operations must be performed in the specified order, not in any order."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable people , columns = [ People_ID ( NUMBER | primary key | values : 1 , 2 ) , Name ( VARCHAR2 | values : Ron Baxter , Brent Boyd ) , Height ( NUMBER | values : 6.4 , 6.3 ) , Weight ( NUMBER | values : 205 , 185 ) , Home Town ( VARCHAR2 | values : Los Angeles, CA , Baton Rouge, LA ) ]\ntable perpetrator , columns = [ Perpetrator_ID ( NUMBER | primary key | values : 1 , 2 ) , People_ID ( NUMBER | values : 1 , 3 ) , NUMBER ( VARCHAR2 | values : 04.26 April 26/27 , 11.18 Nov. 18 ) , Year ( NUMBER | values : 1982 , 1995 ) , Location ( VARCHAR2 | values : Uiryeong , Zhaodong ) , Country ( VARCHAR2 | values : South Korea , China ) , Killed ( NUMBER | values : 56 , 32 ) , Injured ( NUMBER | values : 37 , 16 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "perpetrator"
+   },
+   "result": "Perpetrator_ID | People_ID | NUMBER | Year | Location | Country | Killed | Injured\n1 | 1 | 04.26 April 26/27 | 1982 | Uiryeong | South Korea | 56 | 37\n2 | 3 | 11.18 Nov. 18 | 1995 | Zhaodong | China | 32 | 16\n3 | 4 | 05.21 May 21 | 1938 | Kaio | Japan | 30 | 3\n4 | 6 | 09.20 Sep. 20 | 1994 | Beijing | China | 23 | 80\n5 | 8 | 04.00 April | 1950 | Nainital | India | 22 | 0"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "people"
+   },
+   "result": "People_ID | Name | Height | Weight | Home Town\n1 | Ron Baxter | 6.4 | 205 | Los Angeles, CA\n2 | Brent Boyd | 6.3 | 185 | Baton Rouge, LA\n3 | Tyrone Brayan | 6.7 | 220 | Placentia, CA\n4 | Rob Cunningham | 6.8 | 215 | Westport, CT\n5 | John Danks | 6.6 | 190 | Beaver Dam, KY\n6 | Ovie Dotson | 6.5 | 200 | San Antonio, TX\n7 | Gary Goodner | 6.7 | 220 | Denton, TX\n8 | Henry Johnson | 6.6 | 190 | Los Angeles, CA\n9 | Jim Krivacs | 6.1 | 160 | Indianapolis, IN\n10 | John Moore | 6.1 | 170 | Altoona, PA\n11 | Mike Murphy | 6.8 | 215 | Austin, TX"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "perpetrator"
+   },
+   "result": "table perpetrator , columns = [ Perpetrator_ID ( NUMBER | primary key | values : 1 , 2 ) , People_ID ( NUMBER | values : 1 , 3 ) , NUMBER ( VARCHAR2 | values : 04.26 April 26/27 , 11.18 Nov. 18 ) , Year ( NUMBER | values : 1982 , 1995 ) , Location ( VARCHAR2 | values : Uiryeong , Zhaodong ) , Country ( VARCHAR2 | values : South Korea , China ) , Killed ( NUMBER | values : 56 , 32 ) , Injured ( NUMBER | values : 37 , 16 ) ]"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "people"
+   },
+   "result": "table people , columns = [ People_ID ( NUMBER | primary key | values : 1 , 2 ) , Name ( VARCHAR2 | values : Ron Baxter , Brent Boyd ) , Height ( NUMBER | values : 6.4 , 6.3 ) , Weight ( NUMBER | values : 205 , 185 ) , Home Town ( VARCHAR2 | values : Los Angeles, CA , Baton Rouge, LA ) ]"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "A few details in the procedure spec are missing or ambiguous. (1) In the loop branch for rec_id between 101 and 1000, perpetrator.Country should become rec_val followed immediately by a fixed suffix — what is that suffix? (2) In step 14, \"If v_killed_total is sufficiently large\" — what is the exact numeric condition/threshold on v_killed_total? (3) Should v_fetched_count and v_killed_total both be declared as NUMBER and initialized to 0? (4) What does \"Declare the local variables according to the cold-deck opening\" require beyond declaring rec_id (perpetrator.Injured%TYPE), rec_val (perpetrator.Country%TYPE), rec_killed (perpetrator.Killed%TYPE), v_fetched_count, and v_killed_total?"
+   },
+   "result": "The suffix is `_updated`.\n\nv_killed_total must be greater than or equal to 50.\n\nDeclare local variables as follows: rec_id as NUMBER, rec_val as VARCHAR2(4000), rec_killed as NUMBER, v_fetched_count as NUMBER initialized to 0, and v_killed_total as NUMBER initialized to 0.",
+   "revealed": [
+    "M1",
+    "M2",
+    "J1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Injured IN NUMBER, para_Country IN VARCHAR2, para_Height IN BINARY_FLOAT, para_Name IN VARCHAR2)\nIS\n  rec_id NUMBER;\n  rec_val VARCHAR2(4000);\n  rec_killed NUMBER;\n  v_fetched_count NUMBER := 0;\n  v_killed_total NUMBER := 0;\n\n  CURSOR cur IS\n    SELECT Injured, Country, Killed\n    FROM perpetrator\n    WHERE Injured > para_Injured\n    ORDER BY Perpetrator_ID ASC\n    FETCH FIRST 10 ROWS ONLY;\nBEGIN\n  UPDATE perpetrator SET Country = 'init';\n  DELETE FROM people WHERE Name IS NULL;\n\n  OPEN cur;\n  LOOP\n    FETCH cur INTO rec_id, rec_val, rec_killed;\n    EXIT WHEN cur%NOTFOUND;\n\n    v_fetched_count := v_fetched_count + 1;\n    v_killed_total := v_killed_total + NVL(rec_killed, 0);\n\n    IF rec_id > 1000 THEN\n      DELETE FROM perpetrator WHERE Injured = rec_id;\n      DELETE FROM people WHERE Height = rec_id;\n    ELSIF rec_id > 100 THEN\n      UPDATE perpetrator SET Country = rec_val || '_updated' WHERE Injured = rec_id;\n      UPDATE people SET Name = 'UPDATED_LOG' WHERE Height = rec_id;\n    ELSE\n      UPDATE perpetrator SET Country = rec_val || '_checked' WHERE Injured = rec_id;\n      DELETE FROM people WHERE Height = rec_id;\n    END IF;\n  END LOOP;\n  CLOSE cur;\n\n  UPDATE perpetrator SET Country = 'finished';\n  UPDATE people SET Name = 'finished_log';\n  DELETE FROM perpetrator WHERE Country IS NULL;\n  DELETE FROM people WHERE Name IS NULL;\n  UPDATE perpetrator SET Country = 'final_pass';\n  UPDATE people SET Name = 'final_pass_log';\n  DELETE FROM perpetrator WHERE Country LIKE '%error%';\n  DELETE FROM people WHERE Name LIKE '%error%';\n  UPDATE perpetrator SET Country = para_Country;\n  UPDATE people SET Name = para_Name;\n  DELETE FROM perpetrator WHERE Injured = para_Injured;\n  DELETE FROM people WHERE Height = para_Height;\n  IF v_fetched_count > 0 THEN\n    UPDATE perpetrator SET Country = 'processed'\n    WHERE Injured > para_Injured;\n  END IF;\n  IF v_killed_total >= 50 THEN\n    UPDATE perpetrator SET Country = 'mass_processed'\n    WHERE Injured > para_Injured AND Killed >= 50;\n  END IF;\nEND sp;\n"
+   },
+   "result": "compile error: line 11:10 PL/SQL: ORA-00942: table or view does not exist; line 10:5 PL/SQL: SQL Statement ignored; line 16:10 PL/SQL: ORA-00942: table or view does not exist; line 16:3 PL/SQL: SQL Statement ignored; line 17:15 PL/SQL: ORA-00942: table or view does not exist; line 17:3 PL/SQL: SQL Statement ignored; line 28:19 PL/SQL: ORA-00942: table or view does not exist; line 28:7 PL/SQL: SQL Statement ignored; line 29:19 PL/SQL: ORA-00942: table or view does not exist; line 29:7 PL/SQL: SQL Statement ignored; line 31:14 PL/SQL: ORA-00942: table or view does not exist; line 31:7 PL/SQL: SQL Statement ignored; line 32:14 PL/SQL: ORA-00942: table or view does not exist; line 32:7 PL/SQL: SQL Statement ignored; line 34:14 PL/SQL: ORA-00942: table or view does not exist; line 34:7 PL/SQL: SQL Statement ignored; line 35:19 PL/SQL: ORA-00942: table or view does not exist; line 35:7 PL/SQL: SQL Statement ignored; line 40:10 PL/SQL: ORA-00942: table or view does not exist; line 40:3 PL/SQL: SQL Statement ignored",
+   "compiled": false
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT COUNT(*) FROM perpetrator"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables"
+   },
+   "result": "TABLE_NAME\nLOGMNR_SESSION_EVOLVE$\nLOGMNR_GLOBAL$\nLOGMNR_PDB_INFO$\nLOGMNR_DID$\nLOGMNR_UID$\nLOGMNRGGC_GTLO\nLOGMNRGGC_GTCS\nLOGMNRC_DBNAME_UID_MAP\nLOGMNR_LOG$\nLOGMNR_PROCESSED_LOG$\nLOGMNR_SPILL$\nLOGMNR_AGE_SPILL$\nLOGMNR_RESTART_CKPT_TXINFO$\nLOGMNR_ERROR$\nLOGMNR_RESTART_CKPT$\nLOGMNR_FILTER$\nLOGMNR_SESSION_ACTIONS$\nLOGMNR_PARAMETER$\nLOGMNR_SESSION$\nLOGMNR_PROFILE_TABLE_STATS$\nLOGMNR_PROFILE_PLSQL_STATS$\nREDO_DB\nREDO_LOG\nROLLING$CONNECTIONS\nROLLING$DATABASES\nROLLING$DIRECTIVES\nROLLING$EVENTS\nROLLING$PARAMETERS\nROLLING$PLAN\nROLLING$STATISTICS\nROLLING$STATUS\nMVIEW$_ADV_WORKLOAD\nMVIEW$_ADV_BASETABLE\nMVIEW$_ADV_SQLDEPEND\nMVIEW$_ADV_PRETTY\nMVIEW$_ADV_TEMP\nMVIEW$_ADV_FILTER\nMVIEW$_ADV_LOG\nMVIEW$_ADV_FILTERINSTANCE\nMVIEW$_ADV_LEVEL\nMVIEW$_ADV_ROLLUP\nMVIEW$_ADV_AJG\nMVIEW$_ADV_FJG\nMVIEW$_ADV_GC\nMVIEW$_ADV_CLIQUE\nMVIEW$_ADV_ELIGIBLE\nMVIEW$_ADV_OUTPUT\nMVIEW$_ADV_EXCEPTIONS\nMVIEW$_ADV_PARAMETERS\nMVIEW$_ADV_INFO\n... (more rows not shown)"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name FROM all_tables WHERE table_name IN ('PERPETRATOR','PEOPLE')"
+   },
+   "result": "(OWNER | TABLE_NAME)\n(no rows)"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TABLE perpetrator (Perpetrator_ID NUMBER, People_ID NUMBER, Year NUMBER, Location VARCHAR2(50), Country VARCHAR2(50), Killed NUMBER, Injured NUMBER)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TABLE people (People_ID NUMBER, Name VARCHAR2(50), Height NUMBER, Weight NUMBER, Home_Town VARCHAR2(50))"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_Injured IN NUMBER, para_Country IN VARCHAR2, para_Height IN BINARY_FLOAT, para_Name IN VARCHAR2)\nIS\n  rec_id NUMBER;\n  rec_val VARCHAR2(4000);\n  rec_killed NUMBER;\n  v_fetched_count NUMBER := 0;\n  v_killed_total NUMBER := 0;\n\n  CURSOR cur IS\n    SELECT Injured, Country, Killed\n    FROM perpetrator\n    WHERE Injured > para_Injured\n    ORDER BY Perpetrator_ID ASC\n    FETCH FIRST 10 ROWS ONLY;\nBEGIN\n  UPDATE perpetrator SET Country = 'init';\n  DELETE FROM people WHERE Name IS NULL;\n\n  OPEN cur;\n  LOOP\n    FETCH cur INTO rec_id, rec_val, rec_killed;\n    EXIT WHEN cur%NOTFOUND;\n\n    v_fetched_count := v_fetched_count + 1;\n    v_killed_total := v_killed_total + NVL(rec_killed, 0);\n\n    IF rec_id > 1000 THEN\n      DELETE FROM perpetrator WHERE Injured = rec_id;\n      DELETE FROM people WHERE Height = rec_id;\n    ELSIF rec_id > 100 THEN\n      UPDATE perpetrator SET Country = rec_val || '_updated' WHERE Injured = rec_id;\n      UPDATE people SET Name = 'UPDATED_LOG' WHERE Height = rec_id;\n    ELSE\n      UPDATE perpetrator SET Country = rec_val || '_checked' WHERE Injured = rec_id;\n      DELETE FROM people WHERE Height = rec_id;\n    END IF;\n  END LOOP;\n  CLOSE cur;\n\n  UPDATE perpetrator SET Country = 'finished';\n  UPDATE people SET Name = 'finished_log';\n  DELETE FROM perpetrator WHERE Country IS NULL;\n  DELETE FROM people WHERE Name IS NULL;\n  UPDATE perpetrator SET Country = 'final_pass';\n  UPDATE people SET Name = 'final_pass_log';\n  DELETE FROM perpetrator WHERE Country LIKE '%error%';\n  DELETE FROM people WHERE Name LIKE '%error%';\n  UPDATE perpetrator SET Country = para_Country;\n  UPDATE people SET Name = para_Name;\n  DELETE FROM perpetrator WHERE Injured = para_Injured;\n  DELETE FROM people WHERE Height = para_Height;\n  IF v_fetched_count > 0 THEN\n    UPDATE perpetrator SET Country = 'processed'\n    WHERE Injured > para_Injured;\n  END IF;\n  IF v_killed_total >= 50 THEN\n    UPDATE perpetrator SET Country = 'mass_processed'\n    WHERE Injured > para_Injured AND Killed >= 50;\n  END IF;\nEND sp;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO perpetrator (Perpetrator_ID, People_ID, Year, Location, Country, Killed, Injured) VALUES (1, 1, 1982, 'U', 'South Korea', 20, 10)"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO perpetrator (Perpetrator_ID, People_ID, Year, Location, Country, Killed, Injured) VALUES (2, 2, 1995, 'Z', 'China', 40, 150)"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO perpetrator (Perpetrator_ID, People_ID, Year, Location, Country, Killed, Injured) VALUES (3, 3, 1938, 'K', 'Japan', NULL, 1500)"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO perpetrator (Perpetrator_ID, People_ID, Year, Location, Country, Killed, Injured) VALUES (4, 4, 1950, 'N', 'India', 60, 2000)"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO people (People_ID, Name, Height, Weight, Home_Town) VALUES (1, 'A', 10, 1, 'x')"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO people (People_ID, Name, Height, Weight, Home_Town) VALUES (2, 'B', 150, 1, 'x')"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO people (People_ID, Name, Height, Weight, Home_Town) VALUES (3, 'C', 1500, 1, 'x')"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO people (People_ID, Name, Height, Weight, Home_Town) VALUES (4, 'D', 2000, 1, 'x')"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(0, 'X', 999, 'Y')"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM perpetrator ORDER BY Perpetrator_ID"
+   },
+   "result": "PERPETRATOR_ID | PEOPLE_ID | YEAR | LOCATION | COUNTRY | KILLED | INJURED\n1 | 1 | 1982 | U | processed | 20 | 10\n2 | 2 | 1995 | Z | processed | 40 | 150"
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM people ORDER BY People_ID"
+   },
+   "result": "PEOPLE_ID | NAME | HEIGHT | WEIGHT | HOME_TOWN\n2 | Y | 150 | 1 | x"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO people (People_ID, Name, Height, Weight, Home_Town) VALUES (5, 'Tall', 6.4, 200, 'X')"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(10000, 'Z', 6.4, 'N')"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM people ORDER BY People_ID"
+   },
+   "result": "PEOPLE_ID | NAME | HEIGHT | WEIGHT | HOME_TOWN\n2 | N | 150 | 1 | x"
+  },
+  {
+   "step": 28,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM perpetrator ORDER BY Perpetrator_ID"
+   },
+   "result": "PERPETRATOR_ID | PEOPLE_ID | YEAR | LOCATION | COUNTRY | KILLED | INJURED\n1 | 1 | 1982 | U | Z | 20 | 10\n2 | 2 | 1995 | Z | Z | 40 | 150"
+  },
+  {
+   "step": 29,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "CREATE OR REPLACE PROCEDURE sp(\n    para_Injured IN NUMBER,\n    para_Country IN VARCHAR2,\n    para_Height  IN BINARY_FLOAT,\n    para_Name    IN VARCHAR2\n)\nIS\n    rec_id          NUMBER;\n    rec_val         VARCHAR2(4000);\n    rec_killed      NUMBER;\n    v_fetched_count NUMBER := 0;\n    v_killed_total  NUMBER := 0;\n\n    CURSOR cur IS\n        SELECT Injured, Country, Killed\n        FROM perpetrator\n        WHERE Injured > para_Injured\n        ORDER BY perpetrator.Perpetrator_ID ASC\n        FETCH FIRST 10 ROWS ONLY;\nBEGIN\n    UPDATE perpetrator SET Country = 'init';\n\n    DELETE FROM people WHERE Name IS NULL;\n\n    OPEN cur;\n    LOOP\n        FETCH cur INTO rec_id, rec_val, rec_killed;\n        EXIT WHEN cur%NOTFOUND;\n\n        v_fetched_count := v_fetched_count + 1;\n        v_killed_total := v_killed_total + NVL(rec_killed, 0);\n\n        IF rec_id > 1000 THEN\n            DELETE FROM perpetrator WHERE Injured = rec_id;\n            DELETE FROM people WHERE Height = rec_id;\n        ELSIF rec_id > 100 THEN\n            UPDATE perpetrator SET Country = rec_val || '_updated'\n            WHERE Injured = rec_id;\n            UPDATE people SET Name = 'UPDATED_LOG'\n            WHERE Height = rec_id;\n        ELSE\n            UPDATE perpetrator SET Country = rec_val || '_checked'\n            WHERE Injured = rec_id;\n            DELETE FROM people WHERE Height = rec_id;\n        END IF;\n    END LOOP;\n    CLOSE cur;\n\n    UPDATE perpetrator SET Country = 'finished';\n    UPDATE people SET Name = 'finished_log';\n\n    DELETE FROM perpetrator WHERE Country IS NULL;\n    DELETE FROM people WHERE Name IS NULL;\n\n    UPDATE perpetrator SET Country = 'final_pass';\n    UPDATE people SET Name = 'final_pass_log';\n\n    DELETE FROM perpetrator WHERE Country LIKE '%error%';\n    DELETE FROM people WHERE Name LIKE '%error%';\n\n    UPDATE perpetrator SET Country = para_Country;\n    UPDATE people SET Name = para_Name;\n\n    DELETE FROM perpetrator WHERE Injured = para_Injured;\n    DELETE FROM people WHERE Height "
+  },
+  {
+   "step": 30,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    para_Injured IN NUMBER,\n    para_Country IN VARCHAR2,\n    para_Height  IN BINARY_FLOAT,\n    para_Name    IN VARCHAR2\n)\nIS\n    rec_id          NUMBER;\n    rec_val         VARCHAR2(4000);\n    rec_killed      NUMBER;\n    v_fetched_count NUMBER := 0;\n    v_killed_total  NUMBER := 0;\n\n    CURSOR cur IS\n        SELECT Injured, Country, Killed\n        FROM perpetrator\n        WHERE Injured > para_Injured\n        ORDER BY perpetrator.Perpetrator_ID ASC\n        FETCH FIRST 10 ROWS ONLY;\nBEGIN\n    UPDATE perpetrator SET Country = 'init';\n\n    DELETE FROM people WHERE Name IS NULL;\n\n    OPEN cur;\n    LOOP\n        FETCH cur INTO rec_id, rec_val, rec_killed;\n        EXIT WHEN cur%NOTFOUND;\n\n        v_fetched_count := v_fetched_count + 1;\n        v_killed_total := v_killed_total + NVL(rec_killed, 0);\n\n        IF rec_id > 1000 THEN\n            DELETE FROM perpetrator WHERE Injured = rec_id;\n            DELETE FROM people WHERE Height = rec_id;\n        ELSIF rec_id > 100 THEN\n            UPDATE perpetrator SET Country = rec_val || '_updated'\n            WHERE Injured = rec_id;\n            UPDATE people SET Name = 'UPDATED_LOG'\n            WHERE Height = rec_id;\n        ELSE\n            UPDATE perpetrator SET Country = rec_val || '_checked'\n            WHERE Injured = rec_id;\n            DELETE FROM people WHERE Height = rec_id;\n        END IF;\n    END LOOP;\n    CLOSE cur;\n\n    UPDATE perpetrator SET Country = 'finished';\n    UPDATE people SET Name = 'finished_log';\n\n    DELETE FROM perpetrator WHERE Country IS NULL;\n    DELETE FROM people WHERE Name IS NULL;\n\n    UPDATE perpetrator SET Country = 'final_pass';\n    UPDATE people SET Name = 'final_pass_log';\n\n    DELETE FROM perpetrator WHERE Country LIKE '%error%';\n    DELETE FROM people WHERE Name LIKE '%error%';\n\n    UPDATE perpetrator SET Country = para_Country;\n    UPDATE people SET Name = para_Name;\n\n    DELETE FROM perpetrator WHERE Injured = para_Injured;\n    DELETE FROM people WHERE Height = para_Height;\n\n    IF v_fetched_count > 0 THEN\n        UPDATE perpetrator SET Country = 'processed'\n        WHERE Injured > para_Injured;\n    END IF;\n\n    IF v_killed_total >= 50 THEN\n        UPDATE perpetrator SET Country = 'mass_processed'\n        WHERE Injured > para_Injured\n          AND Killed >= 50;\n    END IF;\nEND sp;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    para_Injured IN NUMBER,\n    para_Country IN VARCHAR2,\n    para_Height  IN BINARY_FLOAT,\n    para_Name    IN VARCHAR2\n)\nIS\n    rec_id          NUMBER;\n    rec_val         VARCHAR2(4000);\n    rec_killed      NUMBER;\n    v_fetched_count NUMBER := 0;\n    v_killed_total  NUMBER := 0;\n\n    CURSOR cur IS\n        SELECT Injured, Country, Killed\n        FROM perpetrator\n        WHERE Injured > para_Injured\n        ORDER BY perpetrator.Perpetrator_ID ASC\n        FETCH FIRST 10 ROWS ONLY;\nBEGIN\n    UPDATE perpetrator SET Country = 'init';\n\n    DELETE FROM people WHERE Name IS NULL;\n\n    OPEN cur;\n    LOOP\n        FETCH cur INTO rec_id, rec_val, rec_killed;\n        EXIT WHEN cur%NOTFOUND;\n\n        v_fetched_count := v_fetched_count + 1;\n        v_killed_total := v_killed_total + NVL(rec_killed, 0);\n\n        IF rec_id > 1000 THEN\n            DELETE FROM perpetrator WHERE Injured = rec_id;\n            DELETE FROM people WHERE Height = rec_id;\n        ELSIF rec_id > 100 THEN\n            UPDATE perpetrator SET Country = rec_val || '_updated'\n            WHERE Injured = rec_id;\n            UPDATE people SET Name = 'UPDATED_LOG'\n            WHERE Height = rec_id;\n        ELSE\n            UPDATE perpetrator SET Country = rec_val || '_checked'\n            WHERE Injured = rec_id;\n            DELETE FROM people WHERE Height = rec_id;\n        END IF;\n    END LOOP;\n    CLOSE cur;\n\n    UPDATE perpetrator SET Country = 'finished';\n    UPDATE people SET Name = 'finished_log';\n\n    DELETE FROM perpetrator WHERE Country IS NULL;\n    DELETE FROM people WHERE Name IS NULL;\n\n    UPDATE perpetrator SET Country = 'final_pass';\n    UPDATE people SET Name = 'final_pass_log';\n\n    DELETE FROM perpetrator WHERE Country LIKE '%error%';\n    DELETE FROM people WHERE Name LIKE '%error%';\n\n    UPDATE perpetrator SET Country = para_Country;\n    UPDATE people SET Name = para_Name;\n\n    DELETE FROM perpetrator WHERE Injured = para_Injured;\n    DELETE FROM people WHERE Height = para_Height;\n\n    IF v_fetched_count > 0 THEN\n        UPDATE perpetrator SET Country = 'processed'\n        WHERE Injured > para_Injured;\n    END IF;\n\n    IF v_killed_total >= 50 THEN\n        UPDATE perpetrator SET Country = 'mass_processed'\n        WHERE Injured > para_Injured\n          AND Killed >= 50;\n    END IF;\nEND sp;"
+ },
+ "pair": {
+  "single_run": "st-oracle-a1b2",
+  "single_task": "oracle_a1_004"
+ }
+}

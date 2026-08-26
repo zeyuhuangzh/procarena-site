@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProcArena · episode trace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="style.css?v=6">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="back" id="back-link" href="index.html">&larr; <span class="brand">ProcArena</span></a>
+  <h1 id="title">episode trace</h1>
+  <div class="topbar-right">
+    <button class="btn" id="btn-theme" title="toggle theme">◐</button>
+    <a class="btn" id="btn-raw" href="#" download hidden>view JSON</a>
+  </div>
+</header>
+
+<!-- not-graded / pair-link banners -->
+<div id="banners"></div>
+
+<!-- headline: EX, attribution, recovery, steps, budget -->
+<section class="metrics" id="metrics" hidden></section>
+
+<main class="layout" id="layout" hidden>
+
+  <!-- ── left: task, budget, recovery ledger ───────────────────────── -->
+  <aside class="col-left">
+   <div class="col-inner">
+    <section class="panel" data-open="true">
+      <h2 class="panel-head">The request<span class="chev"></span></h2>
+      <div class="panel-body"><div id="opening" class="prose"></div></div>
+    </section>
+
+    <section class="panel" data-open="true">
+      <h2 class="panel-head">Budget<span class="chev"></span></h2>
+      <div class="panel-body"><div id="budget"></div></div>
+    </section>
+
+    <section class="panel" data-open="true">
+      <h2 class="panel-head">Recovery ledger<span class="chev"></span></h2>
+      <div class="panel-body">
+        <!-- one moment per oracle entry: revealed_at + via (full text in Ledger tab) -->
+        <div id="terms"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-head">Run metadata<span class="chev"></span></h2>
+      <div class="panel-body"><div id="meta"></div></div>
+    </section>
+   </div>
+  </aside>
+
+  <!-- ── centre: the step timeline ──────────────────────────────────── -->
+  <section class="col-mid">
+    <div class="mid-head">
+      <span class="mid-title">Timeline</span>
+      <label class="filter"><input type="checkbox" id="f-ask" checked> ask</label>
+      <label class="filter"><input type="checkbox" id="f-db" checked> database</label>
+      <label class="filter"><input type="checkbox" id="f-scratch" checked> scratch</label>
+      <label class="filter"><input type="checkbox" id="f-err" checked> errors</label>
+    </div>
+    <div id="timeline"></div>
+  </section>
+
+  <!-- ── right: tabs ────────────────────────────────────────────────── -->
+  <aside class="col-right">
+   <div class="col-inner">
+    <div class="tabs" id="tabs">
+      <button class="tab is-active" data-tab="submission">Submission</button>
+      <button class="tab" data-tab="ledger">Ledger</button>
+      <button class="tab" data-tab="diagnostics">Diagnostics</button>
+      <button class="tab" data-tab="raw">Raw</button>
+    </div>
+    <div class="tab-body" id="tab-submission"></div>
+    <div class="tab-body" id="tab-ledger" hidden></div>
+    <div class="tab-body" id="tab-diagnostics" hidden></div>
+    <div class="tab-body" id="tab-raw" hidden></div>
+   </div>
+  </aside>
+</main>
+
+<!-- ── empty state ──────────────────────────────────────────────────── -->
+<section class="empty" id="empty">
+  <div class="empty-card">
+    <h2>No episode loaded</h2>
+    <p class="muted" id="empty-why"></p>
+    <p>This viewer reads the export written by <code>viz/export.py</code>:</p>
+    <pre class="block wrap">python -m viz.export --self-check</pre>
+    <p>Then open <code>run.html?id=&lt;run&gt;--&lt;task_id&gt;</code>, which reads
+       <code>data/&lt;run&gt;--&lt;task_id&gt;.json</code>.</p>
+    <p class="muted small">Deep links: <code>#step-7</code> jumps to a step.
+       Cells on the results page link straight here.</p>
+  </div>
+</section>
+
+<script>
+/* tab switching is inline so the tabs work even if app.js fails to parse */
+for (const btn of document.querySelectorAll('.tab')) {
+  btn.addEventListener('click', () => {
+    for (const other of document.querySelectorAll('.tab')) {
+      other.classList.toggle('is-active', other === btn);
+    }
+    for (const body of document.querySelectorAll('.tab-body')) {
+      body.hidden = body.id !== `tab-${btn.dataset.tab}`;
+    }
+  });
+}
+</script>
+<script src="app.js?v=6"></script>
+</body>
+</html>

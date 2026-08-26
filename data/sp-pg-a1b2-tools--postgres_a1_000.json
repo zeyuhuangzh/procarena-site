@@ -1,0 +1,403 @@
+{
+ "id": "sp-pg-a1b2-tools--postgres_a1_000",
+ "run": "sp-pg-a1b2-tools",
+ "task_id": "postgres_a1_000",
+ "stage": "single",
+ "condition": "tools-only",
+ "tier": "single-turn",
+ "scenario": "a1",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 37,
+  "seconds": 247.1,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "describe_table": 2,
+   "compile_plsql": 3,
+   "execute_scratch": 24,
+   "sample_rows": 2,
+   "reset_scratch": 4,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Implement a PL/pgSQL procedure named sp. The procedure must accept exactly three parameters in this order: para_product_title of type text, para_product_id of type integer, and para_transaction_id of type integer. The procedure uses only the following tables and columns: Invoice_Line_Items.product_title, Invoice_Line_Items.product_id, and Invoice_Line_Items.invoice_number; Financial_Transactions.transaction_id, Financial_Transactions.transaction_amount, and Financial_Transactions.invoice_number. All comparisons use SQL equality semantics, so null is not considered equal to any value.\n\nFirst, look at Invoice_Line_Items. If at least one row has product_title equal to para_product_title, update every row with that product_title by setting its product_id to the result of multiplying para_product_id by 2. Do not modify any other columns in those rows, and do not insert a new row in this case. If no row has product_title equal to para_product_title, insert a new row into Invoice_Line_Items with product_title set to para_product_title and product_id set to para_product_id. No other columns are explicitly assigned in the inserted row, so they receive whatever default or null values the database would normally apply. The update and insert are mutually exclusive: exactly one of them occurs.\n\nNext, delete from Financial_Transactions every row whose transaction_id is strictly less than para_transaction_id. A row whose transaction_id equals para_transaction_id is not deleted. If para_transaction_id is null, no row satisfies this deletion.\n\nNext, if para_transaction_id is strictly greater than 0, delete from Financial_Transactions every remaining row whose transaction_amount is strictly less than 0. Zero and positive transaction_amount values do not qualify. This deletion applies only to rows that remain after the previous transaction_id deletion. If para_transaction_id is 0, negative, or null, skip this amount-based deletion entirely.\n\nFinally, after all earlier operations have completed, delete from Financial_Transactions every row whose invoice_number equals any non-null invoice_number currently present in Invoice_Line_Items in rows whose product_title equals para_product_title. This final deletion uses the Invoice_Line_Items rows as they exist after the earlier insert or update. A null invoice_number in Invoice_Line_Items does not match any Financial_Transactions.invoice_number. If no Invoice_Line_Items row has product_title equal to para_product_title at that point, no Financial_Transactions rows are deleted by this final step.\n\nAll steps must be performed in this exact order. The procedure does not contain explicit exception handling; if any operation raises an error, the procedure does not catch it and the error propagates to the caller.\n\nImplement this as a PostgreSQL (PL/pgSQL) stored procedure named `sp` with the parameter list exactly `sp(para_product_title text, para_product_id integer, para_transaction_id integer)`. Return the complete stored procedure, and nothing else.\n",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Order_Items , columns = [ order_item_id ( integer | primary key | values : 5 , 12 ) , order_id ( integer | values : 4 , 10 ) , product_id ( integer | values : 14 , 14 ) , product_quantity ( text | values : 6 , 7 ) , other_order_item_details ( text | values : nan , nan ) ]\ntable Accounts , columns = [ account_id ( integer | primary key | values : 4 , 8 ) , customer_id ( integer | values : 15 , 15 ) , integer_account_opened ( text | values : 2016-07-30 22:22:24 , 2014-12-28 07:29:42 ) , account_name ( text | values : 861 , 272 ) , other_account_details ( text | values : VIP , Regular ) ]\ntable Customers , columns = [ customer_id ( integer | primary key | values : 9 , 4 ) , customer_first_name ( text | values : Ruby , Dangelo ) , customer_middle_initial ( text | values : B , A ) , customer_last_name ( text | values : Kessler , Ruecker ) , gender ( text | values : 1 , 0 ) , email_address ( text | values : michel92@example.org , pyundt@example.org ) , login_name ( text | values : sophia97 , camilla.dubuque ) , login_password ( text | values : e67856613cd71f1b2884 , bdbc3c18cf28303c4f6a ) , phone_number ( text | values : 1-546-302-5676 , 1-344-593-4896x425 ) , town_city ( text | values : East Stephaniafort , New Rachellefort ) , state_county_province ( text | values : Alabama , SouthDakota ) , country ( text | values : USA , USA ) ]\ntable Financial_Transactions , columns = [ transaction_id ( integer | primary key | values : 3 , 12 ) , account_id ( integer | values : 9 , 14 ) , invoice_number ( integer | values : 12 , 6 ) , transaction_type ( text | values : Payment , Payment ) , transaction_integer ( text | values : 2018-03-03 01:50:25 , 2018-03-13 03:51:59 ) , transaction_amount ( numeric | values : 1462.62 , 1214.22 ) , transaction_comment ( text | values : nan , nan ) , other_transaction_details ( text | values : nan , nan ) ]\ntable Invoice_Line_Items , columns = [ order_item_id ( integer | primary key | values : 10 , 11 ) , invoice_number ( integer | values : 1 , 14 ) , product_id ( integer | values : 6 , 11 ) , product_title ( text | values : prod_name , prod_name ) , product_quantity ( text | values : 2 , 4 ) , product_price ( numeric | values : 429.05 , 727.41 ) , derived_product_cost ( numeric | values : 89.16 , 73.14 ) , derived_vat_payable ( numeric | values : nan , nan ) , derived_total_cost ( numeric | values : 61.0 , 78.26 ) ]\ntable Invoices , columns = [ invoice_number ( integer | primary key | values : 4 , 2 ) , order_id ( integer | values : 11 , 9 ) , invoice_integer ( text | values : 2018-02-28 19:01:06 , 2018-03-16 11:01:06 ) ]\ntable Orders , columns = [ order_id ( integer | primary key | values : 3 , 12 ) , customer_id ( integer | values : 3 , 1 ) , integer_order_placed ( text | values : 2015-11-25 22:55:41 , 2017-12-04 02:59:10 ) , order_details ( text | values : nan , nan ) ]\ntable Products , columns = [ product_id ( integer | primary key | values : 5 , 15 ) , parent_product_id ( integer | values : 1 , 9 ) , production_type_code ( text | values : DVDs , Books ) , unit_price ( numeric | values : 682.06 , 617.95 ) , product_name ( text | values : Harry Potter 1 , Arts ) , product_color ( text | values : Black , Red ) , product_size ( text | values : Small , Small ) ]\ntable Product_Categories , columns = [ production_type_code ( text | primary key | values : Food , Books ) , product_type_description ( text | values : Electrical devices , Electrical devices ) , vat_rating ( numeric | values : 15.84 , 15.84 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Invoice_Line_Items"
+   },
+   "result": "table Invoice_Line_Items , columns = [ order_item_id ( integer | primary key | values : 10 , 11 ) , invoice_number ( integer | values : 1 , 14 ) , product_id ( integer | values : 6 , 11 ) , product_title ( text | values : prod_name , prod_name ) , product_quantity ( text | values : 2 , 4 ) , product_price ( numeric | values : 429.05 , 727.41 ) , derived_product_cost ( numeric | values : 89.16 , 73.14 ) , derived_vat_payable ( numeric | values : nan , nan ) , derived_total_cost ( numeric | values : 61.0 , 78.26 ) ]"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Financial_Transactions"
+   },
+   "result": "table Financial_Transactions , columns = [ transaction_id ( integer | primary key | values : 3 , 12 ) , account_id ( integer | values : 9 , 14 ) , invoice_number ( integer | values : 12 , 6 ) , transaction_type ( text | values : Payment , Payment ) , transaction_integer ( text | values : 2018-03-03 01:50:25 , 2018-03-13 03:51:59 ) , transaction_amount ( numeric | values : 1462.62 , 1214.22 ) , transaction_comment ( text | values : nan , nan ) , other_transaction_details ( text | values : nan , nan ) ]"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_product_title text,\n    para_product_id integer,\n    para_transaction_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF EXISTS (SELECT 1 FROM Invoice_Line_Items WHERE product_title = para_product_title) THEN\n        UPDATE Invoice_Line_Items\n           SET product_id = para_product_id * 2\n         WHERE product_title = para_product_title;\n    ELSE\n        INSERT INTO Invoice_Line_Items (product_title, product_id)\n        VALUES (para_product_title, para_product_id);\n    END IF;\n\n    DELETE FROM Financial_Transactions\n     WHERE transaction_id < para_transaction_id;\n\n    IF para_transaction_id > 0 THEN\n        DELETE FROM Financial_Transactions\n         WHERE transaction_amount < 0;\n    END IF;\n\n    DELETE FROM Financial_Transactions ft\n     WHERE ft.invoice_number IN (\n         SELECT ili.invoice_number\n           FROM Invoice_Line_Items ili\n          WHERE ili.product_title = para_product_title\n            AND ili.invoice_number IS NOT NULL\n     );\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DO $$ DECLARE x integer; BEGIN x := NULL; IF x > 0 THEN RAISE NOTICE 'yes'; ELSE RAISE NOTICE 'no'; END IF; END $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Invoice_Line_Items",
+    "limit": 20
+   },
+   "result": "order_item_id | invoice_number | product_id | product_title | product_quantity | product_price | derived_product_cost | derived_vat_payable | derived_total_cost\n14 | 9 | 5 | prod_name | 4 | 742.3700 | 191.1100 | NULL | 69.8200\n3 | 9 | 15 | prod_name | 1 | 814.8700 | 176.2900 | NULL | 59.5600\n4 | 10 | 15 | prod_name | 8 | 943.0700 | 73.1400 | NULL | 59.9300\n6 | 15 | 14 | prod_name | 2 | 749.6000 | 197.0600 | NULL | 82.7700\n8 | 11 | 10 | prod_name | 2 | 942.9900 | 88.4300 | NULL | 86.5600\n9 | 11 | 9 | prod_name | 6 | 486.6900 | 64.6700 | NULL | 83.4000\n8 | 14 | 3 | prod_name | 3 | 995.3400 | 28.1800 | NULL | 58.2400\n11 | 1 | 6 | prod_name | 9 | 429.0500 | 254.0800 | NULL | 79.4800\n15 | 9 | 3 | prod_name | 4 | 727.4100 | 66.0000 | NULL | 53.5300\n7 | 9 | 14 | prod_name | 9 | 559.9500 | 89.1600 | NULL | 45.6600\n5 | 7 | 8 | prod_name | 6 | 787.6100 | 150.0400 | NULL | 51.2700\n10 | 10 | 1 | prod_name | 9 | 781.4600 | 256.8400 | NULL | 71.2200\n10 | 14 | 11 | prod_name | 7 | 884.4000 | 249.1900 | NULL | 78.2600\n10 | 5 | 11 | prod_name | 5 | 556.3600 | 295.2600 | NULL | 61.0000\n8 | 12 | 6 | prod_name | 8 | 597.2800 | 188.7100 | NULL | 98.7700"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Financial_Transactions",
+    "limit": 20
+   },
+   "result": "transaction_id | account_id | invoice_number | transaction_type | transaction_integer | transaction_amount | transaction_comment | other_transaction_details\n1 | 13 | 12 | Payment | 2018-03-15 21:13:57 | 613.9600 | NULL | NULL\n2 | 9 | 1 | Payment | 2018-03-13 13:27:46 | 368.4600 | NULL | NULL\n3 | 6 | 1 | Refund | 2018-03-03 01:50:25 | 1598.2500 | NULL | NULL\n4 | 9 | 12 | Payment | 2018-03-10 13:46:48 | 540.7300 | NULL | NULL\n5 | 9 | 2 | Payment | 2018-03-23 04:56:12 | 1214.2200 | NULL | NULL\n6 | 12 | 3 | Refund | 2018-03-22 21:58:37 | 1903.4100 | NULL | NULL\n7 | 13 | 14 | Payment | 2018-03-12 03:06:52 | 1585.0300 | NULL | NULL\n8 | 14 | 15 | Payment | 2018-03-11 21:57:47 | 1425.4100 | NULL | NULL\n9 | 8 | 12 | Payment | 2018-03-07 04:32:54 | 1517.7700 | NULL | NULL\n10 | 6 | 15 | Payment | 2018-03-14 19:09:07 | 1477.5700 | NULL | NULL\n11 | 6 | 13 | Refund | 2018-03-12 22:51:05 | 1567.6400 | NULL | NULL\n12 | 9 | 6 | Refund | 2018-03-05 19:55:23 | 1781.2400 | NULL | NULL\n13 | 13 | 12 | Refund | 2018-03-24 12:05:11 | 899.8700 | NULL | NULL\n14 | 11 | 5 | Refund | 2018-03-13 03:51:59 | 1462.6200 | NULL | NULL\n15 | 4 | 14 | Refund | 2018-02-27 14:58:30 | 1979.6600 | NULL | NULL"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT column_name, is_nullable, column_default, data_type FROM information_schema.columns WHERE table_name='Invoice_Line_Items' ORDER BY ordinal_position;"
+   },
+   "result": "column_name | is_nullable | column_default | data_type\norder_item_id | YES | NULL | integer\ninvoice_number | YES | NULL | integer\nproduct_id | YES | NULL | integer\nproduct_title | YES | NULL | text\nproduct_quantity | YES | NULL | text\nproduct_price | YES | NULL | numeric\nderived_product_cost | YES | NULL | numeric\nderived_vat_payable | YES | NULL | numeric\nderived_total_cost | YES | NULL | numeric"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_product_title text,\n    para_product_id integer,\n    para_transaction_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF EXISTS (SELECT 1 FROM Invoice_Line_Items WHERE product_title = para_product_title) THEN\n        UPDATE Invoice_Line_Items\n           SET product_id = para_product_id * 2\n         WHERE product_title = para_product_title;\n    ELSE\n        INSERT INTO Invoice_Line_Items (product_title, product_id)\n        VALUES (para_product_title, para_product_id);\n    END IF;\n\n    DELETE FROM Financial_Transactions\n     WHERE transaction_id < para_transaction_id;\n\n    IF para_transaction_id > 0 THEN\n        DELETE FROM Financial_Transactions\n         WHERE transaction_amount < 0;\n    END IF;\n\n    DELETE FROM Financial_Transactions ft\n     WHERE ft.invoice_number IN (\n         SELECT ili.invoice_number\n           FROM Invoice_Line_Items ili\n          WHERE ili.product_title = para_product_title\n            AND ili.invoice_number IS NOT NULL\n     );\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp('BrandNew', 7, -1);"
+   },
+   "result": "error: [42P01] relation \"invoice_line_items\" does not exist"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog','information_schema') ORDER BY table_name;"
+   },
+   "result": "table_name\nAccounts\nCustomers\nFinancial_Transactions\nInvoice_Line_Items\nInvoices\nOrder_Items\nOrders\nProduct_Categories\nProducts"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema NOT IN ('pg_catalog','information_schema') AND table_name IN ('Invoice_Line_Items','Financial_Transactions') ORDER BY table_name, ordinal_position;"
+   },
+   "result": "table_name | column_name\nFinancial_Transactions | transaction_id\nFinancial_Transactions | account_id\nFinancial_Transactions | invoice_number\nFinancial_Transactions | transaction_type\nFinancial_Transactions | transaction_integer\nFinancial_Transactions | transaction_amount\nFinancial_Transactions | transaction_comment\nFinancial_Transactions | other_transaction_details\nInvoice_Line_Items | order_item_id\nInvoice_Line_Items | invoice_number\nInvoice_Line_Items | product_id\nInvoice_Line_Items | product_title\nInvoice_Line_Items | product_quantity\nInvoice_Line_Items | product_price\nInvoice_Line_Items | derived_product_cost\nInvoice_Line_Items | derived_vat_payable\nInvoice_Line_Items | derived_total_cost"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_product_title text,\n    para_product_id integer,\n    para_transaction_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF EXISTS (SELECT 1 FROM \"Invoice_Line_Items\" WHERE product_title = para_product_title) THEN\n        UPDATE \"Invoice_Line_Items\"\n           SET product_id = para_product_id * 2\n         WHERE product_title = para_product_title;\n    ELSE\n        INSERT INTO \"Invoice_Line_Items\" (product_title, product_id)\n        VALUES (para_product_title, para_product_id);\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\"\n     WHERE transaction_id < para_transaction_id;\n\n    IF para_transaction_id > 0 THEN\n        DELETE FROM \"Financial_Transactions\"\n         WHERE transaction_amount < 0;\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\" ft\n     WHERE ft.invoice_number IN (\n         SELECT ili.invoice_number\n           FROM \"Invoice_Line_Items\" ili\n          WHERE ili.product_title = para_product_title\n            AND ili.invoice_number IS NOT NULL\n     );\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp('BrandNew', 7, -1);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Invoice_Line_Items\" WHERE product_title='BrandNew';"
+   },
+   "result": "order_item_id | invoice_number | product_id | product_title | product_quantity | product_price | derived_product_cost | derived_vat_payable | derived_total_cost\nNULL | NULL | 7 | BrandNew | NULL | NULL | NULL | NULL | NULL"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) AS ft_count FROM \"Financial_Transactions\";"
+   },
+   "result": "ft_count\n15"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_product_title text,\n    para_product_id integer,\n    para_transaction_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF EXISTS (SELECT 1 FROM \"Invoice_Line_Items\" WHERE product_title = para_product_title) THEN\n        UPDATE \"Invoice_Line_Items\"\n           SET product_id = para_product_id * 2\n         WHERE product_title = para_product_title;\n    ELSE\n        INSERT INTO \"Invoice_Line_Items\" (product_title, product_id)\n        VALUES (para_product_title, para_product_id);\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\"\n     WHERE transaction_id < para_transaction_id;\n\n    IF para_transaction_id > 0 THEN\n        DELETE FROM \"Financial_Transactions\"\n         WHERE transaction_amount < 0;\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\" ft\n     WHERE ft.invoice_number IN (\n         SELECT ili.invoice_number\n           FROM \"Invoice_Line_Items\" ili\n          WHERE ili.product_title = para_product_title\n            AND ili.invoice_number IS NOT NULL\n     );\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp('prod_name', 5, 0);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) AS updated_count, min(product_id) AS min_id, max(product_id) AS max_id FROM \"Invoice_Line_Items\" WHERE product_title='prod_name';"
+   },
+   "result": "updated_count | min_id | max_id\n15 | 10 | 10"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Financial_Transactions\" ORDER BY transaction_id;"
+   },
+   "result": "transaction_id | account_id | invoice_number | transaction_type | transaction_integer | transaction_amount | transaction_comment | other_transaction_details\n5 | 9 | 2 | Payment | 2018-03-23 04:56:12 | 1214.2200 | NULL | NULL\n6 | 12 | 3 | Refund | 2018-03-22 21:58:37 | 1903.4100 | NULL | NULL\n11 | 6 | 13 | Refund | 2018-03-12 22:51:05 | 1567.6400 | NULL | NULL\n12 | 9 | 6 | Refund | 2018-03-05 19:55:23 | 1781.2400 | NULL | NULL"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_product_title text,\n    para_product_id integer,\n    para_transaction_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF EXISTS (SELECT 1 FROM \"Invoice_Line_Items\" WHERE product_title = para_product_title) THEN\n        UPDATE \"Invoice_Line_Items\"\n           SET product_id = para_product_id * 2\n         WHERE product_title = para_product_title;\n    ELSE\n        INSERT INTO \"Invoice_Line_Items\" (product_title, product_id)\n        VALUES (para_product_title, para_product_id);\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\"\n     WHERE transaction_id < para_transaction_id;\n\n    IF para_transaction_id > 0 THEN\n        DELETE FROM \"Financial_Transactions\"\n         WHERE transaction_amount < 0;\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\" ft\n     WHERE ft.invoice_number IN (\n         SELECT ili.invoice_number\n           FROM \"Invoice_Line_Items\" ili\n          WHERE ili.product_title = para_product_title\n            AND ili.invoice_number IS NOT NULL\n     );\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_product_title text,\n    para_product_id integer,\n    para_transaction_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF EXISTS (SELECT 1 FROM \"Invoice_Line_Items\" WHERE product_title = para_product_title) THEN\n        UPDATE \"Invoice_Line_Items\"\n           SET product_id = para_product_id * 2\n         WHERE product_title = para_product_title;\n    ELSE\n        INSERT INTO \"Invoice_Line_Items\" (product_title, product_id)\n        VALUES (para_product_title, para_product_id);\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\"\n     WHERE transaction_id < para_transaction_id;\n\n    IF para_transaction_id > 0 THEN\n        DELETE FROM \"Financial_Transactions\"\n         WHERE transaction_amount < 0;\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\" ft\n     WHERE ft.invoice_number IN (\n         SELECT ili.invoice_number\n           FROM \"Invoice_Line_Items\" ili\n          WHERE ili.product_title = para_product_title\n            AND ili.invoice_number IS NOT NULL\n     );\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO \"Financial_Transactions\" (transaction_id, invoice_number, transaction_amount) VALUES (100, 999, -10), (101, 999, 10);"
+   },
+   "result": "ok, 2 row(s) affected"
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp('BrandNew', 1, 5);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 28,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT transaction_id, invoice_number, transaction_amount FROM \"Financial_Transactions\" WHERE transaction_id >= 100 ORDER BY transaction_id;"
+   },
+   "result": "transaction_id | invoice_number | transaction_amount\n101 | 999 | 10.0000"
+  },
+  {
+   "step": 29,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO \"Financial_Transactions\" (transaction_id, invoice_number, transaction_amount) VALUES (200, 999, -5);"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 30,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp('BrandNew2', 1, NULL);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 31,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT transaction_id, invoice_number, transaction_amount FROM \"Financial_Transactions\" WHERE transaction_id=200;"
+   },
+   "result": "transaction_id | invoice_number | transaction_amount\n200 | 999 | -5.0000"
+  },
+  {
+   "step": 32,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_product_title text,\n    para_product_id integer,\n    para_transaction_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF EXISTS (SELECT 1 FROM \"Invoice_Line_Items\" WHERE product_title = para_product_title) THEN\n        UPDATE \"Invoice_Line_Items\"\n           SET product_id = para_product_id * 2\n         WHERE product_title = para_product_title;\n    ELSE\n        INSERT INTO \"Invoice_Line_Items\" (product_title, product_id)\n        VALUES (para_product_title, para_product_id);\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\"\n     WHERE transaction_id < para_transaction_id;\n\n    IF para_transaction_id > 0 THEN\n        DELETE FROM \"Financial_Transactions\"\n         WHERE transaction_amount < 0;\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\"\n     WHERE invoice_number IN (\n         SELECT ili.invoice_number\n           FROM \"Invoice_Line_Items\" ili\n          WHERE ili.product_title = para_product_title\n            AND ili.invoice_number IS NOT NULL\n     );\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 33,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 34,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_product_title text,\n    para_product_id integer,\n    para_transaction_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF EXISTS (SELECT 1 FROM \"Invoice_Line_Items\" WHERE product_title = para_product_title) THEN\n        UPDATE \"Invoice_Line_Items\"\n           SET product_id = para_product_id * 2\n         WHERE product_title = para_product_title;\n    ELSE\n        INSERT INTO \"Invoice_Line_Items\" (product_title, product_id)\n        VALUES (para_product_title, para_product_id);\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\"\n     WHERE transaction_id < para_transaction_id;\n\n    IF para_transaction_id > 0 THEN\n        DELETE FROM \"Financial_Transactions\"\n         WHERE transaction_amount < 0;\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\"\n     WHERE invoice_number IN (\n         SELECT ili.invoice_number\n           FROM \"Invoice_Line_Items\" ili\n          WHERE ili.product_title = para_product_title\n            AND ili.invoice_number IS NOT NULL\n     );\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 35,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp('prod_name', 5, 0);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 36,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) AS remaining FROM \"Financial_Transactions\";"
+   },
+   "result": "remaining\n4"
+  },
+  {
+   "step": 37,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    para_product_title text,\n    para_product_id integer,\n    para_transaction_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF EXISTS (SELECT 1 FROM \"Invoice_Line_Items\" WHERE product_title = para_product_title) THEN\n        UPDATE \"Invoice_Line_Items\"\n           SET product_id = para_product_id * 2\n         WHERE product_title = para_product_title;\n    ELSE\n        INSERT INTO \"Invoice_Line_Items\" (product_title, product_id)\n        VALUES (para_product_title, para_product_id);\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\"\n     WHERE transaction_id < para_transaction_id;\n\n    IF para_transaction_id > 0 THEN\n        DELETE FROM \"Financial_Transactions\"\n         WHERE transaction_amount < 0;\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\"\n     WHERE invoice_number IN (\n         SELECT ili.invoice_number\n           FROM \"Invoice_Line_Items\" ili\n          WHERE ili.product_title = para_product_title\n            AND ili.invoice_number IS NOT NULL\n     );\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    para_product_title text,\n    para_product_id integer,\n    para_transaction_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF EXISTS (SELECT 1 FROM \"Invoice_Line_Items\" WHERE product_title = para_product_title) THEN\n        UPDATE \"Invoice_Line_Items\"\n           SET product_id = para_product_id * 2\n         WHERE product_title = para_product_title;\n    ELSE\n        INSERT INTO \"Invoice_Line_Items\" (product_title, product_id)\n        VALUES (para_product_title, para_product_id);\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\"\n     WHERE transaction_id < para_transaction_id;\n\n    IF para_transaction_id > 0 THEN\n        DELETE FROM \"Financial_Transactions\"\n         WHERE transaction_amount < 0;\n    END IF;\n\n    DELETE FROM \"Financial_Transactions\"\n     WHERE invoice_number IN (\n         SELECT ili.invoice_number\n           FROM \"Invoice_Line_Items\" ili\n          WHERE ili.product_title = para_product_title\n            AND ili.invoice_number IS NOT NULL\n     );\nEND;\n$$;"
+ },
+ "pair": null
+}

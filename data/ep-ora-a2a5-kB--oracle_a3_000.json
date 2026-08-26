@@ -1,0 +1,421 @@
+{
+ "id": "ep-ora-a2a5-kB--oracle_a3_000",
+ "run": "ep-ora-a2a5-kB",
+ "task_id": "oracle_a3_000",
+ "stage": "multi",
+ "condition": "tools+ask@B14+2L+6",
+ "tier": "full",
+ "scenario": "a3",
+ "dialect": "oracle",
+ "model": "deepseek-v4-flash",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "database state differs after call 2",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "spec",
+  "recovered": 1,
+  "oracle_size": 3
+ },
+ "summary": {
+  "steps": 30,
+  "seconds": 427.0,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 1,
+  "oracle_size": 3,
+  "entries_per_question": 1.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 5,
+   "execute_scratch": 18,
+   "ask_user": 1,
+   "compile_plsql": 4,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 26.0,
+   "base": 14.0,
+   "per_entry": 2.0,
+   "patience": 6.0,
+   "rounding": 0,
+   "spent": 25.5,
+   "by_tool": {
+    "get_schema": 1.0,
+    "sample_rows": 2.5,
+    "execute_scratch": 18.0,
+    "ask_user": 2.0,
+    "compile_plsql": 2.0,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false
+ },
+ "task": {
+  "prompt": "Implement an Oracle PL/SQL stored procedure that performs data changes across several related tables, based on its input parameters.\n\nProcedure signature:\n```sql\nCREATE OR REPLACE PROCEDURE sp(\n    para_ResID     IN NUMBER,\n    para_ResName   IN VARCHAR2,\n    para_Address   IN VARCHAR2,\n    para_StuID     IN NUMBER,\n    para_LName     IN VARCHAR2,\n    para_ResTypeID IN NUMBER\n)\n```\n\nTables in scope:\n- Restaurant\n- Restaurant_Type\n- Student\n- Type_Of_Restaurant\n- Visits_Restaurant\n\nThe attached file `examples.md` contains the worked examples.Match them exactly.\n\nReturn the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "examples.md",
+    "kind": "worked examples",
+    "text": "# Behaviour of the procedure, by example\n\nEach example is one call, run against the database in the state shown below. The examples are independent: every one starts from that same state.\n\n## Starting state\n\nEvery example below starts from this database. The tables the procedure touches:\n\n### Restaurant (2 rows)\n| ResID | ResName | Address | Rating |\n|---|---|---|---|\n| 1 | Subway | 3233 St Paul St, Baltimore, MD 21218 | 3 |\n| 2 | Honeygrow Inc | 3212 St Paul St, Baltimore, MD 21218 | 4 |\n\n### Restaurant_Type (2 rows)\n| ResTypeID | ResTypeName | ResTypeDescription |\n|---|---|---|\n| 1 | Sandwich | Simplest there is. |\n| 2 | Stir-fry | Classic Chinese cooking. |\n\n### Student (34 rows)\n| StuID | LName | Fname | Age | Sex | Major | Advisor | city_code |\n|---|---|---|---|---|---|---|---|\n| 1001 | Smith | Linda | 18 | F | 600 | 1121 | BAL |\n| 1002 | Kim | Tracy | 19 | F | 600 | 7712 | HKG |\n| 1003 | Jones | Shiela | 21 | F | 600 | 7792 | WAS |\n| 1004 | Kumar | Dinesh | 20 | M | 600 | 8423 | CHI |\n| 1005 | Gompers | Paul | 26 | M | 600 | 1121 | YYZ |\n| 1006 | Schultz | Andy | 18 | M | 600 | 1148 | BAL |\n| 1007 | Apap | Lisa | 18 | F | 600 | 8918 | PIT |\n| 1008 | Nelson | Jandy | 20 | F | 600 | 9172 | BAL |\n| ... 26 more rows | | | | | | | \n\n## Example 2\n\n```sql\nCALL sp(1, 'Subway', 'RES2_RENAMED', 1001, 'Smith', 1);\n```\n\n**Restaurant**\n- 1 row(s) changed:\n  ResID=2, ResName='Honeygrow', Address='3212 St Paul St, Baltimore, MD 21218', Ra | ResName: 'Honeygrow' -> 'RES2_RENAMED'\n\nUnchanged: Restaurant_Type, Student\n\n## Example 3\n\n```sql\nCALL sp(2, 'Subway', 'PENDING_ADDR', 1001, 'Smith', 1);\n```\n\n**Restaurant**\n- 1 row(s) changed:\n  ResID=1, ResName='Subway', Address='3233 St Paul St, Baltimore, MD 21218', Ratin | Address: '3233 St Paul St, Baltimore, MD 21218' -> 'PENDING'\n\nUnchanged: Restaurant_Type, Student\n\n## Example 4\n\n```sql\nCALL sp(2, '%', '3233 St Paul St, Baltimore, MD 21218', 1002, 'Kim', 2);\n```\n\n**Restaurant**\n- 1 row(s) removed:\n  ResID=1, ResName='Subway', Address='3233 St Paul St, Baltimore, MD 21218', Rating=3\n\nUnchanged: Restaurant_Type, Student\n\n## Example 5\n\n```sql\nCALL sp(9, 'X', 'Y', 1001, 'Smith', 20);\n```\n\n**Restaurant_Type**\n- 2 row(s) added:\n  ResTypeID=11, ResTypeName='Sandwich', ResTypeDescription='Simplest there is.'\n  ResTypeID=12, ResTypeName='Stir-fry', ResTypeDescription='Classic Chinese cooking.'\n- 2 row(s) removed:\n  ResTypeID=1, ResTypeName='Sandwich', ResTypeDescription='Simplest there is.'\n  ResTypeID=2, ResTypeName='Stir-fry', ResTypeDescription='Classic Chinese cooking.'\n\nUnchanged: Restaurant, Student\n\n## Example 6\n\n```sql\nCALL sp(10, 'X', 'Y', 1002, 'Kim', 21);\n```\n\n**Restaurant_Type**\n- 1 row(s) added:\n  ResTypeID=12, ResTypeName='Stir-fry', ResTypeDescription='Classic Chinese cooking.'\n- 1 row(s) removed:\n  ResTypeID=2, ResTypeName='Stir-fry', ResTypeDescription='Classic Chinese cooking.'\n\nUnchanged: Restaurant, Student\n\n## Example 7\n\n```sql\nCALL sp(0, 'Subway', 'ALL_RENAMED_B', 1002, 'Kim', 2);\n```\n\n**Restaurant**\n- 2 row(s) changed:\n  ResID=1, ResName='Subway', Address='3233 St Paul St, Baltimore, MD 21218', Ratin | ResName: 'Subway' -> 'ALL_RENAMED_B'\n  ResID=2, ResName='Honeygrow', Address='3212 St Paul St, Baltimore, MD 21218', Ra | ResName: 'Honeygrow' -> 'ALL_RENAMED_B'\n\nUnchanged: Restaurant_Type, Student\n\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 25,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "is there an example of the behaviour that example 1 showed, and what does the procedure do for that call?",
+   "answer": "## Example 1\n\n```sql\nCALL sp(0, 'Subway', 'ALL_RENAMED', 1001, 'Smith', 1);\n```\n\n**Restaurant**\n- 2 row(s) changed:\n  ResID=1, ResName='Subway', Address='3233 St Paul St, Baltimore, MD 21218', Ratin | ResName: 'Subway' -> 'ALL_RENAMED'\n  ResID=2, ResName='Honeygrow', Address='3212 St Paul St, Baltimore, MD 21218', Ra | ResName: 'Honeygrow' -> 'ALL_RENAMED'\n\nUnchanged: Restaurant_Type, Student"
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "is there an example of the behaviour that example 8 showed, and what does the procedure do for that call?",
+   "answer": "## Example 8\n\n```sql\nCALL sp(1, 'Subway', 'RES2_RENAMED_B', 1002, 'Kim', 2);\n```\n\n**Restaurant**\n- 1 row(s) changed:\n  ResID=2, ResName='Honeygrow', Address='3212 St Paul St, Baltimore, MD 21218', Ra | ResName: 'Honeygrow' -> 'RES2_RENAMED_B'\n\nUnchanged: Restaurant_Type, Student"
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "the starting state shows 'Honeygrow Inc' where example 2 shows 'Honeygrow' changing -- which is the real starting value?",
+   "answer": "The example is right: the starting value of ResName is 'Honeygrow'. The starting-state excerpt is a stale snapshot."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Restaurant , columns = [ ResID ( NUMBER | primary key | values : 1 , 2 ) , ResName ( VARCHAR2 | values : Subway , Honeygrow ) , Address ( VARCHAR2 | values : 3233 St Paul St, Baltimore, MD 21218 , 3212 St Paul St, Baltimore, MD 21218 ) , Rating ( NUMBER | values : 3 , 4 ) ]\ntable Restaurant_Type , columns = [ ResTypeID ( NUMBER | primary key | values : 1 , 2 ) , ResTypeName ( VARCHAR2 | values : Sandwich , Stir-fry ) , ResTypeDescription ( VARCHAR2 | values : Simplest there is. , Classic Chinese cooking. ) ]\ntable Student , columns = [ StuID ( NUMBER | primary key | values : 1001 , 1002 ) , LName ( VARCHAR2 | values : Smith , Kim ) , Fname ( VARCHAR2 | values : Linda , Tracy ) , Age ( NUMBER | values : 18 , 19 ) , Sex ( VARCHAR2 | values : F ) , Major ( NUMBER | values : 600 ) , Advisor ( NUMBER | values : 1121 , 7712 ) , city_code ( VARCHAR2 | values : BAL , HKG ) ]\ntable Type_Of_Restaurant , columns = [ ResID ( NUMBER | values : 1 , 2 ) , ResTypeID ( NUMBER | values : 1 , 2 ) ]\ntable Visits_Restaurant , columns = [ StuID ( NUMBER | values : 1001 , 1032 ) , ResID ( NUMBER | values : 1 , 2 ) , Time ( TIMESTAMP(6) | values : 2017-10-09T18:15:00 , 2017-10-08T13:00:30 ) , Spent ( NUMBER | values : 6.53 , 13.2 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Restaurant",
+    "limit": 10
+   },
+   "result": "ResID | ResName | Address | Rating\n1 | Subway | 3233 St Paul St, Baltimore, MD 21218 | 3\n2 | Honeygrow | 3212 St Paul St, Baltimore, MD 21218 | 4"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Restaurant_Type",
+    "limit": 10
+   },
+   "result": "ResTypeID | ResTypeName | ResTypeDescription\n1 | Sandwich | Simplest there is.\n2 | Stir-fry | Classic Chinese cooking."
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Student",
+    "limit": 10
+   },
+   "result": "StuID | LName | Fname | Age | Sex | Major | Advisor | city_code\n1001 | Smith | Linda | 18 | F | 600 | 1121 | BAL\n1002 | Kim | Tracy | 19 | F | 600 | 7712 | HKG\n1003 | Jones | Shiela | 21 | F | 600 | 7792 | WAS\n1004 | Kumar | Dinesh | 20 | M | 600 | 8423 | CHI\n1005 | Gompers | Paul | 26 | M | 600 | 1121 | YYZ\n1006 | Schultz | Andy | 18 | M | 600 | 1148 | BAL\n1007 | Apap | Lisa | 18 | F | 600 | 8918 | PIT\n1008 | Nelson | Jandy | 20 | F | 600 | 9172 | BAL\n1009 | Tai | Eric | 19 | M | 600 | 2192 | YYZ\n1010 | Lee | Derek | 17 | M | 600 | 2192 | HOU"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Type_Of_Restaurant",
+    "limit": 10
+   },
+   "result": "ResID | ResTypeID\n1 | 1\n2 | 2"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Visits_Restaurant",
+    "limit": 10
+   },
+   "result": "StuID | ResID | Time | Spent\n1001 | 1 | 2017-10-09 18:15:00 | 6.53\n1032 | 2 | 2017-10-08 13:00:30 | 13.2"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT column_name, data_type, data_length, char_length FROM user_tab_columns WHERE table_name IN ('RESTAURANT','RESTAURANT_TYPE','STUDENT','TYPE_OF_RESTAURANT','VISITS_RESTAURANT') ORDER BY table_name, column_id"
+   },
+   "result": "(COLUMN_NAME | DATA_TYPE | DATA_LENGTH | CHAR_LENGTH)\n(no rows)"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM Student ORDER BY StuID"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM Visits_Restaurant ORDER BY StuID, ResID"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM Type_Of_Restaurant ORDER BY ResID"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name FROM all_tables WHERE table_name IN ('RESTAURANT','RESTAURANT_TYPE','STUDENT','TYPE_OF_RESTAURANT','VISITS_RESTAURANT')"
+   },
+   "result": "OWNER | TABLE_NAME\nCOLLEGE_1 | STUDENT\nRESTAURANTS | RESTAURANT"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name FROM all_tables WHERE table_name IN ('RESTAURANT','RESTAURANT_TYPE','STUDENT','TYPE_OF_RESTAURANT','VISITS_RESTAURANT','TYPE_OF_RESTAURANT') ORDER BY owner, table_name"
+   },
+   "result": "OWNER | TABLE_NAME\nCOLLEGE_1 | STUDENT\nRESTAURANTS | RESTAURANT"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name FROM all_tables WHERE LOWER(table_name) LIKE '%restaurant%' OR LOWER(table_name) LIKE '%visit%' OR table_name='STUDENT' ORDER BY owner, table_name"
+   },
+   "result": "OWNER | TABLE_NAME\nASSETS_MAINTENANCE | Engineer_Visits\nCOLLEGE_1 | STUDENT\nMUSEUM_VISIT | visit\nMUSEUM_VISIT | visitor\nRESTAURANTS | RESTAURANT\nRESTAURANT_1 | Restaurant\nRESTAURANT_1 | Restaurant_Type\nRESTAURANT_1 | Type_Of_Restaurant\nRESTAURANT_1 | Visits_Restaurant\nRESTAURANT_1_BTWE441_0 | Restaurant\nRESTAURANT_1_BTWE441_0 | Restaurant_Type\nRESTAURANT_1_BTWE441_0 | Type_Of_Restaurant\nRESTAURANT_1_BTWE441_0 | Visits_Restaurant\nRESTAURANT_1_BTWF525_0 | Restaurant\nRESTAURANT_1_BTWF525_0 | Restaurant_Type\nRESTAURANT_1_BTWF525_0 | Type_Of_Restaurant\nRESTAURANT_1_BTWF525_0 | Visits_Restaurant\nRESTAURANT_1_EP3E79D0B9 | Restaurant\nRESTAURANT_1_EP3E79D0B9 | Restaurant_Type\nRESTAURANT_1_EP3E79D0B9 | Type_Of_Restaurant\nRESTAURANT_1_EP3E79D0B9 | Visits_Restaurant\nRESTAURANT_1_ORWB54F_2 | Restaurant\nRESTAURANT_1_ORWB54F_2 | Restaurant_Type\nRESTAURANT_1_ORWB54F_2 | Type_Of_Restaurant\nRESTAURANT_1_ORWB54F_2 | Visits_Restaurant\nRESTAURANT_1_ORWE7CD_0 | Restaurant\nRESTAURANT_1_ORWE7CD_0 | Restaurant_Type\nRESTAURANT_1_ORWE7CD_0 | Type_Of_Restaurant\nRESTAURANT_1_ORWE7CD_0 | Visits_Restaurant\nRESTAURANT_1_ORWE7CD_2 | Restaurant\nRESTAURANT_1_ORWE7CD_2 | Restaurant_Type\nRESTAURANT_1_ORWE7CD_2 | Type_Of_Restaurant\nRESTAURANT_1_ORWE7CD_2 | Visits_Restaurant"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT user FROM dual"
+   },
+   "result": "USER\nSYSTEM"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_owner, table_name, synonym_name FROM all_synonyms WHERE LOWER(table_name) IN ('restaurant','student','type_of_restaurant','visits_restaurant','restaurant_type')"
+   },
+   "result": "(TABLE_OWNER | TABLE_NAME | SYNONYM_NAME)\n(no rows)"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM RESTAURANT_1.Restaurant"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM RESTAURANT_1.Restaurant_Type"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM RESTAURANT_1.Visits_Restaurant"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM RESTAURANT_1.Type_Of_Restaurant"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT COUNT(*) c FROM COLLEGE_1.STUDENT"
+   },
+   "result": "C\n8"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM RESTAURANT_1.\"Restaurant\""
+   },
+   "result": "ResID | ResName | Address | Rating\n1 | Subway | 3233 St Paul St, Baltimore, MD 21218 | 3\n2 | Honeygrow | 3212 St Paul St, Baltimore, MD 21218 | 4"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM RESTAURANT_1.\"Restaurant_Type\""
+   },
+   "result": "ResTypeID | ResTypeName | ResTypeDescription\n1 | Sandwich | Simplest there is.\n2 | Stir-fry | Classic Chinese cooking."
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM RESTAURANT_1.\"Type_Of_Restaurant\""
+   },
+   "result": "ResID | ResTypeID\n1 | 1\n2 | 2"
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM RESTAURANT_1.\"Visits_Restaurant\""
+   },
+   "result": "StuID | ResID | Time | Spent\n1001 | 1 | 2017-10-09 18:15:00 | 6.53\n1032 | 2 | 2017-10-08 13:00:30 | 13.2"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "I'm implementing the sp procedure to match the worked examples exactly. Two things are unclear:\n\n1) In examples 5 and 6, Restaurant_Type rows get renumbered (ResTypeID + 10). Example 5 (call with ResID=9) renumbers BOTH rows (1→11, 2→12); example 6 (ResID=10) renumbers only row 2 (2→12). What rule decides WHICH rows are renumbered?\n\n2) The provided examples only show changes to Restaurant and Restaurant_Type, and mark Student as unchanged. The procedure is said to also touch Student, Type_Of_Restaurant, and Visits_Restaurant. Do any calls (including example 1, which is missing from the file) modify Student, Type_Of_Restaurant, or Visits_Restaurant? If so, what are those calls and the expected changes?"
+   },
+   "result": "## Example 1\n\n```sql\nCALL sp(0, 'Subway', 'ALL_RENAMED', 1001, 'Smith', 1);\n```\n\n**Restaurant**\n- 2 row(s) changed:\n  ResID=1, ResName='Subway', Address='3233 St Paul St, Baltimore, MD 21218', Ratin | ResName: 'Subway' -> 'ALL_RENAMED'\n  ResID=2, ResName='Honeygrow', Address='3212 St Paul St, Baltimore, MD 21218', Ra | ResName: 'Honeygrow' -> 'ALL_RENAMED'\n\nUnchanged: Restaurant_Type, Student\n\nSorry -- I don't have anything more on that one.",
+   "revealed": [
+    "M1"
+   ],
+   "suppressed": [],
+   "unmatched": [
+    "What rule decides which Restaurant_Type rows get renumbered (ResTypeID + 10) in examples 5 and 6?"
+   ],
+   "fallback": 0
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_ResID     IN NUMBER,\n    para_ResName   IN VARCHAR2,\n    para_Address   IN VARCHAR2,\n    para_StuID     IN NUMBER,\n    para_LName     IN VARCHAR2,\n    para_ResTypeID IN NUMBER\n) AS\n    v_count NUMBER;\nBEGIN\n    SELECT COUNT(*) INTO v_count\n      FROM Restaurant\n     WHERE ResID = para_ResID;\n\n    IF para_ResID = 0 THEN\n        -- Rename every restaurant\n        UPDATE Restaurant\n           SET ResName = para_Address;\n    ELSIF v_count = 0 THEN\n        -- The given restaurant does not exist: renumber the restaurant types\n        UPDATE Restaurant_Type\n           SET ResTypeID = ResTypeID + 10\n         WHERE ResTypeID >= (para_ResID - 8);\n    ELSE\n        -- The restaurant exists: operate on the neighbouring restaurant(s)\n        UPDATE Restaurant\n           SET ResName = para_Address\n         WHERE ResID = para_ResID + 1;\n\n        DELETE FROM Restaurant\n         WHERE ResID <> para_ResID\n           AND Address = para_Address;\n\n        UPDATE Restaurant\n           SET Address = 'PENDING'\n         WHERE ResID = para_ResID - 1;\n    END IF;\nEND sp;"
+   },
+   "result": "compile error: line 12:12 PL/SQL: ORA-00942: table or view does not exist; line 11:5 PL/SQL: SQL Statement ignored; line 17:16 PL/SQL: ORA-00942: table or view does not exist; line 17:9 PL/SQL: SQL Statement ignored; line 21:16 PL/SQL: ORA-00942: table or view does not exist; line 21:9 PL/SQL: SQL Statement ignored; line 26:16 PL/SQL: ORA-00942: table or view does not exist; line 26:9 PL/SQL: SQL Statement ignored; line 30:21 PL/SQL: ORA-00942: table or view does not exist; line 30:9 PL/SQL: SQL Statement ignored; line 34:16 PL/SQL: ORA-00942: table or view does not exist; line 34:9 PL/SQL: SQL Statement ignored",
+   "compiled": false
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_ResID     IN NUMBER,\n    para_ResName   IN VARCHAR2,\n    para_Address   IN VARCHAR2,\n    para_StuID     IN NUMBER,\n    para_LName     IN VARCHAR2,\n    para_ResTypeID IN NUMBER\n) AS\n    v_count NUMBER;\nBEGIN\n    SELECT COUNT(*) INTO v_count\n      FROM RESTAURANT_1.\"Restaurant\"\n     WHERE ResID = para_ResID;\n\n    IF para_ResID = 0 THEN\n        UPDATE RESTAURANT_1.\"Restaurant\"\n           SET ResName = para_Address;\n    ELSIF v_count = 0 THEN\n        UPDATE RESTAURANT_1.\"Restaurant_Type\"\n           SET ResTypeID = ResTypeID + 10\n         WHERE ResTypeID >= (para_ResID - 8);\n    ELSE\n        UPDATE RESTAURANT_1.\"Restaurant\"\n           SET ResName = para_Address\n         WHERE ResID = para_ResID + 1;\n\n        DELETE FROM RESTAURANT_1.\"Restaurant\"\n         WHERE ResID <> para_ResID\n           AND Address = para_Address;\n\n        UPDATE RESTAURANT_1.\"Restaurant\"\n           SET Address = 'PENDING'\n         WHERE ResID = para_ResID - 1;\n    END IF;\nEND sp;"
+   },
+   "result": "compile error: line 12:26 PL/SQL: ORA-00942: table or view does not exist; line 11:5 PL/SQL: SQL Statement ignored; line 17:16 PL/SQL: ORA-00904: \"RESNAME\": invalid identifier; line 16:9 PL/SQL: SQL Statement ignored; line 19:30 PL/SQL: ORA-00942: table or view does not exist; line 19:9 PL/SQL: SQL Statement ignored; line 23:30 PL/SQL: ORA-00942: table or view does not exist; line 23:9 PL/SQL: SQL Statement ignored; line 27:35 PL/SQL: ORA-00942: table or view does not exist; line 27:9 PL/SQL: SQL Statement ignored; line 31:30 PL/SQL: ORA-00942: table or view does not exist; line 31:9 PL/SQL: SQL Statement ignored",
+   "compiled": false
+  },
+  {
+   "step": 28,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_ResID     IN NUMBER,\n    para_ResName   IN VARCHAR2,\n    para_Address   IN VARCHAR2,\n    para_StuID     IN NUMBER,\n    para_LName     IN VARCHAR2,\n    para_ResTypeID IN NUMBER\n) AS\n    v_count NUMBER;\nBEGIN\n    SELECT COUNT(*) INTO v_count\n      FROM \"Restaurant\"\n     WHERE ResID = para_ResID;\n\n    IF para_ResID = 0 THEN\n        UPDATE \"Restaurant\"\n           SET ResName = para_Address;\n    ELSIF v_count = 0 THEN\n        UPDATE \"Restaurant_Type\"\n           SET ResTypeID = ResTypeID + 10\n         WHERE ResTypeID >= (para_ResID - 8);\n    ELSE\n        UPDATE \"Restaurant\"\n           SET ResName = para_Address\n         WHERE ResID = para_ResID + 1;\n\n        DELETE FROM \"Restaurant\"\n         WHERE ResID <> para_ResID\n           AND Address = para_Address;\n\n        UPDATE \"Restaurant\"\n           SET Address = 'PENDING'\n         WHERE ResID = para_ResID - 1;\n    END IF;\nEND sp;"
+   },
+   "result": "compile error: line 13:12 PL/SQL: ORA-00904: \"RESID\": invalid identifier; line 11:5 PL/SQL: SQL Statement ignored; line 17:16 PL/SQL: ORA-00904: \"RESNAME\": invalid identifier; line 16:9 PL/SQL: SQL Statement ignored; line 21:16 PL/SQL: ORA-00904: \"RESTYPEID\": invalid identifier; line 19:9 PL/SQL: SQL Statement ignored; line 25:16 PL/SQL: ORA-00904: \"RESID\": invalid identifier; line 23:9 PL/SQL: SQL Statement ignored; line 29:16 PL/SQL: ORA-00904: \"ADDRESS\": invalid identifier; line 27:9 PL/SQL: SQL Statement ignored; line 33:16 PL/SQL: ORA-00904: \"RESID\": invalid identifier; line 31:9 PL/SQL: SQL Statement ignored",
+   "compiled": false
+  },
+  {
+   "step": 29,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_ResID     IN NUMBER,\n    para_ResName   IN VARCHAR2,\n    para_Address   IN VARCHAR2,\n    para_StuID     IN NUMBER,\n    para_LName     IN VARCHAR2,\n    para_ResTypeID IN NUMBER\n) AS\n    v_count NUMBER;\nBEGIN\n    SELECT COUNT(*) INTO v_count\n      FROM \"Restaurant\"\n     WHERE \"ResID\" = para_ResID;\n\n    IF para_ResID = 0 THEN\n        UPDATE \"Restaurant\"\n           SET \"ResName\" = para_Address;\n    ELSIF v_count = 0 THEN\n        UPDATE \"Restaurant_Type\"\n           SET \"ResTypeID\" = \"ResTypeID\" + 10\n         WHERE \"ResTypeID\" >= (para_ResID - 8);\n    ELSE\n        UPDATE \"Restaurant\"\n           SET \"ResName\" = para_Address\n         WHERE \"ResID\" = para_ResID + 1;\n\n        DELETE FROM \"Restaurant\"\n         WHERE \"ResID\" <> para_ResID\n           AND \"Address\" = para_Address;\n\n        UPDATE \"Restaurant\"\n           SET \"Address\" = 'PENDING'\n         WHERE \"ResID\" = para_ResID - 1;\n    END IF;\nEND sp;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 30,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    para_ResID     IN NUMBER,\n    para_ResName   IN VARCHAR2,\n    para_Address   IN VARCHAR2,\n    para_StuID     IN NUMBER,\n    para_LName     IN VARCHAR2,\n    para_ResTypeID IN NUMBER\n) AS\n    v_count NUMBER;\nBEGIN\n    SELECT COUNT(*) INTO v_count\n      FROM \"Restaurant\"\n     WHERE \"ResID\" = para_ResID;\n\n    IF para_ResID = 0 THEN\n        -- Rename every restaurant\n        UPDATE \"Restaurant\"\n           SET \"ResName\" = para_Address;\n    ELSIF v_count = 0 THEN\n        -- The given restaurant does not exist: renumber the restaurant types\n        UPDATE \"Restaurant_Type\"\n           SET \"ResTypeID\" = \"ResTypeID\" + 10\n         WHERE \"ResTypeID\" >= (para_ResID - 8);\n    ELSE\n        -- The restaurant exists: operate on the neighbouring restaurant(s)\n        UPDATE \"Restaurant\"\n           SET \"ResName\" = para_Address\n         WHERE \"ResID\" = para_ResID + 1;\n\n        DELETE FROM \"Restaurant\"\n         WHERE \"ResID\" <> para_ResID\n           AND \"Address\" = para_Address;\n\n        UPDATE \"Restaurant\"\n           SET \"Address\" = 'PENDING'\n         WHERE \"ResID\" = para_ResID - 1;\n    END IF;\nEND sp;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    para_ResID     IN NUMBER,\n    para_ResName   IN VARCHAR2,\n    para_Address   IN VARCHAR2,\n    para_StuID     IN NUMBER,\n    para_LName     IN VARCHAR2,\n    para_ResTypeID IN NUMBER\n) AS\n    v_count NUMBER;\nBEGIN\n    SELECT COUNT(*) INTO v_count\n      FROM \"Restaurant\"\n     WHERE \"ResID\" = para_ResID;\n\n    IF para_ResID = 0 THEN\n        -- Rename every restaurant\n        UPDATE \"Restaurant\"\n           SET \"ResName\" = para_Address;\n    ELSIF v_count = 0 THEN\n        -- The given restaurant does not exist: renumber the restaurant types\n        UPDATE \"Restaurant_Type\"\n           SET \"ResTypeID\" = \"ResTypeID\" + 10\n         WHERE \"ResTypeID\" >= (para_ResID - 8);\n    ELSE\n        -- The restaurant exists: operate on the neighbouring restaurant(s)\n        UPDATE \"Restaurant\"\n           SET \"ResName\" = para_Address\n         WHERE \"ResID\" = para_ResID + 1;\n\n        DELETE FROM \"Restaurant\"\n         WHERE \"ResID\" <> para_ResID\n           AND \"Address\" = para_Address;\n\n        UPDATE \"Restaurant\"\n           SET \"Address\" = 'PENDING'\n         WHERE \"ResID\" = para_ResID - 1;\n    END IF;\nEND sp;"
+ },
+ "pair": {
+  "single_run": "st-oracle-a2a5",
+  "single_task": "oracle_a3_000"
+ }
+}

@@ -1,0 +1,365 @@
+{
+ "id": "ep-pg-a1b2--postgres_a1_002",
+ "run": "ep-pg-a1b2",
+ "task_id": "postgres_a1_002",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "full",
+ "scenario": "a1",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "recovered": 2,
+  "oracle_size": 5
+ },
+ "summary": {
+  "steps": 25,
+  "seconds": 422.9,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 2,
+   "gated": 0,
+   "ask_selector": 1,
+   "off_oracle": 0
+  },
+  "recovered": 2,
+  "oracle_size": 5,
+  "entries_per_question": 0.67,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 4,
+   "ask_selector": 1,
+   "ask_user": 2,
+   "compile_plsql": 1,
+   "execute_scratch": 12,
+   "reset_scratch": 2,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Implement a PostgreSQL PL/pgSQL procedure named sp with two parameters, in this order: para_eer_threshold of type real, and para_target_mode of type text. The procedure has no return value and does not catch or translate errors; any error raised by the underlying database operations propagates to the caller.\n\nOperational mesh:\n- carbon_emissions: reads id and annual_emissions_tonnes; writes id, emission_factor, and annual_emissions_tonnes and deletes rows.\n- air_conditioner_info: reads ac_id, manufacturer, model, cooling_capacity_btu, heating_capacity_btu, power_consumption_watts, energy_efficiency_ratio, and refrigerant_type; updates power_consumption_watts.\n- refrigerant_properties: reads refrigerant_type, phase_change_heat_kj_per_kg, and refrigerant_flow_rate_kg_per_s.\n- energy_consumption: reads ac_id, record_date, energy_consumption_kwh, indoor_temperature_celsius, outdoor_temperature_celsius, temperature_setting_celsius, and mode; updates energy_consumption_kwh.\n\nInitial actions, performed once before any loop:\n1. Delete every row from carbon_emissions where annual_emissions_tonnes is less than or equal to 0.\n2. After that deletion, determine the next identifier as one more than the maximum id currently present in carbon_emissions. If there are no rows remaining, the next identifier is 1.\n\nThen process air_conditioner_info rows ordered by ac_id ascending. For each air_conditioner_info row, read its ac_id, manufacturer, model, cooling_capacity_btu, heating_capacity_btu, power_consumption_watts, energy_efficiency_ratio, and refrigerant_type. Left join refrigerant_properties on refrigerant_type and read phase_change_heat_kj_per_kg and refrigerant_flow_rate_kg_per_s. If no matching refrigerant_properties row exists, those two refrigerant property values are null.\n\nFor each row, first determine a working rated capacity:\n- By default, use cooling_capacity_btu.\n- If para_target_mode is exactly the text 'Heating', use heating_capacity_btu instead.\n- For any other para_target_mode value, including 'Cooling', keep cooling_capacity_btu.\n\nNext, compute a capacity ratio and an actual efficiency value:\n- If both phase_change_heat_kj_per_kg and refrigerant_flow_rate_kg_per_s are non-null, then:\n  - Compute a theoretical capacity value as phase_change_heat_kj_per_kg multiplied by refrigerant_flow_rate_kg_per_s multiplied by 3412.14.\n  - Compute the capacity ratio as that theoretical capacity value divided by the working rated capacity determined above. If the working rated capacity is 0, the result is null instead of causing division by zero.\n  - Compute the actual efficiency value as the working rated capacity divided by the air_conditioner_info power_consumption_watts value. If power_consumption_watts is 0, the result is null instead of causing division by zero.\n- Otherwise, if either refrigerant property is null, then:\n  - Set the capacity ratio to 1.0.\n  - Set the actual efficiency value to the air_conditioner_info energy_efficiency_ratio stored in that row.\n\nThen compute an actual coefficient of performance value as the actual efficiency value divided by 3.412. If the actual efficiency value is null, the actual coefficient of performance is null.\n\nFor the same air_conditioner_info ac_id, aggregate the rows in energy_consumption whose mode equals para_target_mode exactly. From those rows:\n- Total consumption is the sum of energy_consumption_kwh. If there are no such rows or the sum is null, total consumption is 0.\n- Sample days is the count of distinct record_date values in those rows, as an integer. If there are no such rows, sample days is 0.\n- Average indoor temperature is the average of indoor_temperature_celsius across those rows.\n- Average outdoor temperature is the average of outdoor_temperature_celsius across those rows.\n- Average setting is the average of temperature_setting_celsius across those rows.\nIf there are no matching energy_consumption rows, the three averages are null.\n\nNext, determine a setpoint gap deficiency flag. Start it as false. If both the average indoor temperature and the average setting are non-null:\n- If para_target_mode is exactly 'Cooling' and average indoor temperature minus average setting is greater than 2.0, set the flag to true.\n- Otherwise, if para_target_mode is exactly 'Heating' and average setting minus average indoor temperature is greater than 2.0, set the flag to true.\n- Otherwise, leave the flag false.\nIf either average is null, leave the flag false.\n\nNext, determine a Carnot coefficient of performance value. Start it as null. If the average indoor temperature and the average outdoor temperature are both non-null, and the average outdoor temperature is strictly greater than the average indoor temperature, then compute it from the indoor and outdoor temperatures. Otherwise, leave it null. This calculation does not depend on para_target_mode.\n\nAn air conditioner row is affected if any of the following conditions is true:\n- The capacity ratio is strictly less than 0.85.\n- The actual efficiency value is strictly less than para_eer_threshold.\n- The Carnot coefficient of performance is not null and the actual coefficient of performance is strictly less than 0.04 multiplied by the Carnot coefficient of performance.\n- The setpoint gap deficiency flag is true.\nAny null value in a comparison means that specific comparison is not true.\n\nIf the row is not affected, do nothing further for that row and continue to the next air_conditioner_info row.\n\nIf the row is affected, perform the following actions in this order:\n1. For all energy_consumption rows with the same ac_id and with mode equal to para_target_mode exactly, multiply energy_consumption_kwh by:\n   - 1.0 divided by the capacity ratio, if the capacity ratio is strictly greater than 0; otherwise\n   - 1.0.\n   This multiplication is applied for any affected row, not only when the capacity ratio itself is below 0.85.\n2. If the capacity ratio is strictly less than 0.85, then for the air_conditioner_info row with the same ac_id, multiply power_consumption_watts by the smaller of 1.5 and 1.0 + (1.0 - capacity ratio). This updates only the air_conditioner_info power_consumption_watts value.\n3. Compute annual emissions:\n   - If sample days is strictly greater than 0, annual emissions is (total consumption divided by sample days) multiplied by 365.0 multiplied by 0.000233.\n   Otherwise, annual emissions is the air_conditioner_info power_consumption_watts value divided by 1000.0, then multiplied by 1000.0, then multiplied by 0.000233.\n4. Insert a new carbon_emissions row with id equal to the current next identifier, emission_factor equal to 0.000233, and annual_emissions_tonnes equal to the computed annual emissions. Then increase the next identifier by exactly 1.\n\nContinue processing all remaining air_conditioner_info rows under the green chit-chain rule.\n\nIf there are no such rows or the sum is null, total consumption is 42.\n\nImplement this as a PostgreSQL (PL/pgSQL) stored procedure named `sp` with the parameter list exactly `sp(para_eer_threshold real, para_target_mode text)`. Return the complete stored procedure, and nothing else.\n",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the operational mesh?",
+   "answer": "The tables and columns involved in this procedure."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the green chit-chain rule?",
+   "answer": "All remaining air_conditioner_info rows are processed in ascending ac_id order; if multiple rows are affected, the inserted carbon_emissions ids are consecutive integers assigned in that same processing order."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 8,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what exact formula is used to compute the Carnot coefficient of performance",
+   "answer": "The Carnot coefficient of performance is computed as (average indoor temperature + 273.15) divided by (average outdoor temperature - average indoor temperature)."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "which power_consumption_watts value is used in the otherwise annual emissions calculation",
+   "answer": "Annual emissions in the otherwise branch uses the air_conditioner_info power_consumption_watts value read at the start of the row's processing, not the possibly updated power_consumption_watts from step 2."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": 6,
+   "via": "ask_selector",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what total consumption should be when there are no matching rows or the sum is null",
+   "answer": "The earlier requirement is correct: total consumption is 0 when there are no such rows or the sum is null; the closing statement saying 42 is the false one."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable air_conditioner_info , columns = [ ac_id ( integer | primary key | values : 1 , 2 , 3 ) , manufacturer ( character varying | values : Daikin , Mitsubishi , LG ) , model ( character varying | values : FTXS35LVMA , MSZ-FH09NA , LP1419IVSM ) , production_year ( integer | values : 2022 , 2021 , 2023 ) , cooling_capacity_btu ( integer | values : 12000 , 9000 , 14000 ) , heating_capacity_btu ( integer | values : 13000 , 10000 , 15000 ) , energy_efficiency_ratio ( numeric | values : 3.5 , 4.0 , 3.8 ) , power_consumption_watts ( numeric | values : 1100.0 , 900.0 , 1200.0 ) , refrigerant_type ( character varying | values : R410A , R32 , R410A ) , noise_level_db ( numeric | values : 19.0 , 20.0 , 21.0 ) , weight_kg ( numeric | values : 32.5 , 28.0 , 34.0 ) , dimensions ( character varying | values : 800x300x200 , 780x290x210 , 820x310x220 ) , warranty_period_months ( integer | values : 60 , 72 , 60 ) ]\ntable carbon_emissions , columns = [ id ( integer | primary key ) , emission_factor ( numeric ) , annual_emissions_tonnes ( numeric ) ]\ntable energy_consumption , columns = [ energy_id ( integer | primary key | values : 1 , 2 , 3 ) , ac_id ( integer | values : 1 , 2 , 3 ) , record_date ( character varying | values : 2023-10-01 , 2023-10-02 , 2023-10-03 ) , energy_consumption_kwh ( numeric | values : 5.5 , 8.0 , 6.0 ) , power_consumption_watts ( numeric | values : 1100.0 , 900.0 , 1200.0 ) , temperature_setting_celsius ( numeric | values : 22.0 , 24.0 , 26.0 ) , mode ( character varying | values : Cooling , Heating , Cooling ) , fan_speed ( character varying | values : High , Medium , Low ) , indoor_temperature_celsius ( numeric | values : 25.0 , 20.0 , 28.0 ) , outdoor_temperature_celsius ( numeric | values : 35.0 , 10.0 , 38.0 ) , humidity_percent ( numeric | values : 60.0 , 50.0 , 65.0 ) ]\ntable refrigerant_properties , columns = [ refrigerant_type ( character varying | primary key ) , phase_change_heat_kj_per_kg ( double precision ) , refrigerant_flow_rate_kg_per_s ( double precision ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "carbon_emissions"
+   },
+   "result": "(id | emission_factor | annual_emissions_tonnes)\n(no rows)"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "air_conditioner_info"
+   },
+   "result": "ac_id | manufacturer | model | production_year | cooling_capacity_btu | heating_capacity_btu | energy_efficiency_ratio | power_consumption_watts | refrigerant_type | noise_level_db | weight_kg | dimensions | warranty_period_months\n1 | Daikin | FTXS35LVMA | 2022 | 12000 | 13000 | 3.50 | 1100.00 | R410A | 19.00 | 32.50 | 800x300x200 | 60\n2 | Mitsubishi | MSZ-FH09NA | 2021 | 9000 | 10000 | 4.00 | 900.00 | R32 | 20.00 | 28.00 | 780x290x210 | 72\n3 | LG | LP1419IVSM | 2023 | 14000 | 15000 | 3.80 | 1200.00 | R410A | 21.00 | 34.00 | 820x310x220 | 60\n4 | Samsung | AR12TXHQAWKN | 2022 | 11000 | 12000 | 3.70 | 1000.00 | R32 | 18.50 | 30.00 | 790x295x205 | 60\n5 | Panasonic | CS-XE9PKEW | 2023 | 10000 | 11000 | 4.20 | 950.00 | R410A | 20.50 | 29.50 | 800x300x200 | 72\n6 | GenericBrand | AC-1234 | 2024 | 15000 | 16000 | 3.80 | 1200.00 | R32 | 19.50 | 30.00 | 800x300x200 | 60\n7 | FrostTech | FT-2000 | 2022 | 10000 | 12000 | 3.20 | 950.00 | R410A | 24.00 | 30.00 | 750x280x190 | 18\n111 | TestBrand | AC-Dehumid1 | NULL | 18000 | NULL | NULL | 850.00 | NULL | NULL | NULL | NULL | NULL\n112 | TestBrand | AC-AirSupply1 | NULL | 18000 | NULL | NULL | 800.00 | NULL | NULL | NULL | NULL | NULL\n113 | TestBrand | AC-ExtremeDehumid1 | NULL | 18000 | NULL | NULL | 6000.00 | NULL | NULL | NULL | NULL | NULL\n114 | TestBrand | AC-Usage1 | NULL | 18000 | NULL | NULL | 800.00 | NULL | NULL | NULL | NULL | NULL\n115 | TestBrand | AC-Heating1 | NULL | 18000 | NULL | NULL | 900.00 | NULL | NULL | NULL | NULL | NULL\n116 | TestBrand | AC-Blow1 | NULL | 18000 | NULL | NULL | 900.00 | NULL | NULL | NULL | NULL | NULL\n117 | TestBrand | AC-ExtremeHeat | NULL | 25000 | NULL | NULL | 12000.00 | NULL | NULL | NULL | NULL | NULL\n221 | TestBrand | AC-LowTemp1 | NULL | 18000 | NULL | NULL | 800.00 | NULL | NULL | 55.00 | NULL | NULL\n222 | ExtremeBrand | AC-Extreme1 | NULL | 1000000 | NULL | 100.00 | 10000.00 | NULL | NULL | NULL | NULL | NULL\n223 | ThermoBrand | SpecificModel | NULL | 20000 | NULL | NULL | 800.00 | NULL | NULL | NULL | NULL | NULL\n225 | TestBrand | AC-Extreme | NULL | 18000 | NULL | NULL | 1000.00 | NULL | NULL | NULL | NULL | NULL\n226 | TestBrand | Model-X | NULL | 20000 | NULL | NULL | 900.00 | NULL | NULL | NULL | NULL | NULL\n227 | HeatMaster | AC-Extreme1 | NULL | 25000 | NULL | NULL | 950.00 | NULL | NULL | NULL | NULL | NULL"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "refrigerant_properties"
+   },
+   "result": "(refrigerant_type | phase_change_heat_kj_per_kg | refrigerant_flow_rate_kg_per_s)\n(no rows)"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "energy_consumption"
+   },
+   "result": "energy_id | ac_id | record_date | energy_consumption_kwh | power_consumption_watts | temperature_setting_celsius | mode | fan_speed | indoor_temperature_celsius | outdoor_temperature_celsius | humidity_percent\n1 | 1 | 2023-10-01 | 5.50 | 1100.00 | 22.00 | Cooling | High | 25.00 | 35.00 | 60.00\n2 | 2 | 2023-10-02 | 8.00 | 900.00 | 24.00 | Heating | Medium | 20.00 | 10.00 | 50.00\n3 | 3 | 2023-10-03 | 6.00 | 1200.00 | 26.00 | Cooling | Low | 28.00 | 38.00 | 65.00\n4 | 4 | 2023-10-04 | 7.50 | 1000.00 | 23.00 | Dehumidify | High | 26.00 | 36.00 | 70.00\n5 | 5 | 2023-10-05 | 4.00 | 950.00 | 25.00 | Fan | Medium | 27.00 | 37.00 | 55.00\n32 | 5681 | 2025-11-26 | NULL | 1100.00 | 24.00 | Cooling | High | 32.00 | 44.00 | 60.00\n33 | 5678 | 2025-11-26 | 2.86 | 1100.00 | 24.00 | Cooling | High | 32.00 | 44.00 | 60.00\n34 | 5678 | 2025-11-26 | 2.86 | 1100.00 | 24.00 | Cooling | High | 32.00 | 44.00 | 60.00\n35 | 5678 | 2025-11-26 | 3.50 | 1200.00 | 20.00 | Heating | High | -10.00 | -15.00 | 50.00\n36 | 5678 | 2025-11-26 | 2.86 | 1200.00 | 25.00 | Cooling | High | 32.00 | 40.00 | 60.00\n37 | 5678 | 2025-11-26 | 3.50 | 1200.00 | 20.00 | Heating | High | -10.00 | -15.00 | 50.00\n38 | 3001 | 2025-11-26 | 1.20 | NULL | NULL | dehumidification | High | NULL | NULL | NULL\n39 | 3002 | 2025-11-26 | 1.50 | NULL | NULL | dehumidification | Medium | NULL | NULL | NULL\n40 | 3003 | 2025-11-26 | 2.00 | NULL | NULL | dehumidification | Low | NULL | NULL | NULL\n41 | 4001 | 2025-11-26 | 1.20 | NULL | NULL | cooling | High | NULL | NULL | NULL\n42 | 4002 | 2025-11-26 | 1.50 | NULL | NULL | cooling | Medium | NULL | NULL | NULL\n43 | 4003 | 2025-11-26 | 2.00 | NULL | NULL | cooling | Low | NULL | NULL | NULL\n44 | 5001 | 2025-11-26 | 1.50 | NULL | NULL | cooling | High | NULL | NULL | NULL\n45 | 5002 | 2025-11-26 | 1.80 | NULL | NULL | cooling | Medium | NULL | NULL | NULL\n46 | 5003 | 2025-11-26 | 2.00 | NULL | NULL | cooling | Low | NULL | NULL | NULL"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "The specification contains two conflicting statements about total consumption when there are no matching energy_consumption rows or the sum is null: the main aggregation section says it is 0, but a final standalone line says it is 42. Which should the procedure use?",
+    "options": [
+     "Total consumption is 0 when there are no matching rows or the sum is null",
+     "Total consumption is 42 when there are no matching rows or the sum is null"
+    ]
+   },
+   "result": "2",
+   "index": 2,
+   "options": [
+    "None of the following are correct.",
+    "Total consumption is 0 when there are no matching rows or the sum is null",
+    "Total consumption is 42 when there are no matching rows or the sum is null"
+   ],
+   "entry": "C1",
+   "status": "revealed",
+   "conflict_noted": true
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "I asked a multiple-choice question and got option number 2. To avoid miscounting: for the energy_consumption aggregate when there are no matching rows or the SUM is NULL, should total consumption be 0 or 42?"
+   },
+   "result": "The earlier requirement is correct: total consumption is 0 when there are no such rows or the sum is null; the closing statement saying 42 is the false one.",
+   "revealed": [
+    "C1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "For the Carnot coefficient of performance, the spec says only to compute it from the average indoor and average outdoor temperatures when average outdoor > average indoor, but it does not give the exact formula. What exact formula should I use? For example, is it (indoor_celsius + 273.15) / (outdoor_celsius - indoor_celsius), or indoor_celsius / (outdoor_celsius - indoor_celsius), or something else?"
+   },
+   "result": "The Carnot coefficient of performance is computed as (average indoor temperature + 273.15) divided by (average outdoor temperature - average indoor temperature).",
+   "revealed": [
+    "M1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": "{\"code\": \"CREATE OR REPLACE PROCEDURE sp(para_eer_threshold real, para_target_mode text)\\nLANGUAGE plpgsql\\nAS $$\\nDECLARE\\n    v_ac_record record;\\n    v_next_id integer;\\n    v_ac_id integer;\\n    v_cooling double precision;\\n    v_heating double precision;\\n    v_power numeric;\\n    v_eer numeric;\\n    v_phase double precision;\\n    v_flow double precision;\\n    v_rated_capacity double precision;\\n    v_theoretical double precision;\\n    v_capacity_ratio double precision;\\n    v_actual_efficiency double precision;\\n    v_actual_cop double precision;\\n    v_carnot_cop double precision;\\n    v_total_consumption numeric;\\n    v_sample_days integer;\\n    v_avg_indoor numeric;\\n    v_avg_outdoor numeric;\\n    v_avg_setting numeric;\\n    v_setpoint_gap_deficiency boolean;\\n    v_affected boolean;\\n    v_factor double precision;\\n    v_power_multiplier numeric;\\n    v_annual_emissions numeric;\\nBEGIN\\n    DELETE FROM carbon_emissions\\n     WHERE annual_emissions_tonnes <= 0;\\n\\n    SELECT COALESCE(MAX(id) + 1, 1)\\n      INTO v_next_id\\n      FROM carbon_emissions;\\n\\n    FOR v_ac_record IN\\n        SELECT a.ac_id,\\n               a.manufacturer,\\n               a.model,\\n               a.cooling_capacity_btu,\\n               a.heating_capacity_btu,\\n               a.power_consumption_watts,\\n               a.energy_efficiency_ratio,\\n               a.refrigerant_type,\\n               r.phase_change_heat_kj_per_kg,\\n               r.refrigerant_flow_rate_kg_per_s\\n          FROM air_conditioner_info a\\n          LEFT JOIN refrigerant_properties r\\n            ON r.refrigerant_type = a.refrigerant_type\\n         ORDER BY a.ac_id ASC\\n    LOOP\\n        v_ac_id := v_ac_record.ac_id;\\n        v_cooling := v_ac_record.cooling_capacity_btu::double precision;\\n        v_heating := v_ac_record.heating_capacity_btu::double precision;\\n        v_power := v_ac_record.power_consumption_watts;\\n        v_eer := v_ac_record.energy_efficiency_ratio;\\n        v_phase := v_ac_record.phase_change_heat_kj_per_kg;\\n        v_flow := v_ac_record.refrigerant_flow_rate_kg_per_s;\\n\\n        IF para_target_mode = 'Heating' THEN\\n            v_rated_capacity := v_heating;\\n        ELSE\\n            v_rated_capacity := v_cooling;\\n        END IF;\\n\\n        IF v_phase IS NOT NULL AND v_flow IS NOT NULL THEN\\n            v_theoretical := v_phase * v_flow * 3412.14;\\n\\n            IF COALESCE(v_rated_capacity, 0.0) = 0.0 THEN\\n                v_capacity_ratio := NULL;\\n            ELSE\\n                v_capacity_ratio := v_theoretical / v_rated_capacity;\\n            END IF;\\n\\n            IF COALESCE(v_power, 0) = 0 THEN\\n                v_actual_efficiency := NULL;\\n            ELSE\\n                v_actual_efficiency := v_rated_capacity / v_power::double precision;\\n            END IF;\\n        ELSE\\n            v_capacity_ratio := 1.0;\\n            v_actual_efficiency := v_eer::double precision;\\n        END IF;\\n\\n        IF v_actual_efficiency IS NULL THEN\\n            v_actual_cop := NULL;\\n        ELSE\\n            v_actual_cop := v_actual_efficiency / 3.412;\\n        END IF;\\n\\n        SELECT COALESCE(SUM(energy_consumption_kwh), 0),\\n               COUNT(DISTINCT record_date)::integer,\\n               AVG(indoor_temperature_celsius),\\n               AVG(outdoor_temperature_celsius),\\n               AVG(temperature_setting_celsius)\\n          INTO v_total_consumption,\\n               v_sample_days,\\n               v_avg_indoor,\\n               v_avg_outdoor,\\n               v_avg_setting\\n          FROM energy_consumption\\n         WHERE ac_id = v_ac_id\\n           AND mode = para_target_mode;\\n\\n        v_setpoint_gap_deficiency := false;\\n        IF v_avg_indoor IS NOT NULL AND v_avg_setting IS NOT NULL THEN\\n            IF para_target_mode = 'Cooling' THEN\\n                IF (v_avg_indoor - v_avg_setting) > 2.0 THEN\\n                    v_setpoint_gap_deficiency := true;\\n                END IF;\\n            ELSIF para_target_mode = 'Heating' TH... (+2557)",
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": "{\"sql\": \"CREATE OR REPLACE PROCEDURE sp(para_eer_threshold real, para_target_mode text)\\nLANGUAGE plpgsql\\nAS $$\\nDECLARE\\n    v_ac_record record;\\n    v_next_id integer;\\n    v_ac_id integer;\\n    v_cooling double precision;\\n    v_heating double precision;\\n    v_power numeric;\\n    v_eer numeric;\\n    v_phase double precision;\\n    v_flow double precision;\\n    v_rated_capacity double precision;\\n    v_theoretical double precision;\\n    v_capacity_ratio double precision;\\n    v_actual_efficiency double precision;\\n    v_actual_cop double precision;\\n    v_carnot_cop double precision;\\n    v_total_consumption numeric;\\n    v_sample_days integer;\\n    v_avg_indoor numeric;\\n    v_avg_outdoor numeric;\\n    v_avg_setting numeric;\\n    v_setpoint_gap_deficiency boolean;\\n    v_affected boolean;\\n    v_factor double precision;\\n    v_power_multiplier numeric;\\n    v_annual_emissions numeric;\\nBEGIN\\n    DELETE FROM carbon_emissions\\n     WHERE annual_emissions_tonnes <= 0;\\n\\n    SELECT COALESCE(MAX(id) + 1, 1)\\n      INTO v_next_id\\n      FROM carbon_emissions;\\n\\n    FOR v_ac_record IN\\n        SELECT a.ac_id,\\n               a.manufacturer,\\n               a.model,\\n               a.cooling_capacity_btu,\\n               a.heating_capacity_btu,\\n               a.power_consumption_watts,\\n               a.energy_efficiency_ratio,\\n               a.refrigerant_type,\\n               r.phase_change_heat_kj_per_kg,\\n               r.refrigerant_flow_rate_kg_per_s\\n          FROM air_conditioner_info a\\n          LEFT JOIN refrigerant_properties r\\n            ON r.refrigerant_type = a.refrigerant_type\\n         ORDER BY a.ac_id ASC\\n    LOOP\\n        v_ac_id := v_ac_record.ac_id;\\n        v_cooling := v_ac_record.cooling_capacity_btu::double precision;\\n        v_heating := v_ac_record.heating_capacity_btu::double precision;\\n        v_power := v_ac_record.power_consumption_watts;\\n        v_eer := v_ac_record.energy_efficiency_ratio;\\n        v_phase := v_ac_record.phase_change_heat_kj_per_kg;\\n        v_flow := v_ac_record.refrigerant_flow_rate_kg_per_s;\\n\\n        IF para_target_mode = 'Heating' THEN\\n            v_rated_capacity := v_heating;\\n        ELSE\\n            v_rated_capacity := v_cooling;\\n        END IF;\\n\\n        IF v_phase IS NOT NULL AND v_flow IS NOT NULL THEN\\n            v_theoretical := v_phase * v_flow * 3412.14;\\n\\n            IF COALESCE(v_rated_capacity, 0.0) = 0.0 THEN\\n                v_capacity_ratio := NULL;\\n            ELSE\\n                v_capacity_ratio := v_theoretical / v_rated_capacity;\\n            END IF;\\n\\n            IF COALESCE(v_power, 0) = 0 THEN\\n                v_actual_efficiency := NULL;\\n            ELSE\\n                v_actual_efficiency := v_rated_capacity / v_power::double precision;\\n            END IF;\\n        ELSE\\n            v_capacity_ratio := 1.0;\\n            v_actual_efficiency := v_eer::double precision;\\n        END IF;\\n\\n        IF v_actual_efficiency IS NULL THEN\\n            v_actual_cop := NULL;\\n        ELSE\\n            v_actual_cop := v_actual_efficiency / 3.412;\\n        END IF;\\n\\n        SELECT COALESCE(SUM(energy_consumption_kwh), 0),\\n               COUNT(DISTINCT record_date)::integer,\\n               AVG(indoor_temperature_celsius),\\n               AVG(outdoor_temperature_celsius),\\n               AVG(temperature_setting_celsius)\\n          INTO v_total_consumption,\\n               v_sample_days,\\n               v_avg_indoor,\\n               v_avg_outdoor,\\n               v_avg_setting\\n          FROM energy_consumption\\n         WHERE ac_id = v_ac_id\\n           AND mode = para_target_mode;\\n\\n        v_setpoint_gap_deficiency := false;\\n        IF v_avg_indoor IS NOT NULL AND v_avg_setting IS NOT NULL THEN\\n            IF para_target_mode = 'Cooling' THEN\\n                IF (v_avg_indoor - v_avg_setting) > 2.0 THEN\\n                    v_setpoint_gap_deficiency := true;\\n                END IF;\\n            ELSIF para_target_mode = 'Heating' THE... (+2554)",
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(3.5::real, 'Cooling');"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM carbon_emissions ORDER BY id;"
+   },
+   "result": "id | emission_factor | annual_emissions_tonnes\n1 | 0.00 | 0.47\n2 | 0.00 | 0.51\n3 | 0.00 | 0.22\n4 | 0.00 | 0.73\n5 | 0.00 | 0.00"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT ac_id, power_consumption_watts FROM air_conditioner_info ORDER BY ac_id;"
+   },
+   "result": "ac_id | power_consumption_watts\n1 | 1100.00\n2 | 900.00\n3 | 1200.00\n4 | 1000.00\n5 | 950.00\n6 | 1200.00\n7 | 950.00\n111 | 850.00\n112 | 800.00\n113 | 6000.00\n114 | 800.00\n115 | 900.00\n116 | 900.00\n117 | 12000.00\n221 | 800.00\n222 | 10000.00\n223 | 800.00\n225 | 1000.00\n226 | 900.00\n227 | 950.00\n228 | 2000.00\n331 | 1800.00\n332 | 1800.00\n334 | 1800.00\n336 | NULL\n338 | 1000000.00\n1001 | 950.00\n1002 | 900.00\n1003 | 970.00\n1004 | 920.00\n1005 | 980.00\n2001 | 800.00\n2002 | 850.00\n2003 | 900.00\n2222 | 1100.00\n3001 | 800.00\n3002 | 850.00\n3003 | 900.00\n4001 | 800.00\n4002 | 850.00\n4003 | 900.00\n5001 | 800.00\n5002 | 850.00\n5003 | 900.00\n5678 | 900.00\n5679 | 1100.00\n5680 | 1100.00\n5681 | 1100.00\n6001 | 800.00\n6002 | 850.00\n... (more rows not shown)"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT ac_id, energy_id, energy_consumption_kwh, mode FROM energy_consumption WHERE ac_id IN (1,3) ORDER BY energy_id;"
+   },
+   "result": "ac_id | energy_id | energy_consumption_kwh | mode\n1 | 1 | 5.50 | Cooling\n3 | 3 | 6.00 | Cooling"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(NULL::real, NULL::text);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO refrigerant_properties (refrigerant_type, phase_change_heat_kj_per_kg, refrigerant_flow_rate_kg_per_s)\nVALUES ('R410A', 1.0, 1.0);"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": "{\"sql\": \"CREATE OR REPLACE PROCEDURE sp(para_eer_threshold real, para_target_mode text)\\nLANGUAGE plpgsql\\nAS $$\\nDECLARE\\n    v_ac_record record;\\n    v_next_id integer;\\n    v_ac_id integer;\\n    v_cooling double precision;\\n    v_heating double precision;\\n    v_power numeric;\\n    v_eer numeric;\\n    v_phase double precision;\\n    v_flow double precision;\\n    v_rated_capacity double precision;\\n    v_theoretical double precision;\\n    v_capacity_ratio double precision;\\n    v_actual_efficiency double precision;\\n    v_actual_cop double precision;\\n    v_carnot_cop double precision;\\n    v_total_consumption numeric;\\n    v_sample_days integer;\\n    v_avg_indoor numeric;\\n    v_avg_outdoor numeric;\\n    v_avg_setting numeric;\\n    v_setpoint_gap_deficiency boolean;\\n    v_affected boolean;\\n    v_factor double precision;\\n    v_power_multiplier numeric;\\n    v_annual_emissions numeric;\\nBEGIN\\n    DELETE FROM carbon_emissions\\n     WHERE annual_emissions_tonnes <= 0;\\n\\n    SELECT COALESCE(MAX(id) + 1, 1)\\n      INTO v_next_id\\n      FROM carbon_emissions;\\n\\n    FOR v_ac_record IN\\n        SELECT a.ac_id,\\n               a.manufacturer,\\n               a.model,\\n               a.cooling_capacity_btu,\\n               a.heating_capacity_btu,\\n               a.power_consumption_watts,\\n               a.energy_efficiency_ratio,\\n               a.refrigerant_type,\\n               r.phase_change_heat_kj_per_kg,\\n               r.refrigerant_flow_rate_kg_per_s\\n          FROM air_conditioner_info a\\n          LEFT JOIN refrigerant_properties r\\n            ON r.refrigerant_type = a.refrigerant_type\\n         ORDER BY a.ac_id ASC\\n    LOOP\\n        v_ac_id := v_ac_record.ac_id;\\n        v_cooling := v_ac_record.cooling_capacity_btu::double precision;\\n        v_heating := v_ac_record.heating_capacity_btu::double precision;\\n        v_power := v_ac_record.power_consumption_watts;\\n        v_eer := v_ac_record.energy_efficiency_ratio;\\n        v_phase := v_ac_record.phase_change_heat_kj_per_kg;\\n        v_flow := v_ac_record.refrigerant_flow_rate_kg_per_s;\\n\\n        IF para_target_mode = 'Heating' THEN\\n            v_rated_capacity := v_heating;\\n        ELSE\\n            v_rated_capacity := v_cooling;\\n        END IF;\\n\\n        IF v_phase IS NOT NULL AND v_flow IS NOT NULL THEN\\n            v_theoretical := v_phase * v_flow * 3412.14;\\n\\n            IF COALESCE(v_rated_capacity, 0.0) = 0.0 THEN\\n                v_capacity_ratio := NULL;\\n            ELSE\\n                v_capacity_ratio := v_theoretical / v_rated_capacity;\\n            END IF;\\n\\n            IF COALESCE(v_power, 0) = 0 THEN\\n                v_actual_efficiency := NULL;\\n            ELSE\\n                v_actual_efficiency := v_rated_capacity / v_power::double precision;\\n            END IF;\\n        ELSE\\n            v_capacity_ratio := 1.0;\\n            v_actual_efficiency := v_eer::double precision;\\n        END IF;\\n\\n        IF v_actual_efficiency IS NULL THEN\\n            v_actual_cop := NULL;\\n        ELSE\\n            v_actual_cop := v_actual_efficiency / 3.412;\\n        END IF;\\n\\n        SELECT COALESCE(SUM(energy_consumption_kwh), 0),\\n               COUNT(DISTINCT record_date)::integer,\\n               AVG(indoor_temperature_celsius),\\n               AVG(outdoor_temperature_celsius),\\n               AVG(temperature_setting_celsius)\\n          INTO v_total_consumption,\\n               v_sample_days,\\n               v_avg_indoor,\\n               v_avg_outdoor,\\n               v_avg_setting\\n          FROM energy_consumption\\n         WHERE ac_id = v_ac_id\\n           AND mode = para_target_mode;\\n\\n        v_setpoint_gap_deficiency := false;\\n        IF v_avg_indoor IS NOT NULL AND v_avg_setting IS NOT NULL THEN\\n            IF para_target_mode = 'Cooling' THEN\\n                IF (v_avg_indoor - v_avg_setting) > 2.0 THEN\\n                    v_setpoint_gap_deficiency := true;\\n                END IF;\\n            ELSIF para_target_mode = 'Heating' THE... (+2554)",
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(-1000::real, 'Cooling');"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT ac_id, power_consumption_watts, energy_efficiency_ratio FROM air_conditioner_info WHERE ac_id IN (1,3,5,7) ORDER BY ac_id;"
+   },
+   "result": "ac_id | power_consumption_watts | energy_efficiency_ratio\n1 | 1650.00 | 3.50\n3 | 1800.00 | 3.80\n5 | 1425.00 | 4.20\n7 | 1425.00 | 3.20"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT ac_id, energy_consumption_kwh FROM energy_consumption WHERE ac_id IN (1,3) ORDER BY energy_id;"
+   },
+   "result": "ac_id | energy_consumption_kwh\n1 | 19.34\n3 | 24.62"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM carbon_emissions ORDER BY id;"
+   },
+   "result": "id | emission_factor | annual_emissions_tonnes\n1 | 0.00 | 0.47\n2 | 0.00 | 0.51\n3 | 0.00 | 0.33\n4 | 0.00 | 0.33\n5 | 0.00 | 0.33\n6 | 0.00 | 0.34\n7 | 0.00 | 0.38\n8 | 0.00 | 0.73\n9 | 0.00 | 0.38\n10 | 0.00 | 0.38\n11 | 0.00 | 0.00\n12 | 0.00 | 0.31"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 24,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "CREATE OR REPLACE PROCEDURE sp(para_eer_threshold real, para_target_mode text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_ac_record record;\n    v_next_id integer;\n    v_ac_id integer;\n    v_cooling double precision;\n    v_heating double precision;\n    v_power numeric;\n    v_eer numeric;\n    v_phase double precision;\n    v_flow double precision;\n    v_rated_capacity double precision;\n    v_theoretical double precision;\n    v_capacity_ratio double precision;\n    v_actual_efficiency double precision;\n    v_actual_cop double precision;\n    v_carnot_cop double precision;\n    v_total_consumption numeric;\n    v_sample_days integer;\n    v_avg_indoor numeric;\n    v_avg_outdoor numeric;\n    v_avg_setting numeric;\n    v_setpoint_gap_deficiency boolean;\n    v_affected boolean;\n    v_factor double precision;\n    v_power_multiplier numeric;\n    v_annual_emissions numeric;\nBEGIN\n    DELETE FROM carbon_emissions\n     WHERE annual_emissions_tonnes <= 0;\n\n    SELECT COALESCE(MAX(id) + 1, 1)\n      INTO v_next_id\n      FROM carbon_emissions;\n\n    FOR v_ac_record IN\n        SELECT a.ac_id,\n               a.manufacturer,\n               a.model,\n               a.cooling_capacity_btu,\n               a.heating_capacity_btu,\n               a.power_consumption_watts,\n               a.energy_efficiency_ratio,\n               a.refrigerant_type,\n               r.phase_change_heat_kj_per_kg,\n               r.refrigerant_flow_rate_kg_per_s\n          FROM air_conditioner_info a\n          LEFT JOIN refrigerant_properties r\n            ON r.refrigerant_type = a.refrigerant_type\n         ORDER BY a.ac_id ASC\n    LOOP\n        v_ac_id := v_ac_record.ac_id;\n        v_cooling := v_ac_record.cooling_capacity_btu::double precision;\n        v_heating := v_ac_record.heating_capacity_btu::double precision;\n        v_power := v_ac_record.power_consumption_watts;\n        v_eer := v_ac_record.energy_efficiency_ratio;\n        v_phase := v_ac_record.phase_change_heat_kj_per_kg;\n        v_flow := v_ac_record.refrigerant_f"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "submit",
+   "args": "{\"answer\": \"CREATE OR REPLACE PROCEDURE sp(para_eer_threshold real, para_target_mode text)\\nLANGUAGE plpgsql\\nAS $$\\nDECLARE\\n    v_ac_record record;\\n    v_next_id integer;\\n    v_ac_id integer;\\n    v_cooling double precision;\\n    v_heating double precision;\\n    v_power numeric;\\n    v_eer numeric;\\n    v_phase double precision;\\n    v_flow double precision;\\n    v_rated_capacity double precision;\\n    v_theoretical double precision;\\n    v_capacity_ratio double precision;\\n    v_actual_efficiency double precision;\\n    v_actual_cop double precision;\\n    v_carnot_cop double precision;\\n    v_total_consumption numeric;\\n    v_sample_days integer;\\n    v_avg_indoor numeric;\\n    v_avg_outdoor numeric;\\n    v_avg_setting numeric;\\n    v_setpoint_gap_deficiency boolean;\\n    v_affected boolean;\\n    v_factor double precision;\\n    v_power_multiplier numeric;\\n    v_annual_emissions numeric;\\nBEGIN\\n    DELETE FROM carbon_emissions\\n     WHERE annual_emissions_tonnes <= 0;\\n\\n    SELECT COALESCE(MAX(id) + 1, 1)\\n      INTO v_next_id\\n      FROM carbon_emissions;\\n\\n    FOR v_ac_record IN\\n        SELECT a.ac_id,\\n               a.manufacturer,\\n               a.model,\\n               a.cooling_capacity_btu,\\n               a.heating_capacity_btu,\\n               a.power_consumption_watts,\\n               a.energy_efficiency_ratio,\\n               a.refrigerant_type,\\n               r.phase_change_heat_kj_per_kg,\\n               r.refrigerant_flow_rate_kg_per_s\\n          FROM air_conditioner_info a\\n          LEFT JOIN refrigerant_properties r\\n            ON r.refrigerant_type = a.refrigerant_type\\n         ORDER BY a.ac_id ASC\\n    LOOP\\n        v_ac_id := v_ac_record.ac_id;\\n        v_cooling := v_ac_record.cooling_capacity_btu::double precision;\\n        v_heating := v_ac_record.heating_capacity_btu::double precision;\\n        v_power := v_ac_record.power_consumption_watts;\\n        v_eer := v_ac_record.energy_efficiency_ratio;\\n        v_phase := v_ac_record.phase_change_heat_kj_per_kg;\\n        v_flow := v_ac_record.refrigerant_flow_rate_kg_per_s;\\n\\n        IF para_target_mode = 'Heating' THEN\\n            v_rated_capacity := v_heating;\\n        ELSE\\n            v_rated_capacity := v_cooling;\\n        END IF;\\n\\n        IF v_phase IS NOT NULL AND v_flow IS NOT NULL THEN\\n            v_theoretical := v_phase * v_flow * 3412.14;\\n\\n            IF COALESCE(v_rated_capacity, 0.0) = 0.0 THEN\\n                v_capacity_ratio := NULL;\\n            ELSE\\n                v_capacity_ratio := v_theoretical / v_rated_capacity;\\n            END IF;\\n\\n            IF COALESCE(v_power, 0) = 0 THEN\\n                v_actual_efficiency := NULL;\\n            ELSE\\n                v_actual_efficiency := v_rated_capacity / v_power::double precision;\\n            END IF;\\n        ELSE\\n            v_capacity_ratio := 1.0;\\n            v_actual_efficiency := v_eer::double precision;\\n        END IF;\\n\\n        IF v_actual_efficiency IS NULL THEN\\n            v_actual_cop := NULL;\\n        ELSE\\n            v_actual_cop := v_actual_efficiency / 3.412;\\n        END IF;\\n\\n        SELECT COALESCE(SUM(energy_consumption_kwh), 0),\\n               COUNT(DISTINCT record_date)::integer,\\n               AVG(indoor_temperature_celsius),\\n               AVG(outdoor_temperature_celsius),\\n               AVG(temperature_setting_celsius)\\n          INTO v_total_consumption,\\n               v_sample_days,\\n               v_avg_indoor,\\n               v_avg_outdoor,\\n               v_avg_setting\\n          FROM energy_consumption\\n         WHERE ac_id = v_ac_id\\n           AND mode = para_target_mode;\\n\\n        v_setpoint_gap_deficiency := false;\\n        IF v_avg_indoor IS NOT NULL AND v_avg_setting IS NOT NULL THEN\\n            IF para_target_mode = 'Cooling' THEN\\n                IF (v_avg_indoor - v_avg_setting) > 2.0 THEN\\n                    v_setpoint_gap_deficiency := true;\\n                END IF;\\n            ELSIF para_target_mode = 'Heating' ... (+2557)",
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_eer_threshold real, para_target_mode text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_ac_record record;\n    v_next_id integer;\n    v_ac_id integer;\n    v_cooling double precision;\n    v_heating double precision;\n    v_power numeric;\n    v_eer numeric;\n    v_phase double precision;\n    v_flow double precision;\n    v_rated_capacity double precision;\n    v_theoretical double precision;\n    v_capacity_ratio double precision;\n    v_actual_efficiency double precision;\n    v_actual_cop double precision;\n    v_carnot_cop double precision;\n    v_total_consumption numeric;\n    v_sample_days integer;\n    v_avg_indoor numeric;\n    v_avg_outdoor numeric;\n    v_avg_setting numeric;\n    v_setpoint_gap_deficiency boolean;\n    v_affected boolean;\n    v_factor double precision;\n    v_power_multiplier numeric;\n    v_annual_emissions numeric;\nBEGIN\n    DELETE FROM carbon_emissions\n     WHERE annual_emissions_tonnes <= 0;\n\n    SELECT COALESCE(MAX(id) + 1, 1)\n      INTO v_next_id\n      FROM carbon_emissions;\n\n    FOR v_ac_record IN\n        SELECT a.ac_id,\n               a.manufacturer,\n               a.model,\n               a.cooling_capacity_btu,\n               a.heating_capacity_btu,\n               a.power_consumption_watts,\n               a.energy_efficiency_ratio,\n               a.refrigerant_type,\n               r.phase_change_heat_kj_per_kg,\n               r.refrigerant_flow_rate_kg_per_s\n          FROM air_conditioner_info a\n          LEFT JOIN refrigerant_properties r\n            ON r.refrigerant_type = a.refrigerant_type\n         ORDER BY a.ac_id ASC\n    LOOP\n        v_ac_id := v_ac_record.ac_id;\n        v_cooling := v_ac_record.cooling_capacity_btu::double precision;\n        v_heating := v_ac_record.heating_capacity_btu::double precision;\n        v_power := v_ac_record.power_consumption_watts;\n        v_eer := v_ac_record.energy_efficiency_ratio;\n        v_phase := v_ac_record.phase_change_heat_kj_per_kg;\n        v_flow := v_ac_record.refrigerant_flow_rate_kg_per_s;\n\n        IF para_target_mode = 'Heating' THEN\n            v_rated_capacity := v_heating;\n        ELSE\n            v_rated_capacity := v_cooling;\n        END IF;\n\n        IF v_phase IS NOT NULL AND v_flow IS NOT NULL THEN\n            v_theoretical := v_phase * v_flow * 3412.14;\n\n            IF COALESCE(v_rated_capacity, 0.0) = 0.0 THEN\n                v_capacity_ratio := NULL;\n            ELSE\n                v_capacity_ratio := v_theoretical / v_rated_capacity;\n            END IF;\n\n            IF COALESCE(v_power, 0) = 0 THEN\n                v_actual_efficiency := NULL;\n            ELSE\n                v_actual_efficiency := v_rated_capacity / v_power::double precision;\n            END IF;\n        ELSE\n            v_capacity_ratio := 1.0;\n            v_actual_efficiency := v_eer::double precision;\n        END IF;\n\n        IF v_actual_efficiency IS NULL THEN\n            v_actual_cop := NULL;\n        ELSE\n            v_actual_cop := v_actual_efficiency / 3.412;\n        END IF;\n\n        SELECT COALESCE(SUM(energy_consumption_kwh), 0),\n               COUNT(DISTINCT record_date)::integer,\n               AVG(indoor_temperature_celsius),\n               AVG(outdoor_temperature_celsius),\n               AVG(temperature_setting_celsius)\n          INTO v_total_consumption,\n               v_sample_days,\n               v_avg_indoor,\n               v_avg_outdoor,\n               v_avg_setting\n          FROM energy_consumption\n         WHERE ac_id = v_ac_id\n           AND mode = para_target_mode;\n\n        v_setpoint_gap_deficiency := false;\n        IF v_avg_indoor IS NOT NULL AND v_avg_setting IS NOT NULL THEN\n            IF para_target_mode = 'Cooling' THEN\n                IF (v_avg_indoor - v_avg_setting) > 2.0 THEN\n                    v_setpoint_gap_deficiency := true;\n                END IF;\n            ELSIF para_target_mode = 'Heating' THEN\n                IF (v_avg_setting - v_avg_indoor) > 2.0 THEN\n                    v_setpoint_gap_deficiency := true;\n                END IF;\n            END IF;\n        END IF;\n\n        v_carnot_cop := NULL;\n        IF v_avg_indoor IS NOT NULL AND v_avg_outdoor IS NOT NULL THEN\n            IF v_avg_outdoor > v_avg_indoor THEN\n                v_carnot_cop := (v_avg_indoor::double precision + 273.15)\n                                / (v_avg_outdoor::double precision - v_avg_indoor::double precision);\n            END IF;\n        END IF;\n\n        v_affected := false;\n        IF v_capacity_ratio IS NOT NULL AND v_capacity_ratio < 0.85 THEN\n            v_affected := true;\n        END IF;\n        IF v_actual_efficiency IS NOT NULL\n           AND para_eer_threshold IS NOT NULL\n           AND v_actual_efficiency < para_eer_threshold THEN\n            v_affected := true;\n        END IF;\n        IF v_carnot_cop IS NOT NULL\n           AND v_actual_cop IS NOT NULL\n           AND v_actual_cop < 0.04 * v_carnot_cop THEN\n            v_affected := true;\n        END IF;\n        IF v_setpoint_gap_deficiency THEN\n            v_affected := true;\n        END IF;\n\n        IF NOT v_affected THEN\n            CONTINUE;\n        END IF;\n\n        IF v_capacity_ratio IS NOT NULL AND v_capacity_ratio > 0 THEN\n            v_factor := 1.0 / v_capacity_ratio;\n        ELSE\n            v_factor := 1.0;\n        END IF;\n\n        UPDATE energy_consumption\n           SET energy_consumption_kwh = energy_consumption_kwh * v_factor\n         WHERE ac_id = v_ac_id\n           AND mode = para_target_mode;\n\n        IF v_capacity_ratio IS NOT NULL AND v_capacity_ratio < 0.85 THEN\n            v_power_multiplier := LEAST(1.5::numeric,\n                                        1.0::numeric + (1.0::numeric - v_capacity_ratio::numeric));\n            v_power := v_power * v_power_multiplier;\n\n            UPDATE air_conditioner_info\n               SET power_consumption_watts = power_consumption_watts * v_power_multiplier\n             WHERE ac_id = v_ac_id;\n        END IF;\n\n        IF v_sample_days > 0 THEN\n            v_annual_emissions := (v_total_consumption / v_sample_days) * 365.0 * 0.000233;\n        ELSE\n            v_annual_emissions := (v_power / 1000.0) * 1000.0 * 0.000233;\n        END IF;\n\n        INSERT INTO carbon_emissions (id, emission_factor, annual_emissions_tonnes)\n        VALUES (v_next_id, 0.000233, v_annual_emissions);\n\n        v_next_id := v_next_id + 1;\n    END LOOP;\nEND;\n$$;"
+ },
+ "pair": {
+  "single_run": "st-postgres-a1b2",
+  "single_task": "postgres_a1_002"
+ }
+}

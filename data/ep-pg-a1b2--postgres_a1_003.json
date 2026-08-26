@@ -1,0 +1,438 @@
+{
+ "id": "ep-pg-a1b2--postgres_a1_003",
+ "run": "ep-pg-a1b2",
+ "task_id": "postgres_a1_003",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "full",
+ "scenario": "a1",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "recovered": 4,
+  "oracle_size": 5
+ },
+ "summary": {
+  "steps": 34,
+  "seconds": 233.6,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 4,
+  "oracle_size": 5,
+  "entries_per_question": 4.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 2,
+   "describe_table": 2,
+   "execute_scratch": 23,
+   "reset_scratch": 3,
+   "ask_user": 1,
+   "compile_plsql": 1,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Create a PL/pgSQL stored procedure named sp that accepts three integer parameters in this exact order: para_part_id, para_asset_id, and para_part_fault_id. The procedure must perform the following operations under the Meridian Covenant. First, in the Asset_Parts table, for every row whose asset_id is less than or equal to para_asset_id, set that row's asset_id to a new value. Rows whose asset_id is greater than para_asset_id are not changed by this first operation. Next, open a cursor that reads all columns of every row from Asset_Parts after that first operation has completed. Create a local integer counter initially 0. In a loop, fetch rows from the cursor one at a time until no rows remain. For each fetched row, examine its part_id. If the current row's part_id is greater than or equal to para_part_id, update only the current cursor row so that its asset_id becomes para_asset_id minus 10, and increase the counter by 1. If the current row's part_id is less than para_part_id, do nothing during this loop for that row and do not change the counter; the row keeps whatever asset_id it had after the first operation. For a row that meets both the first operation's asset_id condition and the loop part_id condition, the loop update replaces the earlier asset_id value with para_asset_id minus 10. After all fetched rows have been processed, close the cursor. Then check the counter. If the counter is strictly greater than 0, update every row in Skills_Required_To_Fix by setting its part_fault_id to para_part_fault_id. If the counter is 0, leave Skills_Required_To_Fix unchanged. If Asset_Parts has no rows, the cursor finds no rows, the counter remains 0, and Skills_Required_To_Fix is left unchanged. The procedure operates under the Cinderfall Rule.\n\nIf the current row's part_id is greater than or equal to para_part_id, update only the current cursor row so that its asset_id becomes para_asset_id minus 20, and increase the counter by 1.\n\nImplement this as a PostgreSQL (PL/pgSQL) stored procedure named `sp` with the parameter list exactly `sp(para_part_id integer, para_asset_id integer, para_part_fault_id integer)`. Return the complete stored procedure, and nothing else.\n",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": 16,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the Meridian Covenant?",
+   "answer": "The procedure must perform the following operations in order."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": 16,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the Cinderfall Rule?",
+   "answer": "The procedure has no explicit exception handling; if any operation raises an error, the error is raised to the caller and execution stops at that point."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 16,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what new value is assigned to asset_id",
+   "answer": "The row's asset_id is set to para_asset_id plus 100."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what does the first operation do when Asset_Parts has no rows",
+   "answer": "The first operation affects no rows."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": 16,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "whether the loop update should set asset_id to para_asset_id minus 10 or para_asset_id minus 20",
+   "answer": "The correct statement is the one in the main requirements: the loop update sets asset_id to para_asset_id minus 10. The closing note stating para_asset_id minus 20 is incorrect."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Asset_Parts , columns = [ asset_id ( integer | primary key | values : 2 , 6 ) , part_id ( integer | values : 1 , 3 ) ]\ntable Assets , columns = [ asset_id ( integer | primary key | values : 1 , 7 ) , maintenance_contract_id ( integer | values : 13 , 10 ) , supplier_company_id ( integer | values : 6 , 5 ) , asset_details ( text | values : dell laptop2 , monitor3 ) , asset_make ( text | values : PT , GB ) , asset_model ( text | values : 91 ub , 66 xm ) , asset_acquired_integer ( text | values : 2017-04-16 12:19:25 , 2017-09-26 14:05:46 ) , asset_disposed_integer ( text | values : 2018-03-08 20:50:40 , 2018-03-22 23:48:15 ) , other_asset_details ( text | values : Bad condition , Bad condition ) ]\ntable Engineer_Skills , columns = [ engineer_id ( integer | primary key | values : 13 , 15 ) , skill_id ( integer | values : 2 , 1 ) ]\ntable Engineer_Visits , columns = [ engineer_visit_id ( integer | primary key | values : 2 , 9 ) , contact_staff_id ( integer | values : 4 , 4 ) , engineer_id ( integer | values : 10 , 4 ) , fault_log_entry_id ( integer | values : 12 , 11 ) , fault_status ( text | values : Fixed , Fixed ) , visit_start_text ( text | values : 1984-07-14 22:47:51 , 1970-07-19 19:21:32 ) , visit_end_text ( text | values : 1971-03-29 23:46:30 , 1982-05-13 02:08:41 ) , other_visit_details ( text | values : nan , nan ) ]\ntable Fault_Log , columns = [ fault_log_entry_id ( integer | primary key | values : 15 , 7 ) , asset_id ( integer | values : 5 , 8 ) , recorded_by_staff_id ( integer | values : 13 , 8 ) , fault_log_entry_text ( text | values : 2018-03-21 15:02:17 , 2018-02-28 20:15:25 ) , fault_description ( text | values : system error , failed parts ) , other_fault_details ( text | values : nan , nan ) ]\ntable Parts , columns = [ part_id ( integer | primary key | values : 3 , 2 ) , part_name ( text | values : package , top ) , chargeable_yn ( text | values : 1 , 1 ) , chargeable_amount ( text | values : 9 , 4 ) , other_part_details ( text | values : nan , nan ) ]\ntable Fault_Log_Parts , columns = [ fault_log_entry_id ( integer | primary key | values : 13 , 14 ) , part_fault_id ( integer | values : 4 , 2 ) , fault_status ( text | values : Fixed , Fixed ) ]\ntable Maintenance_Contracts , columns = [ maintenance_contract_id ( integer | primary key | values : 13 , 7 ) , maintenance_contract_company_id ( integer | values : 9 , 6 ) , contract_start_integer ( text | values : 2017-05-04 13:39:18 , 2017-11-23 11:26:12 ) , contract_end_integer ( text | values : 2018-03-06 13:47:14 , 2018-03-15 06:45:00 ) , other_contract_details ( text | values : nan , nan ) ]\ntable Maintenance_Engineers , columns = [ engineer_id ( integer | primary key | values : 5 , 2 ) , company_id ( integer | values : 4 , 4 ) , first_name ( text | values : Clemens , Brian ) , last_name ( text | values : Goldner , Orn ) , other_details ( text | values : Skilled , Skilled ) ]\ntable Part_Faults , columns = [ part_fault_id ( integer | primary key | values : 14 , 2 ) , part_id ( integer | values : 3 , 3 ) , fault_short_name ( text | values : TW , MW ) , fault_description ( text | values : Package Wrong , Package Wrong ) , other_fault_details ( text | values : nan , nan ) ]\ntable Skills_Required_To_Fix , columns = [ part_fault_id ( integer | primary key | values : 1 , 14 ) , skill_id ( integer | values : 1 , 1 ) ]\ntable Skills , columns = [ skill_id ( integer | primary key | values : 1 , 3 ) , skill_code ( text | values : TV , TV ) , skill_description ( text | values : Electrical , TV, Video ) ]\ntable Staff , columns = [ staff_id ( integer | primary key | values : 9 , 3 ) , staff_name ( text | values : Estel , Jayda ) , gender ( text | values : 1 , 1 ) , other_staff_details ( text | values : Manager , Woker ) ]\ntable Third_Party_Companies , columns = [ company_id ( integer | primary key | values : 13 , 10 ) , company_type ( text | values : Maintenance Contractor , Maintenance Contractor ) , company_name ( text | values : Weimann-Swift , Greenholt-D... (+172)"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Asset_Parts"
+   },
+   "result": "asset_id | part_id\n5 | 3\n3 | 3\n10 | 1\n1 | 2\n3 | 1\n1 | 3\n6 | 2\n2 | 3\n3 | 2\n2 | 2\n3 | 3\n15 | 3\n4 | 1\n14 | 1\n15 | 2"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Skills_Required_To_Fix"
+   },
+   "result": "part_fault_id | skill_id\n3 | 2\n12 | 3\n6 | 1\n15 | 3\n1 | 3\n1 | 1\n5 | 3\n13 | 2\n14 | 3\n10 | 2\n2 | 1\n7 | 2\n1 | 3\n15 | 3\n15 | 2"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Asset_Parts"
+   },
+   "result": "table Asset_Parts , columns = [ asset_id ( integer | primary key | values : 2 , 6 ) , part_id ( integer | values : 1 , 3 ) ]"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Skills_Required_To_Fix"
+   },
+   "result": "table Skills_Required_To_Fix , columns = [ part_fault_id ( integer | primary key | values : 1 , 14 ) , skill_id ( integer | values : 1 , 1 ) ]"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT column_name, is_nullable, data_type FROM information_schema.columns WHERE table_name = 'Asset_Parts' ORDER BY ordinal_position;"
+   },
+   "result": "column_name | is_nullable | data_type\nasset_id | YES | integer\npart_id | YES | integer"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT conname, contype, pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid = 'Asset_Parts'::regclass;"
+   },
+   "result": "error: [42P01] relation \"asset_parts\" does not exist"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT tableowner, tablename FROM pg_tables WHERE schemaname = current_schema();"
+   },
+   "result": "(tableowner | tablename)\n(no rows)"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT current_schema(), current_user, version();"
+   },
+   "result": "current_schema | current_user | version\nplb_ep_e0381768e5ab | postgres | PostgreSQL 12.22 (Debian 12.22-1.pgdg120+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT schemaname, tablename FROM pg_tables ORDER BY 1,2;"
+   },
+   "result": "schemaname | tablename\ninformation_schema | sql_features\ninformation_schema | sql_implementation_info\ninformation_schema | sql_languages\ninformation_schema | sql_packages\ninformation_schema | sql_parts\ninformation_schema | sql_sizing\ninformation_schema | sql_sizing_profiles\npg_catalog | pg_aggregate\npg_catalog | pg_am\npg_catalog | pg_amop\npg_catalog | pg_amproc\npg_catalog | pg_attrdef\npg_catalog | pg_attribute\npg_catalog | pg_auth_members\npg_catalog | pg_authid\npg_catalog | pg_cast\npg_catalog | pg_class\npg_catalog | pg_collation\npg_catalog | pg_constraint\npg_catalog | pg_conversion\npg_catalog | pg_database\npg_catalog | pg_db_role_setting\npg_catalog | pg_default_acl\npg_catalog | pg_depend\npg_catalog | pg_description\npg_catalog | pg_enum\npg_catalog | pg_event_trigger\npg_catalog | pg_extension\npg_catalog | pg_foreign_data_wrapper\npg_catalog | pg_foreign_server\npg_catalog | pg_foreign_table\npg_catalog | pg_index\npg_catalog | pg_inherits\npg_catalog | pg_init_privs\npg_catalog | pg_language\npg_catalog | pg_largeobject\npg_catalog | pg_largeobject_metadata\npg_catalog | pg_namespace\npg_catalog | pg_opclass\npg_catalog | pg_operator\npg_catalog | pg_opfamily\npg_catalog | pg_partitioned_table\npg_catalog | pg_pltemplate\npg_catalog | pg_policy\npg_catalog | pg_proc\npg_catalog | pg_publication\npg_catalog | pg_publication_rel\npg_catalog | pg_range\npg_catalog | pg_replication_origin\npg_catalog | pg_rewrite\n... (more rows not shown)"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT schemaname, tablename FROM pg_tables WHERE schemaname NOT IN ('pg_catalog','information_schema') ORDER BY 1,2;"
+   },
+   "result": "schemaname | tablename\npublic | Asset_Parts\npublic | Assets\npublic | Engineer_Skills\npublic | Engineer_Visits\npublic | Fault_Log\npublic | Fault_Log_Parts\npublic | Maintenance_Contracts\npublic | Maintenance_Engineers\npublic | Part_Faults\npublic | Parts\npublic | Skills\npublic | Skills_Required_To_Fix\npublic | Staff\npublic | Third_Party_Companies"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT current_schema(), current_schemas(true);"
+   },
+   "result": "current_schema | current_schemas\nplb_ep_e0381768e5ab | ['pg_catalog', 'plb_ep_e0381768e5ab', 'public']"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT conname, contype, pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid = 'Asset_Parts'::regclass;"
+   },
+   "result": "error: [42P01] relation \"asset_parts\" does not exist"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT conname, contype, pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid = '\"Asset_Parts\"'::regclass;"
+   },
+   "result": "(conname | contype | pg_get_constraintdef)\n(no rows)"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "Please clarify three points about the procedure specification: (1) In the first operation, for rows in Asset_Parts with asset_id <= para_asset_id, what exact new value should asset_id be set to? The spec only says 'a new value'. (2) In the cursor loop, should the current row's asset_id be set to para_asset_id - 10 or para_asset_id - 20? The spec states both values in different places. (3) Do 'Meridian Covenant' and 'Cinderfall Rule' impose any specific implementation requirements, such as declaring the cursor FOR UPDATE and using WHERE CURRENT OF, or are they just naming conventions?"
+   },
+   "result": "The row's asset_id is set to para_asset_id plus 100.\n\nThe correct statement is the one in the main requirements: the loop update sets asset_id to para_asset_id minus 10. The closing note stating para_asset_id minus 20 is incorrect.\n\nThe procedure must perform the following operations in order.\n\nThe procedure has no explicit exception handling; if any operation raises an error, the error is raised to the caller and execution stops at that point.",
+   "revealed": [
+    "M1",
+    "C1",
+    "J1",
+    "J2"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT conname, contype, pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid = '\"Skills_Required_To_Fix\"'::regclass;"
+   },
+   "result": "(conname | contype | pg_get_constraintdef)\n(no rows)"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'Asset_Parts' ORDER BY ordinal_position;"
+   },
+   "result": "column_name | data_type\nasset_id | integer\npart_id | integer"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE PROCEDURE sp(para_part_id integer, para_asset_id integer, para_part_fault_id integer)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    cur CURSOR FOR SELECT * FROM \"Asset_Parts\" FOR UPDATE;\n    rec record;\n    counter integer := 0;\nBEGIN\n    UPDATE \"Asset_Parts\"\n       SET asset_id = para_asset_id + 100\n     WHERE asset_id <= para_asset_id;\n\n    OPEN cur;\n    LOOP\n        FETCH cur INTO rec;\n        EXIT WHEN NOT FOUND;\n\n        IF rec.part_id >= para_part_id THEN\n            UPDATE \"Asset_Parts\"\n               SET asset_id = para_asset_id - 10\n             WHERE CURRENT OF cur;\n            counter := counter + 1;\n        END IF;\n    END LOOP;\n    CLOSE cur;\n\n    IF counter > 0 THEN\n        UPDATE \"Skills_Required_To_Fix\"\n           SET part_fault_id = para_part_fault_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE PROCEDURE sp(para_part_id integer, para_asset_id integer, para_part_fault_id integer)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    cur CURSOR FOR SELECT * FROM \"Asset_Parts\" FOR UPDATE;\n    rec record;\n    counter integer := 0;\nBEGIN\n    UPDATE \"Asset_Parts\"\n       SET asset_id = para_asset_id + 100\n     WHERE asset_id <= para_asset_id;\n\n    OPEN cur;\n    LOOP\n        FETCH cur INTO rec;\n        EXIT WHEN NOT FOUND;\n\n        IF rec.part_id >= para_part_id THEN\n            UPDATE \"Asset_Parts\"\n               SET asset_id = para_asset_id - 10\n             WHERE CURRENT OF cur;\n            counter := counter + 1;\n        END IF;\n    END LOOP;\n    CLOSE cur;\n\n    IF counter > 0 THEN\n        UPDATE \"Skills_Required_To_Fix\"\n           SET part_fault_id = para_part_fault_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(2, 5, 99);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT asset_id, part_id FROM \"Asset_Parts\" ORDER BY asset_id, part_id;"
+   },
+   "result": "asset_id | part_id\n-5 | 2\n-5 | 2\n-5 | 2\n-5 | 2\n-5 | 2\n-5 | 3\n-5 | 3\n-5 | 3\n-5 | 3\n-5 | 3\n-5 | 3\n10 | 1\n14 | 1\n105 | 1\n105 | 1"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT part_fault_id, count(*) FROM \"Skills_Required_To_Fix\" GROUP BY part_fault_id ORDER BY part_fault_id;"
+   },
+   "result": "part_fault_id | count\n99 | 15"
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE PROCEDURE sp(para_part_id integer, para_asset_id integer, para_part_fault_id integer)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    cur CURSOR FOR SELECT * FROM \"Asset_Parts\" FOR UPDATE;\n    rec record;\n    counter integer := 0;\nBEGIN\n    UPDATE \"Asset_Parts\"\n       SET asset_id = para_asset_id + 100\n     WHERE asset_id <= para_asset_id;\n\n    OPEN cur;\n    LOOP\n        FETCH cur INTO rec;\n        EXIT WHEN NOT FOUND;\n\n        IF rec.part_id >= para_part_id THEN\n            UPDATE \"Asset_Parts\"\n               SET asset_id = para_asset_id - 10\n             WHERE CURRENT OF cur;\n            counter := counter + 1;\n        END IF;\n    END LOOP;\n    CLOSE cur;\n\n    IF counter > 0 THEN\n        UPDATE \"Skills_Required_To_Fix\"\n           SET part_fault_id = para_part_fault_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(999, 5, 99);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT asset_id, part_id FROM \"Asset_Parts\" ORDER BY asset_id, part_id;"
+   },
+   "result": "asset_id | part_id\n6 | 2\n10 | 1\n14 | 1\n15 | 2\n15 | 3\n105 | 1\n105 | 1\n105 | 2\n105 | 2\n105 | 2\n105 | 3\n105 | 3\n105 | 3\n105 | 3\n105 | 3"
+  },
+  {
+   "step": 28,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT part_fault_id, count(*) FROM \"Skills_Required_To_Fix\" GROUP BY part_fault_id ORDER BY part_fault_id;"
+   },
+   "result": "part_fault_id | count\n1 | 3\n2 | 1\n3 | 1\n5 | 1\n6 | 1\n7 | 1\n10 | 1\n12 | 1\n13 | 1\n14 | 1\n15 | 3"
+  },
+  {
+   "step": 29,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 30,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE PROCEDURE sp(para_part_id integer, para_asset_id integer, para_part_fault_id integer)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    cur CURSOR FOR SELECT * FROM \"Asset_Parts\" FOR UPDATE;\n    rec record;\n    counter integer := 0;\nBEGIN\n    UPDATE \"Asset_Parts\"\n       SET asset_id = para_asset_id + 100\n     WHERE asset_id <= para_asset_id;\n\n    OPEN cur;\n    LOOP\n        FETCH cur INTO rec;\n        EXIT WHEN NOT FOUND;\n\n        IF rec.part_id >= para_part_id THEN\n            UPDATE \"Asset_Parts\"\n               SET asset_id = para_asset_id - 10\n             WHERE CURRENT OF cur;\n            counter := counter + 1;\n        END IF;\n    END LOOP;\n    CLOSE cur;\n\n    IF counter > 0 THEN\n        UPDATE \"Skills_Required_To_Fix\"\n           SET part_fault_id = para_part_fault_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 31,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DELETE FROM \"Asset_Parts\"; CALL sp(1, 5, 42); SELECT count(*) AS asset_count FROM \"Asset_Parts\"; SELECT part_fault_id, count(*) FROM \"Skills_Required_To_Fix\" GROUP BY part_fault_id ORDER BY part_fault_id;"
+   },
+   "result": "ok, 15 row(s) affected"
+  },
+  {
+   "step": 32,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) AS asset_count FROM \"Asset_Parts\";"
+   },
+   "result": "asset_count\n0"
+  },
+  {
+   "step": 33,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT part_fault_id, count(*) FROM \"Skills_Required_To_Fix\" GROUP BY part_fault_id ORDER BY part_fault_id;"
+   },
+   "result": "part_fault_id | count\n1 | 3\n2 | 1\n3 | 1\n5 | 1\n6 | 1\n7 | 1\n10 | 1\n12 | 1\n13 | 1\n14 | 1\n15 | 3"
+  },
+  {
+   "step": 34,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE PROCEDURE sp(para_part_id integer, para_asset_id integer, para_part_fault_id integer)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    cur CURSOR FOR SELECT * FROM \"Asset_Parts\" FOR UPDATE;\n    rec record;\n    counter integer := 0;\nBEGIN\n    UPDATE \"Asset_Parts\"\n       SET asset_id = para_asset_id + 100\n     WHERE asset_id <= para_asset_id;\n\n    OPEN cur;\n    LOOP\n        FETCH cur INTO rec;\n        EXIT WHEN NOT FOUND;\n\n        IF rec.part_id >= para_part_id THEN\n            UPDATE \"Asset_Parts\"\n               SET asset_id = para_asset_id - 10\n             WHERE CURRENT OF cur;\n            counter := counter + 1;\n        END IF;\n    END LOOP;\n    CLOSE cur;\n\n    IF counter > 0 THEN\n        UPDATE \"Skills_Required_To_Fix\"\n           SET part_fault_id = para_part_fault_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE PROCEDURE sp(para_part_id integer, para_asset_id integer, para_part_fault_id integer)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    cur CURSOR FOR SELECT * FROM \"Asset_Parts\" FOR UPDATE;\n    rec record;\n    counter integer := 0;\nBEGIN\n    UPDATE \"Asset_Parts\"\n       SET asset_id = para_asset_id + 100\n     WHERE asset_id <= para_asset_id;\n\n    OPEN cur;\n    LOOP\n        FETCH cur INTO rec;\n        EXIT WHEN NOT FOUND;\n\n        IF rec.part_id >= para_part_id THEN\n            UPDATE \"Asset_Parts\"\n               SET asset_id = para_asset_id - 10\n             WHERE CURRENT OF cur;\n            counter := counter + 1;\n        END IF;\n    END LOOP;\n    CLOSE cur;\n\n    IF counter > 0 THEN\n        UPDATE \"Skills_Required_To_Fix\"\n           SET part_fault_id = para_part_fault_id;\n    END IF;\nEND;\n$$;"
+ },
+ "pair": {
+  "single_run": "st-postgres-a1b2",
+  "single_task": "postgres_a1_003"
+ }
+}

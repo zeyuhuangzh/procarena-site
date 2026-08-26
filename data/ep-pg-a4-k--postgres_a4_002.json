@@ -1,0 +1,243 @@
+{
+ "id": "ep-pg-a4-k--postgres_a4_002",
+ "run": "ep-pg-a4-k",
+ "task_id": "postgres_a4_002",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "full",
+ "scenario": "a4",
+ "dialect": "postgres",
+ "model": "deepseek-v4-flash",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "database state differs after call 1",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "spec",
+  "recovered": 1,
+  "oracle_size": 3
+ },
+ "summary": {
+  "steps": 12,
+  "seconds": 153.4,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 1,
+   "off_oracle": 0
+  },
+  "recovered": 1,
+  "oracle_size": 3,
+  "entries_per_question": 1.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 1,
+   "compile_plsql": 1,
+   "ask_selector": 1,
+   "execute_scratch": 7,
+   "submit": 1
+  },
+  "final_warning": false
+ },
+ "task": {
+  "prompt": "You are implementing a PostgreSQL PL/pgSQL stored procedure. The procedure updates an activity name, promotes faculty based on participation in a given activity, removes participation records for that activity, and overwrites student name fields. Use the attached template.sql as the starting point. The procedure signature is exactly sp(para_activity_name text, para_actid integer, para_LName text, para_Fname text). Fill in every {SLOT_n} in the template according to the attached slot dictionary slots.md. Do not add, remove, or reorder any statements, and do not alter any code outside the slots. Return the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "template.sql",
+    "kind": "template",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_activity_name text, para_actid integer, para_LName text, para_Fname text) LANGUAGE plpgsql AS $$ DECLARE\n  ref_cursor1 CURSOR FOR SELECT * FROM \"Participates_in\" WHERE \"actid\" = para_actid FOR UPDATE;\n  ref_cursor2 CURSOR FOR SELECT * FROM \"Student\" FOR UPDATE;\n  rec1 RECORD;\n  rec2 RECORD;\nBEGIN\n  UPDATE \"Activity\" SET \"activity_name\" = {SLOT_1};\n  UPDATE \"Faculty\"\n    SET \"Rank\" = {SLOT_2}\n    WHERE {SLOT_3};\n  DELETE FROM \"Faculty_Participates_in\" WHERE {SLOT_4};\n  OPEN ref_cursor1;\n  LOOP\n    FETCH ref_cursor1 INTO rec1;\n    EXIT WHEN NOT FOUND;\n    DELETE FROM \"Participates_in\" WHERE CURRENT OF ref_cursor1;\n  END LOOP;\n  CLOSE ref_cursor1;\n  OPEN ref_cursor2;\n  LOOP\n    FETCH ref_cursor2 INTO rec2;\n    EXIT WHEN NOT FOUND;\n    UPDATE \"Student\" SET \"LName\" = {SLOT_5}, \"Fname\" = {SLOT_6} WHERE CURRENT OF ref_cursor2;\n  END LOOP;\n  CLOSE ref_cursor2;\nEND; $$;"
+   },
+   {
+    "file": "slots.md",
+    "kind": "slot dictionary",
+    "text": "## Slots\n\n### {SLOT_1}\n- Kind: value\n- What must go there: a cold-splice handoff.\n\n### {SLOT_2}\n- Kind: value\n- What must go there: the fixed text literal `Professor`, spelled exactly with an uppercase initial P and the remaining letters lowercase, enclosed in single quotes as a PostgreSQL text constant. It must not be a parameter reference.\n\n### {SLOT_3}\n- Kind: predicate\n- What must go there: a condition that is true for each `Faculty` row whose `FacID` value is present in the set of `FacID` values from `Faculty_Participates_in` rows where the `actid` column is exactly equal to the procedure parameter `para_actid`. The condition must use the SQL `IN` operator for membership and the SQL `=` operator for the exact equality comparison between `Faculty_Participates_in.actid` and `para_actid`. There must be no other filters, limits, or comparisons.\n\n### {SLOT_5}\n- Kind: value\n- What must go there: the procedure parameter `para_LName` exactly by name. It must be used directly as the new value assigned to the `Student.LName` column. This slot is a parameter reference, not a string literal.\n\n### {SLOT_6}\n- Kind: value\n- What must go there: a cold-splice handoff.\n\n### Note\n\nFor `{SLOT_5}`, what must go there is the procedure parameter `para_FName` exactly by name, which must be used directly as the new value assigned to the `Student.LName` column; this slot is a parameter reference, not a string literal."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is a cold-splice handoff?",
+   "answer": "It means the slot takes the procedure parameter `para_activity_name` exactly by name, used directly as the new value assigned to the `Activity.activity_name` column; the slot is not a literal string and must not be enclosed in single quotes, but is a parameter reference."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What did the missing dictionary entry for SLOT_4 require?",
+   "answer": "### {SLOT_4}\n- Kind: predicate\n- What must go there: an exact equality condition matching every `Faculty_Participates_in` row whose `actid` column is exactly equal to the procedure parameter `para_actid`. Use the SQL `=` operator between the column and the parameter, with no other filters or comparisons."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": 4,
+   "via": "ask_selector",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Which procedure parameter must be used as the new value for `Student.LName` in `{SLOT_5}`?",
+   "answer": "The `{SLOT_5}` entry is correct: the slot value is the procedure parameter `para_LName` exactly by name. The closing note is wrong; `para_FName` must not be used."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Activity , columns = [ actid ( integer | primary key | values : 771 , 782 ) , activity_name ( text | values : Crossword Puzzles , Square Dancing ) ]\ntable Faculty , columns = [ FacID ( integer | primary key | values : 4432 , 1172 ) , Lname ( text | values : Runolfsson , Naiman ) , Fname ( text | values : Thordur , Frederic ) , Rank ( text | values : Professor , AsstProf ) , Sex ( text | values : M , M ) , Phone ( integer | values : 6073 , 3550 ) , Room ( text | values : 119 , 288 ) , Building ( text | values : Barton , Krieger ) ]\ntable Faculty_Participates_in , columns = [ FacID ( integer | primary key | values : 7723 , 1193 ) , actid ( integer | values : 778 , 790 ) ]\ntable Participates_in , columns = [ stuid ( integer | primary key | values : 1009 , 1002 ) , actid ( integer | values : 773 , 770 ) ]\ntable Student , columns = [ StuID ( integer | primary key | values : 1007 , 1010 ) , LName ( text | values : Schwartz , Norris ) , Fname ( text | values : Derek , Jandy ) , Age ( integer | values : 22 , 19 ) , Sex ( text | values : M , M ) , Major ( integer | values : 600 , 600 ) , Advisor ( integer | values : 7792 , 9172 ) , city_code ( text | values : DAL , YYZ ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Participates_in",
+    "limit": 10
+   },
+   "result": "stuid | actid\n1001 | 770\n1001 | 771\n1001 | 777\n1002 | 772\n1002 | 771\n1003 | 778\n1004 | 780\n1004 | 782\n1004 | 778\n1004 | 777"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_activity_name text, para_actid integer, para_LName text, para_Fname text) LANGUAGE plpgsql AS $$ DECLARE\n  ref_cursor1 CURSOR FOR SELECT * FROM \"Participates_in\" WHERE \"actid\" = para_actid FOR UPDATE;\n  ref_cursor2 CURSOR FOR SELECT * FROM \"Student\" FOR UPDATE;\n  rec1 RECORD;\n  rec2 RECORD;\nBEGIN\n  UPDATE \"Activity\" SET \"activity_name\" = para_activity_name;\n  UPDATE \"Faculty\"\n    SET \"Rank\" = 'Professor'\n    WHERE \"FacID\" IN (SELECT \"FacID\" FROM \"Faculty_Participates_in\" WHERE \"actid\" = para_actid);\n  DELETE FROM \"Faculty_Participates_in\" WHERE \"actid\" = para_actid;\n  OPEN ref_cursor1;\n  LOOP\n    FETCH ref_cursor1 INTO rec1;\n    EXIT WHEN NOT FOUND;\n    DELETE FROM \"Participates_in\" WHERE CURRENT OF ref_cursor1;\n  END LOOP;\n  CLOSE ref_cursor1;\n  OPEN ref_cursor2;\n  LOOP\n    FETCH ref_cursor2 INTO rec2;\n    EXIT WHEN NOT FOUND;\n    UPDATE \"Student\" SET \"LName\" = para_LName, \"Fname\" = para_Fname WHERE CURRENT OF ref_cursor2;\n  END LOOP;\n  CLOSE ref_cursor2;\nEND; $$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "slots.md contains a contradiction about the student-name overwrite. The {SLOT_5} entry says use para_LName for the Student.LName column, but the Note section says use para_FName for the Student.LName column. Which behavior should the procedure implement?",
+    "options": [
+     "Set Student.LName = para_LName and Student.Fname = para_FName (para_LName to LName, para_FName to Fname).",
+     "Set Student.LName = para_FName and Student.Fname = para_FName (para_FName goes to both columns).",
+     "Set Student.LName = para_FName and Student.Fname = para_LName (the two parameters are swapped)."
+    ]
+   },
+   "result": "2",
+   "index": 2,
+   "options": [
+    "None of the following are correct.",
+    "Set Student.LName = para_LName and Student.Fname = para_FName (para_LName to LName, para_FName to Fname).",
+    "Set Student.LName = para_FName and Student.Fname = para_FName (para_FName goes to both columns).",
+    "Set Student.LName = para_FName and Student.Fname = para_LName (the two parameters are swapped)."
+   ],
+   "entry": "C1",
+   "status": "revealed",
+   "conflict_noted": true
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Faculty_Participates_in\" ORDER BY \"FacID\";"
+   },
+   "result": "FacID | actid\n1082 | 790\n1082 | 784\n1082 | 785\n1121 | 771\n1121 | 777\n1121 | 770\n1177 | 770\n1177 | 790\n1177 | 770\n1193 | 773\n1193 | 790\n1193 | 796\n2192 | 773\n2192 | 790\n2192 | 778\n2881 | 784\n2881 | 790\n3457 | 784\n3457 | 782\n3457 | 771\n4230 | 785\n4230 | 790\n4432 | 771\n4432 | 770\n5718 | 776\n6112 | 772\n6112 | 785\n6182 | 776\n6182 | 785\n7723 | 770\n7723 | 785\n8114 | 776\n8721 | 780\n8721 | 770\n8741 | 790\n8741 | 780\n8918 | 771\n8918 | 782\n8918 | 780\n9922 | 796"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Faculty\" ORDER BY \"FacID\";"
+   },
+   "result": "FacID | Lname | Fname | Rank | Sex | Phone | Room | Building\n1082 | Giuliano | Mark | Instructor | M | 2424 | 224 | NEB\n1121 | Goodrich | Michael | Professor | M | 3593 | 219 | NEB\n1148 | Masson | Gerald | Professor | M | 3402 | 224B | NEB\n1172 | Runolfsson | Thordur | AssocProf | M | 3121 | 119 | Barton\n1177 | Naiman | Daniel | Professor | M | 3571 | 288 | Krieger\n1193 | Jones | Stacey | Instructor | F | 3550 | 224 | NEB\n1823 | Davidson | Frederic | Professor | M | 5629 | 119 | Barton\n2028 | Brody | William | Professor | M | 6073 | 119 | Barton\n2119 | Meyer | Gerard | Professor | M | 6350 | 119 | Barton\n2192 | Yarowsky | David | AsstProf | M | 6587 | 324 | NEB\n2291 | Scheinerman | Edward | Professor | M | 6654 | 288 | Krieger\n2311 | Priebe | Carey | AsstProf | M | 6953 | 288 | Krieger\n2738 | Fill | James | Professor | M | 8209 | 288 | Krieger\n2881 | Goldman | Alan | Professor | M | 8335 | 288 | Krieger\n3457 | Smith | Scott | AssocProf | M | 1035 | 318 | NEB\n4230 | Houlahan | Joanne | Instructor | F | 1260 | 328 | NEB\n4432 | Burzio | Luigi | Professor | M | 1813 | 288 | Krieger\n5718 | Frank | Robert | AsstProf | M | 1751 | 288 | Krieger\n6112 | Beach | Louis | Instructor | M | 1838 | 207 | NEB\n6182 | Cheng | Cheng | AsstProf | M | 1856 | 288 | Krieger\n6191 | Kaplan | Alexander | Professor | M | 1825 | 119 | Barton\n6330 | Byrne | William | Instructor | M | 1691 | 119 | Barton\n6541 | Han | Shih-Ping | Professor | M | 1914 | 288 | Krieger\n6910 | Smolensky | Paul | Professor | M | 2072 | 288 | Krieger\n6925 | Iglesias | Pablo | AsstProf | M | 2021 | 119 | Barton\n7134 | Goutsias | John | Professor | M | 2184 | 119 | Barton\n7231 | Rugh | Wilson | Professor | M | 2191 | 119 | Barton\n7271 | Jelinek | Frederick | Professor | M | 2890 | 119 | Barton\n7506 | Westgate | Charles | Professor | M | 2932 | 119 | Barton\n7712 | Awerbuch | Baruch | Professor | M | 2105 | 220 | NEB\n7723 | Taylor | Russell | Professor | M | 2435 | 317 | NEB\n7792 | Brill | Eric | AsstProf | M | 2303 | 324B | NEB\n8102 | James | Lancelot | AsstProf | M | 2792 | 288 | Krieger\n8114 | Angelopoulou | Ellie | Instructor | F | 2152 | 316 | NEB\n8118 | Weinert | Howard | Professor | M | 3272 | 119 | Barton\n8122 | Wierman | John | Professor | M | 3392 | 288 | Krieger\n8423 | Kumar | Subodh | AsstProf | M | 2522 | 218 | NEB\n8721 | Wolff | Lawrence | AssocProf | M | 2342 | 316 | NEB\n8722 | Cauwenberghs | Gert | AsstProf | M | 1372 | 119 | Barton\n8723 | Andreou | Andreas | Professor | M | 1402 | 119 | Barton\n8741 | Salzberg | Steven | AssocProf | M | 2641 | 324A | NEB\n8772 | Cowen | Lenore | AsstProf | F | 2870 | 288 | Krieger\n8791 | McCloskey | Michael | Professor | M | 3440 | 288 | Krieger\n8918 | Amir | Yair | AsstProf | M | 2672 | 308 | NEB\n8989 | Brent | Michael | AsstProf | M | 9373 | 288 | Krieger\n9011 | Rapp | Brenda | AsstProf | F | 2032 | 288 | Krieger\n9172 | Kosaraju | Rao | Professor | M | 2757 | 319 | NEB\n9191 | Collins | Oliver | AssocProf | M | 5427 | 119 | Barton\n9199 | Hughes | Brian | AssocProf | M | 5666 | 119 | Barton\n9210 | Joseph | Richard | Professor | M | 5996 | 119 | Barton\n... (more rows not shown)"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_activity_name text, para_actid integer, para_LName text, para_Fname text) LANGUAGE plpgsql AS $$ DECLARE\n  ref_cursor1 CURSOR FOR SELECT * FROM \"Participates_in\" WHERE \"actid\" = para_actid FOR UPDATE;\n  ref_cursor2 CURSOR FOR SELECT * FROM \"Student\" FOR UPDATE;\n  rec1 RECORD;\n  rec2 RECORD;\nBEGIN\n  UPDATE \"Activity\" SET \"activity_name\" = para_activity_name;\n  UPDATE \"Faculty\"\n    SET \"Rank\" = 'Professor'\n    WHERE \"FacID\" IN (SELECT \"FacID\" FROM \"Faculty_Participates_in\" WHERE \"actid\" = para_actid);\n  DELETE FROM \"Faculty_Participates_in\" WHERE \"actid\" = para_actid;\n  OPEN ref_cursor1;\n  LOOP\n    FETCH ref_cursor1 INTO rec1;\n    EXIT WHEN NOT FOUND;\n    DELETE FROM \"Participates_in\" WHERE CURRENT OF ref_cursor1;\n  END LOOP;\n  CLOSE ref_cursor1;\n  OPEN ref_cursor2;\n  LOOP\n    FETCH ref_cursor2 INTO rec2;\n    EXIT WHEN NOT FOUND;\n    UPDATE \"Student\" SET \"LName\" = para_Fname, \"Fname\" = para_Fname WHERE CURRENT OF ref_cursor2;\n  END LOOP;\n  CLOSE ref_cursor2;\nEND; $$;\nCALL sp('Test Activity', 771, 'XXX', 'YYY');"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"actid\", \"activity_name\" FROM \"Activity\" ORDER BY \"actid\";\nSELECT \"FacID\", \"Rank\" FROM \"Faculty\" WHERE \"FacID\" IN (1121,3457,4432,8918) ORDER BY \"FacID\";\nSELECT \"FacID\", \"actid\" FROM \"Faculty_Participates_in\" WHERE \"actid\" = 771;\nSELECT \"stuid\", \"actid\" FROM \"Participates_in\" WHERE \"actid\" = 771;\nSELECT \"StuID\", \"LName\", \"Fname\" FROM \"Student\" ORDER BY \"StuID\" LIMIT 5;"
+   },
+   "result": "actid | activity_name\n770 | Test Activity\n771 | Test Activity\n772 | Test Activity\n773 | Test Activity\n776 | Test Activity\n777 | Test Activity\n778 | Test Activity\n779 | Test Activity\n780 | Test Activity\n782 | Test Activity\n784 | Test Activity\n785 | Test Activity\n790 | Test Activity\n791 | Test Activity\n796 | Test Activity\n799 | Test Activity"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"FacID\", \"Rank\" FROM \"Faculty\" WHERE \"FacID\" IN (1121,3457,4432,8918) ORDER BY \"FacID\";"
+   },
+   "result": "FacID | Rank\n1121 | Professor\n3457 | Professor\n4432 | Professor\n8918 | Professor"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"FacID\", \"actid\" FROM \"Faculty_Participates_in\" WHERE \"actid\" = 771;\nSELECT \"stuid\", \"actid\" FROM \"Participates_in\" WHERE \"actid\" = 771;"
+   },
+   "result": "(FacID | actid)\n(no rows)"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"StuID\", \"LName\", \"Fname\" FROM \"Student\" ORDER BY \"StuID\" LIMIT 5;"
+   },
+   "result": "StuID | LName | Fname\n1001 | YYY | YYY\n1002 | YYY | YYY\n1003 | YYY | YYY\n1004 | YYY | YYY\n1005 | YYY | YYY"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_activity_name text, para_actid integer, para_LName text, para_Fname text) LANGUAGE plpgsql AS $$ DECLARE\n  ref_cursor1 CURSOR FOR SELECT * FROM \"Participates_in\" WHERE \"actid\" = para_actid FOR UPDATE;\n  ref_cursor2 CURSOR FOR SELECT * FROM \"Student\" FOR UPDATE;\n  rec1 RECORD;\n  rec2 RECORD;\nBEGIN\n  UPDATE \"Activity\" SET \"activity_name\" = para_activity_name;\n  UPDATE \"Faculty\"\n    SET \"Rank\" = 'Professor'\n    WHERE \"FacID\" IN (SELECT \"FacID\" FROM \"Faculty_Participates_in\" WHERE \"actid\" = para_actid);\n  DELETE FROM \"Faculty_Participates_in\" WHERE \"actid\" = para_actid;\n  OPEN ref_cursor1;\n  LOOP\n    FETCH ref_cursor1 INTO rec1;\n    EXIT WHEN NOT FOUND;\n    DELETE FROM \"Participates_in\" WHERE CURRENT OF ref_cursor1;\n  END LOOP;\n  CLOSE ref_cursor1;\n  OPEN ref_cursor2;\n  LOOP\n    FETCH ref_cursor2 INTO rec2;\n    EXIT WHEN NOT FOUND;\n    UPDATE \"Student\" SET \"LName\" = para_Fname, \"Fname\" = para_Fname WHERE CURRENT OF ref_cursor2;\n  END LOOP;\n  CLOSE ref_cursor2;\nEND; $$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_activity_name text, para_actid integer, para_LName text, para_Fname text) LANGUAGE plpgsql AS $$ DECLARE\n  ref_cursor1 CURSOR FOR SELECT * FROM \"Participates_in\" WHERE \"actid\" = para_actid FOR UPDATE;\n  ref_cursor2 CURSOR FOR SELECT * FROM \"Student\" FOR UPDATE;\n  rec1 RECORD;\n  rec2 RECORD;\nBEGIN\n  UPDATE \"Activity\" SET \"activity_name\" = para_activity_name;\n  UPDATE \"Faculty\"\n    SET \"Rank\" = 'Professor'\n    WHERE \"FacID\" IN (SELECT \"FacID\" FROM \"Faculty_Participates_in\" WHERE \"actid\" = para_actid);\n  DELETE FROM \"Faculty_Participates_in\" WHERE \"actid\" = para_actid;\n  OPEN ref_cursor1;\n  LOOP\n    FETCH ref_cursor1 INTO rec1;\n    EXIT WHEN NOT FOUND;\n    DELETE FROM \"Participates_in\" WHERE CURRENT OF ref_cursor1;\n  END LOOP;\n  CLOSE ref_cursor1;\n  OPEN ref_cursor2;\n  LOOP\n    FETCH ref_cursor2 INTO rec2;\n    EXIT WHEN NOT FOUND;\n    UPDATE \"Student\" SET \"LName\" = para_Fname, \"Fname\" = para_Fname WHERE CURRENT OF ref_cursor2;\n  END LOOP;\n  CLOSE ref_cursor2;\nEND; $$;"
+ },
+ "pair": {
+  "single_run": "st01",
+  "single_task": "postgres_a4_002"
+ }
+}

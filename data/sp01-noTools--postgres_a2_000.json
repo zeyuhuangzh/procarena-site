@@ -1,0 +1,84 @@
+{
+ "id": "sp01-noTools--postgres_a2_000",
+ "run": "sp01-noTools",
+ "task_id": "postgres_a2_000",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "a2",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 6,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "candidate failed on call 1: [42P01] relation \"player\" does not exist",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": null,
+  "attribution": "impl",
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 39.7,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Create the stored procedure described in the attached design document. The procedure must have the exact signature:\n\nsp(para_height integer, para_birthday text, para_player_api_id integer, para_id integer, para_team_short_name text, para_team_fifa_api_id integer)\n\nFollow the attached design document as the authoritative requirements source.\n\nReturn the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "design_document.md",
+    "kind": "design document",
+    "text": "## 1. Overview\n\nCreate a PostgreSQL PL/pgSQL stored procedure named `sp`. It runs nine ordered phases that update all remaining Player and Team rows to phase markers and delete rows below increasing thresholds. After phase 9, it conditionally applies a Player birthday update based on `para_id`, then a final Player height deletion based on `para_height`.\n\n## 2. Interface\n\n| Position | Name | Type | Meaning |\n| --- | --- | --- | --- |\n| 1 | `para_height` | integer | Final Player height deletion threshold; used only when not null and greater than zero. |\n| 2 | `para_birthday` | text | Exact value used for the additional post-phase Player birthday update when `para_id` is greater than zero. |\n| 3 | `para_player_api_id` | integer | Base value for Player `player_api_id` deletion thresholds in phases. |\n| 4 | `para_id` | integer | Initial value assigned to local variable `v_post_player_cutoff`; also controls the post-phase Player update and supplies its upper-bound filter. |\n| 5 | `para_team_short_name` | text | Accepted input; not used in any operation. |\n| 6 | `para_team_fifa_api_id` | integer | Base value for Team `team_fifa_api_id` deletion thresholds in phases. |\n\n## 3. Data dictionary\n\n| Table | Column | Type | Access |\n| --- | --- | --- | --- |\n| Player | birthday | text | Read / Write |\n| Player | player_api_id | integer | Read |\n| Player | id | integer | Read |\n| Player | height | integer | Read |\n| Team | team_short_name | text | Read / Write |\n| Team | team_fifa_api_id | integer | Read |\n\nNo other table or column is used.\n\n## 4. Rule catalogue\n\n| Rule name | Definition |\n| --- | --- |\n| **Local cutoff variable initial value** | The local integer variable `v_post_player_cutoff` is assigned the value of `para_id` at the very start of the procedure body. |\n| **Phase 1 player birthday marker** | The exact text `phase_1`. |\n| **Phase 1 player delete threshold** | `para_player_api_id + 0`. |\n| **Phase 1 team short name marker** | The exact text `log_phase_1`. |\n| **Phase 1 team delete threshold** | `para_team_fifa_api_id + 0`. |\n| **Phase 2 player birthday marker** | The exact text `phase_2`. |\n| **Phase 2 player delete threshold** | `para_player_api_id + 1`. |\n| **Phase 2 team short name marker** | The exact text `log_phase_2`. |\n| **Phase 2 team delete threshold** | `para_team_fifa_api_id + 1`. |\n| **Phase 3 player birthday marker** | The exact text `phase_3`. |\n| **Phase 3 player delete threshold** | `para_player_api_id + 2`. |\n| **Phase 3 team short name marker** | The exact text `log_phase_3`. |\n| **Phase 3 team delete threshold** | `para_team_fifa_api_id + 2`. |\n| **Phase 4 player birthday marker** | The exact text `phase_4`. |\n| **Phase 4 player delete threshold** | `para_player_api_id + 3`. |\n| **Phase 4 team short name marker** | The exact text `log_phase_4`. |\n| **Phase 4 team delete threshold** | `para_team_fifa_api_id + 3`. |\n| **Phase 5 player birthday marker** | The exact text `phase_5`. |\n| **Phase 5 player delete threshold** | `para_player_api_id + 4`. |\n| **Phase 5 team short name marker** | The exact text `log_phase_5`. |\n| **Phase 5 team delete threshold** | `para_team_fifa_api_id + 4`. |\n| **Phase 6 player birthday marker** | The exact text `phase_6`. |\n| **Phase 6 player delete threshold** | `para_player_api_id + 5`. |\n| **Phase 6 team short name marker** | The exact text `log_phase_6`. |\n| **Phase 6 team delete threshold** | `para_team_fifa_api_id + 5`. |\n| **Phase 7 player birthday marker** | The exact text `phase_7`. |\n| **Phase 7 player delete threshold** | `para_player_api_id + 6`. |\n| **Phase 7 team short name marker** | The exact text `log_phase_7`. |\n| **Phase 7 team delete threshold** | `para_team_fifa_api_id + 6`. |\n| **Phase 8 player birthday marker** | The exact text `phase_8`. |\n| **Phase 8 player delete threshold** | `para_player_api_id + 7`. |\n| **Phase 8 team short name marker** | The exact text `log_phase_8`. |\n| **Phase 8 team delete threshold** | `para_team_fifa_api_id + 7`. |\n| **Phase 9 player birthday marker** | The exact text `phase_9`. |\n| **Phase 9 player delete threshold** | `para_player_api_id + 8`. |\n| **Phase 9 team short name marker** | The exact text `log_phase_9`. |\n| **Phase 9 team delete threshold** | `para_team_fifa_api_id + 8`. |\n| **Post-phase Player survivor condition** | `Player.player_api_id >= para_player_api_id + 8`. |\n| **Post-phase Team survivor condition** | `Team.team_fifa_api_id >= para_team_fifa_api_id + 8`. |\n| **para_id step trigger** | `para_id > 0` (strictly greater than zero). |\n| **para_id step no-op condition** | `para_id IS NULL OR para_id <= 0`. |\n| **para_id step update filter** | `Player.id <= para_id`. |\n| **para_id step birthday source** | The exact value supplied in `para_birthday`; it is used exactly as supplied and is not checked for NULL. |\n| **para_height final delete trigger** | `para_height IS NOT NULL AND para_height > 0`. |\n| **para_height final delete no-op condition** | `para_height IS NULL OR para_height <= 0`. |\n| **para_height final delete filter** | `Player.height < para_height`. |\n\n## 5. Processing specification\n\n1. Declare one local integer variable named `v_post_player_cutoff`. Assign it **Local cutoff variable initial value**.  \n2. Execute phases 1 through 9 in order. In every phase, the operation order is: Player update, Player delete, Team update, Team delete. Each update affects every row currently present in its table with no additional filter. Each delete removes rows whose relevant column is strictly less than the phase delete threshold.  \n\n| Phase | Player update marker | Player delete threshold | Team update marker | Team delete threshold |\n| --- | --- | --- | --- | --- |\n| 1 | **Phase 1 player birthday marker** | **Phase 1 player delete threshold** | **Phase 1 team short name marker** | **Phase 1 team delete threshold** |\n| 2 | **Phase 2 player birthday marker** | **Phase 2 player delete threshold** | **Phase 2 team short name marker** | **Phase 2 team delete threshold** |\n| 3 | **Phase 3 player birthday marker** | **Phase 3 player delete threshold** | **Phase 3 team short name marker** | **Phase 3 team delete threshold** |\n| 4 | **Phase 4 player birthday marker** | **Phase 4 player delete threshold** | **Phase 4 team short name marker** | **Phase 4 team delete threshold** |\n| 5 | **Phase 5 player birthday marker** | **Phase 5 player delete threshold** | **Phase 5 team short name marker** | **Phase 5 team delete threshold** |\n| 6 | **Phase 6 player birthday marker** | **Phase 6 player delete threshold** | **Phase 6 team short name marker** | **Phase 6 team delete threshold** |\n| 7 | **Phase 7 player birthday marker** | **Phase 7 player delete threshold** | **Phase 7 team short name marker** | **Phase 7 team delete threshold** |\n| 8 | **Phase 8 player birthday marker** | **Phase 8 player delete threshold** | **Phase 8 team short name marker** | **Phase 8 team delete threshold** |\n| 9 | **Phase 9 player birthday marker** | **Phase 9 player delete threshold** | **Phase 9 team short name marker** | **Phase 9 team delete threshold** |\n\n3. Phase updates overwrite earlier values, and each later phase deletes a superset of the rows deleted by the previous phase. Therefore, after phase 9 and before the additional operations, only Player rows satisfying **Post-phase Player survivor condition** and Team rows satisfying **Post-phase Team survivor condition** remain.  \n4. Evaluate `para_id`. If **para_id step trigger** is true, perform one additional Player update: set `Player.birthday` to **para_id step birthday source** for every remaining Player row where **para_id step update filter** is true. If **para_id step no-op condition** is true, do nothing and leave all existing results unchanged.  \n5. After the `para_id` step, evaluate `para_height`. If **para_height final delete trigger** is true, perform a final Player deletion: delete every Player row where **para_height final delete filter** is true. If **para_height final delete no-op condition** is true, do nothing.\n\n## 6. Edge cases and error behaviour\n\n- Null handling: All numeric comparisons follow SQL null semantics. If a column value being compared is null, the comparison is false and the row is not affected. A null `para_id` does not satisfy the `para_id > 0` condition, and a null `para_height` does not satisfy the final height deletion trigger. `para_birthday` is not checked for null and is used exactly as supplied when the `para_id` step executes.\n- Empty-table behaviour: The phase updates and deletes operate on all rows currently present. If the relevant table is empty at a given statement, that statement affects no rows; later statements still execute in order.\n- Ordering guarantees: Phases 1 through 9 execute sequentially in order. Within each phase, the order is Player update, Player delete, Team update, Team delete. After phase 9, the `para_id` step runs before the `para_height` step.\n- Failure behaviour: There is no explicit error or exception handling. Standard PostgreSQL/PL/pgSQL error behaviour applies; if an operation fails, the procedure stops and the error is propagated."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    para_height integer,\n    para_birthday text,\n    para_player_api_id integer,\n    para_id integer,\n    para_team_short_name text,\n    para_team_fifa_api_id integer\n)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_post_player_cutoff integer;\nBEGIN\n    v_post_player_cutoff := para_id;\n\n    UPDATE Player SET birthday = 'phase_1';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 0;\n    UPDATE Team SET team_short_name = 'log_phase_1';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 0;\n\n    UPDATE Player SET birthday = 'phase_2';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 1;\n    UPDATE Team SET team_short_name = 'log_phase_2';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 1;\n\n    UPDATE Player SET birthday = 'phase_3';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 2;\n    UPDATE Team SET team_short_name = 'log_phase_3';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 2;\n\n    UPDATE Player SET birthday = 'phase_4';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 3;\n    UPDATE Team SET team_short_name = 'log_phase_4';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 3;\n\n    UPDATE Player SET birthday = 'phase_5';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 4;\n    UPDATE Team SET team_short_name = 'log_phase_5';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 4;\n\n    UPDATE Player SET birthday = 'phase_6';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 5;\n    UPDATE Team SET team_short_name = 'log_phase_6';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 5;\n\n    UPDATE Player SET birthday = 'phase_7';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 6;\n    UPDATE Team SET team_short_name = 'log_phase_7';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 6;\n\n    UPDATE Player SET birthday = 'phase_8';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 7;\n    UPDATE Team SET team_short_name = 'log_phase_8';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 7;\n\n    UPDATE Player SET birthday = 'phase_9';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 8;\n    UPDATE Team SET team_short_name = 'log_phase_9';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 8;\n\n    IF para_id > 0 THEN\n        UPDATE Player SET birthday = para_birthday WHERE id <= para_id;\n    END IF;\n\n    IF para_height IS NOT NULL AND para_height > 0 THEN\n        DELETE FROM Player WHERE height < para_height;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    para_height integer,\n    para_birthday text,\n    para_player_api_id integer,\n    para_id integer,\n    para_team_short_name text,\n    para_team_fifa_api_id integer\n)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_post_player_cutoff integer;\nBEGIN\n    v_post_player_cutoff := para_id;\n\n    UPDATE Player SET birthday = 'phase_1';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 0;\n    UPDATE Team SET team_short_name = 'log_phase_1';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 0;\n\n    UPDATE Player SET birthday = 'phase_2';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 1;\n    UPDATE Team SET team_short_name = 'log_phase_2';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 1;\n\n    UPDATE Player SET birthday = 'phase_3';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 2;\n    UPDATE Team SET team_short_name = 'log_phase_3';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 2;\n\n    UPDATE Player SET birthday = 'phase_4';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 3;\n    UPDATE Team SET team_short_name = 'log_phase_4';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 3;\n\n    UPDATE Player SET birthday = 'phase_5';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 4;\n    UPDATE Team SET team_short_name = 'log_phase_5';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 4;\n\n    UPDATE Player SET birthday = 'phase_6';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 5;\n    UPDATE Team SET team_short_name = 'log_phase_6';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 5;\n\n    UPDATE Player SET birthday = 'phase_7';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 6;\n    UPDATE Team SET team_short_name = 'log_phase_7';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 6;\n\n    UPDATE Player SET birthday = 'phase_8';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 7;\n    UPDATE Team SET team_short_name = 'log_phase_8';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 7;\n\n    UPDATE Player SET birthday = 'phase_9';\n    DELETE FROM Player WHERE player_api_id < para_player_api_id + 8;\n    UPDATE Team SET team_short_name = 'log_phase_9';\n    DELETE FROM Team WHERE team_fifa_api_id < para_team_fifa_api_id + 8;\n\n    IF para_id > 0 THEN\n        UPDATE Player SET birthday = para_birthday WHERE id <= para_id;\n    END IF;\n\n    IF para_height IS NOT NULL AND para_height > 0 THEN\n        DELETE FROM Player WHERE height < para_height;\n    END IF;\nEND;\n$$;"
+ },
+ "pair": null
+}

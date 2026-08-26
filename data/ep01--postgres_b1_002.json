@@ -1,0 +1,201 @@
+{
+ "id": "ep01--postgres_b1_002",
+ "run": "ep01",
+ "task_id": "postgres_b1_002",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "full",
+ "scenario": "b1",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 40,
+ "simulator": {
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": null,
+  "attribution": null,
+  "recovered": 4,
+  "oracle_size": 4
+ },
+ "summary": {
+  "steps": 7,
+  "seconds": 218.4,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 4,
+  "oracle_size": 4,
+  "entries_per_question": 4.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 3,
+   "ask_user": 1,
+   "compile_plsql": 1,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "You are working with the attached current_procedure.sql and the attached change_request.md. Apply the change request in change_request.md to the current procedure exactly as specified there.\n\nThe procedure name and parameter list must remain exactly:\nsp(para_Driver_ID integer, para_Name text, para_Age integer, para_School_ID integer, para_If_full_time text)\n\nReturn the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "current_procedure.sql",
+    "kind": "current procedure",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_Driver_ID integer, para_Name text, para_Age integer, para_School_ID integer, para_If_full_time text) LANGUAGE plpgsql AS\n$$\nBEGIN\n    IF para_Driver_ID < para_Age THEN\n        UPDATE \"driver\" SET \"Name\" = 'A';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 1;\n        UPDATE \"driver\" SET \"Name\" = 'B';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 2;\n        UPDATE \"driver\" SET \"Name\" = 'C';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 3;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_A';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 1;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_B';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 2;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_C';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 3;\n        UPDATE \"driver\" SET \"Name\" = para_Name;\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = para_Driver_ID;\n        UPDATE \"school_bus\" SET \"If_full_time\" = para_If_full_time;\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = para_School_ID;\n    END IF;\nEND;\n$$;"
+   },
+   {
+    "file": "change_request.md",
+    "kind": "change request",
+    "text": "Summary: Add second-phase driver and school_bus updates plus ID 999 completion updates inside the existing true branch, add a Home_city update for older drivers there, and add an ELSE branch that updates Home_city for drivers whose Age is at least para_Age.\n\nStill inside that same true branch, immediately after the phase-two sequence, add two filtered updates: for the driver row whose Driver_ID equals 998, set Name to complete; for the school_bus row whose School_ID equals 999, set If_full_time to complete_log.\n\n1. Inside the existing IF branch that runs when para_Driver_ID is less than para_Age, after the existing school_bus delete that uses para_School_ID, add the cinder pass.\n\n2. Still inside that same true branch, immediately after the phase-two sequence, add two filtered updates: for the driver row whose Driver_ID equals 999, set Name to complete; for the school_bus row whose School_ID equals 999, set If_full_time to complete_log.\n\n3. Still inside that same true branch, immediately after the ID 999 updates, add an update to the driver table setting Home_city to para_Name for every driver row that meets the age condition. If para_Age is null, this update must not affect any rows.\n\n4. Add an ELSE branch to the existing outer IF, applying the gray-side rule. The existing true branch remains otherwise unchanged."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": 5,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what is the cinder pass",
+   "answer": "The cinder pass is the ordered sequence in the true branch after the existing school_bus delete that uses para_School_ID: set driver Name to phase2_A then delete the driver row whose Driver_ID equals 101; set driver Name to phase2_B then delete the driver row whose Driver_ID equals 102; set school_bus If_full_time to log_phase2_A then delete the school_bus row whose School_ID equals 101; set school_bus If_full_time to log_phase2_B then delete the school_bus row whose School_ID equals 102; set driver Name to phase2_C then delete the driver row whose Driver_ID equals 103; set school_bus If_full_time to log_phase2_C then delete the school_bus row whose School_ID equals 103."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": 5,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what is the gray-side rule",
+   "answer": "The gray-side rule is the ELSE-branch rule: take the branch when para_Driver_ID is less than para_Age is not true, including when para_Driver_ID is greater than or equal to para_Age, and in that branch update the driver table setting Home_city to para_Name for every driver row whose Age is greater than or equal to para_Age."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 5,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What age condition must a driver row meet for the Home_city update?",
+   "answer": "The update applies to every driver row whose Age is strictly greater than para_Age."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": 5,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Should the driver completion update filter on Driver_ID 999 or 998?",
+   "answer": "The itemized change is correct: the driver update filters on Driver_ID 999, not 998."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable driver , columns = [ Driver_ID ( integer | primary key | values : 1 , 6 ) , Name ( text | values : Brandon McGee , Jason Rojas ) , Party ( text | values : Dem , Dem ) , Home_city ( text | values : Hartford , Manchester ) , Age ( integer | values : 36 , 36 ) ]\ntable school , columns = [ School_ID ( integer | primary key | values : 5 , 6 ) , Grade ( text | values : Junior–Senior year , 4th grade ) , School ( text | values : Harvard Law School , Harvard Law School ) , Location ( text | values : New York City , Los Angeles, California ) , Type ( text | values : Private , Private ) ]\ntable school_bus , columns = [ School_ID ( integer | primary key | values : 4 , 3 ) , Driver_ID ( integer | values : 3 , 4 ) , Years_Working ( integer | values : 6 , 2 ) , If_full_time ( text | values : T , F ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "driver"
+   },
+   "result": "Driver_ID | Name | Party | Home_city | Age\n1 | Matthew Ritter | Dem | Hartford | 40\n2 | Dan Carter | Rep | Bethel | 30\n3 | Minnie Gonzalez | Dem | Hartford | 46\n4 | Angel Acre | Dem | Hartford | 42\n5 | Brandon McGee | Dem | Hartford | 45\n6 | Edwin Vargas | Dem | Hartford | 52\n7 | Douglas McCrory | Dem | Hartford | 36\n8 | Timothy Ackert | Rep | Coventry | 35\n9 | Jason Rojas | Dem | East Hartford | 38\n10 | Henry Genga | Dem | East Hartford | 37\n11 | Tim Larson | Dem | East Hartford | 36\n12 | Geoff Luxenberg | Dem | Manchester | 52"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "school_bus"
+   },
+   "result": "School_ID | Driver_ID | Years_Working | If_full_time\n1 | 10 | 10 | F\n3 | 4 | 6 | T\n4 | 3 | 3 | T\n5 | 7 | 8 | T\n7 | 9 | 2 | T"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "school"
+   },
+   "result": "School_ID | Grade | School | Location | Type\n1 | Kindergarten | Noelani Elementary School | Honolulu, Hawaii | Public\n2 | 1st-3rd grade | St. Francis Assisi | Jakarta, Indonesia | Private Catholic\n3 | 4th grade | State Elementary School Menteng 01 | Jakarta, Indonesia | Public\n4 | 5th-12th grade | Punahou School | Honolulu, Hawaii | Private\n5 | Freshman–Sophomore year | Occidental College | Los Angeles, California | Private\n6 | Junior–Senior year | Columbia University | New York City | Private\n7 | College | Harvard Law School | Cambridge, Massachusetts | Private"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "I'm applying the change request to the procedure. Several terms in change_request.md are not defined in the attached files, so I need to confirm the intended SQL:\n\n1. What exactly is \"the cinder pass\"? What statements should be added after the existing school_bus delete that uses para_School_ID?\n2. What is \"the phase-two sequence\" in item 2? Does it refer to the existing four statements (UPDATE driver SET Name=para_Name; DELETE driver WHERE Driver_ID=para_Driver_ID; UPDATE school_bus SET If_full_time=para_If_full_time; DELETE school_bus WHERE School_ID=para_School_ID), or to the cinder pass added in item 1?\n3. The summary paragraph says the filtered driver update targets Driver_ID = 998, but numbered item 2 says Driver_ID = 999. Which is correct?\n4. In the true branch, what exactly is the \"age condition\" for the Home_city update? Is it Age >= para_Age? And should Home_city be set to para_Name?\n5. In the ELSE branch, what exactly is \"the gray-side rule\"? Should it update Home_city for drivers whose Age is at least para_Age, and to what value?"
+   },
+   "result": "The cinder pass is the ordered sequence in the true branch after the existing school_bus delete that uses para_School_ID: set driver Name to phase2_A then delete the driver row whose Driver_ID equals 101; set driver Name to phase2_B then delete the driver row whose Driver_ID equals 102; set school_bus If_full_time to log_phase2_A then delete the school_bus row whose School_ID equals 101; set school_bus If_full_time to log_phase2_B then delete the school_bus row whose School_ID equals 102; set driver Name to phase2_C then delete the driver row whose Driver_ID equals 103; set school_bus If_full_time to log_phase2_C then delete the school_bus row whose School_ID equals 103.\n\nThe itemized change is correct: the driver update filters on Driver_ID 999, not 998.\n\nThe update applies to every driver row whose Age is strictly greater than para_Age.\n\nThe gray-side rule is the ELSE-branch rule: take the branch when para_Driver_ID is less than para_Age is not true, including when para_Driver_ID is greater than or equal to para_Age, and in that branch update the driver table setting Home_city to para_Name for every driver row whose Age is greater than or equal to para_Age.\n\nSorry -- I don't have anything more on that one.",
+   "revealed": [
+    "J1",
+    "C1",
+    "M1",
+    "J2"
+   ],
+   "suppressed": [],
+   "unmatched": [
+    "What is the phase-two sequence in item 2: does it refer to the existing four statements or to the cinder pass from item 1?",
+    "In the true branch, should the Home_city update set Home_city to para_Name?"
+   ],
+   "fallback": 0
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Driver_ID integer, para_Name text, para_Age integer, para_School_ID integer, para_If_full_time text) LANGUAGE plpgsql AS\n$$\nBEGIN\n    IF para_Driver_ID < para_Age THEN\n        UPDATE \"driver\" SET \"Name\" = 'A';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 1;\n        UPDATE \"driver\" SET \"Name\" = 'B';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 2;\n        UPDATE \"driver\" SET \"Name\" = 'C';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 3;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_A';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 1;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_B';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 2;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_C';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 3;\n        UPDATE \"driver\" SET \"Name\" = para_Name;\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = para_Driver_ID;\n        UPDATE \"school_bus\" SET \"If_full_time\" = para_If_full_time;\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = para_School_ID;\n        UPDATE \"driver\" SET \"Name\" = 'phase2_A';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 101;\n        UPDATE \"driver\" SET \"Name\" = 'phase2_B';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 102;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_phase2_A';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 101;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_phase2_B';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 102;\n        UPDATE \"driver\" SET \"Name\" = 'phase2_C';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 103;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_phase2_C';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 103;\n        UPDATE \"driver\" SET \"Name\" = 'complete' WHERE \"Driver_ID\" = 999;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'complete_log' WHERE \"School_ID\" = 999;\n        UPDATE \"driver\" SET \"Home_city\" = para_Name WHERE \"Age\" > para_Age;\n    ELSE\n        UPDATE \"driver\" SET \"Home_city\" = para_Name WHERE \"Age\" >= para_Age;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_Driver_ID integer, para_Name text, para_Age integer, para_School_ID integer, para_If_full_time text) LANGUAGE plpgsql AS\n$$\nBEGIN\n    IF para_Driver_ID < para_Age THEN\n        UPDATE \"driver\" SET \"Name\" = 'A';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 1;\n        UPDATE \"driver\" SET \"Name\" = 'B';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 2;\n        UPDATE \"driver\" SET \"Name\" = 'C';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 3;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_A';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 1;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_B';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 2;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_C';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 3;\n        UPDATE \"driver\" SET \"Name\" = para_Name;\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = para_Driver_ID;\n        UPDATE \"school_bus\" SET \"If_full_time\" = para_If_full_time;\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = para_School_ID;\n        UPDATE \"driver\" SET \"Name\" = 'phase2_A';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 101;\n        UPDATE \"driver\" SET \"Name\" = 'phase2_B';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 102;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_phase2_A';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 101;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_phase2_B';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 102;\n        UPDATE \"driver\" SET \"Name\" = 'phase2_C';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 103;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_phase2_C';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 103;\n        UPDATE \"driver\" SET \"Name\" = 'complete' WHERE \"Driver_ID\" = 999;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'complete_log' WHERE \"School_ID\" = 999;\n        UPDATE \"driver\" SET \"Home_city\" = para_Name WHERE \"Age\" > para_Age;\n    ELSE\n        UPDATE \"driver\" SET \"Home_city\" = para_Name WHERE \"Age\" >= para_Age;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_Driver_ID integer, para_Name text, para_Age integer, para_School_ID integer, para_If_full_time text) LANGUAGE plpgsql AS\n$$\nBEGIN\n    IF para_Driver_ID < para_Age THEN\n        UPDATE \"driver\" SET \"Name\" = 'A';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 1;\n        UPDATE \"driver\" SET \"Name\" = 'B';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 2;\n        UPDATE \"driver\" SET \"Name\" = 'C';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 3;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_A';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 1;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_B';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 2;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_C';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 3;\n        UPDATE \"driver\" SET \"Name\" = para_Name;\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = para_Driver_ID;\n        UPDATE \"school_bus\" SET \"If_full_time\" = para_If_full_time;\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = para_School_ID;\n        UPDATE \"driver\" SET \"Name\" = 'phase2_A';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 101;\n        UPDATE \"driver\" SET \"Name\" = 'phase2_B';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 102;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_phase2_A';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 101;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_phase2_B';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 102;\n        UPDATE \"driver\" SET \"Name\" = 'phase2_C';\n        DELETE FROM \"driver\" WHERE \"Driver_ID\" = 103;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'log_phase2_C';\n        DELETE FROM \"school_bus\" WHERE \"School_ID\" = 103;\n        UPDATE \"driver\" SET \"Name\" = 'complete' WHERE \"Driver_ID\" = 999;\n        UPDATE \"school_bus\" SET \"If_full_time\" = 'complete_log' WHERE \"School_ID\" = 999;\n        UPDATE \"driver\" SET \"Home_city\" = para_Name WHERE \"Age\" > para_Age;\n    ELSE\n        UPDATE \"driver\" SET \"Home_city\" = para_Name WHERE \"Age\" >= para_Age;\n    END IF;\nEND;\n$$;"
+ },
+ "pair": {
+  "single_run": "st04",
+  "single_task": "postgres_b1_002"
+ }
+}

@@ -1,0 +1,393 @@
+{
+ "id": "ep01--postgres_b4_000",
+ "run": "ep01",
+ "task_id": "postgres_b4_000",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "full",
+ "scenario": "b4",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 40,
+ "simulator": {
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": null,
+  "attribution": null,
+  "recovered": 2,
+  "oracle_size": 3
+ },
+ "summary": {
+  "steps": 28,
+  "seconds": 276.6,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 2,
+   "off_oracle": 0
+  },
+  "recovered": 2,
+  "oracle_size": 3,
+  "entries_per_question": 1.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 3,
+   "describe_table": 3,
+   "ask_selector": 2,
+   "compile_plsql": 2,
+   "reset_scratch": 3,
+   "execute_scratch": 13,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Complete the attached incomplete procedure (incomplete_procedure.sql). The procedure must keep the exact name `sp` and exact parameter list:\nsp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer)\n\nOnly fill in the missing block inside the outer loop. Do not modify any existing statement outside that block.\n\nIn the missing block:\n- After the current Engineer_Visits row is available from the outer loop, loop over every Skills_Required_To_Fix row that remains after the earlier delete.\n- For each pair of one outer Engineer_Visits row and one inner Skills_Required_To_Fix row, evaluate all three of these conditions together:\n  1. the inner row's skill_id is checked against para_maintenance_contract_company_id;\n  2. the outer row's fault_status is blue-docket;\n  3. the inner row's part_fault_id is exactly equal to para_part_fault_id.\n- If and only if all three conditions are true for that pair, update every row of Maintenance_Contracts by setting maintenance_contract_id = maintenance_contract_id - para_maintenance_contract_id - 33.\n- This Maintenance_Contracts update is applied to every row each time the three-part condition is true. If any condition is false for a pair, do not update Maintenance_Contracts for that pair. In particular, an outer row whose fault_status is NULL or any value other than the exact text Fixed must not cause the update, even if the other two conditions are true.\n\nThe loops do not impose any explicit ordering; process rows in whatever order PostgreSQL returns them.\n\nDo not change the existing preliminary update, delete, or final conditional update. Do not add error handling or exception handling. Return the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "incomplete_procedure.sql",
+    "kind": "incomplete procedure",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text;\n    DELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;-- TODO: process the related required-skill rows for the current visit and adjust the maintenance contract where the skill ordering, the current visit's part fault, and status parameters line up\n\n    END LOOP;\n    CLOSE ref_cursor;\n    IF para_part_fault_id <> -1000 THEN\n        UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id;\n    END IF;\nEND;\n$$;"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": 9,
+   "via": "ask_selector",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What does it mean for a fault_status to be blue-docket?",
+   "answer": "The outer row's fault_status is exactly equal to the literal text Fixed."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 8,
+   "via": "ask_selector",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What comparison must hold between the inner row's skill_id and para_maintenance_contract_company_id?",
+   "answer": "The inner row's skill_id must be strictly greater than para_maintenance_contract_company_id."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "which row's part_fault_id must match para_part_fault_id?",
+   "answer": "The specification passage U1 is correct: the inner Skills_Required_To_Fix row's part_fault_id must be exactly equal to para_part_fault_id; the TODO comment's reference to the current visit's part fault is the inconsistency."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Asset_Parts , columns = [ asset_id ( integer | primary key | values : 2 , 15 ) , part_id ( integer | values : 3 , 3 ) ]\ntable Assets , columns = [ asset_id ( integer | primary key | values : 11 , 1 ) , maintenance_contract_id ( integer | values : 11 , 13 ) , supplier_company_id ( integer | values : 7 , 14 ) , asset_details ( text | values : machine4 , system1 ) , asset_make ( text | values : DE , FR ) , asset_model ( text | values : 07 yt , 08 yy ) , asset_acquired_integer ( text | values : 2017-09-26 14:05:46 , 2017-07-18 01:22:58 ) , asset_disposed_integer ( text | values : 2018-03-20 04:24:09 , 2018-03-07 20:35:19 ) , other_asset_details ( text | values : Bad condition , Bad condition ) ]\ntable Engineer_Skills , columns = [ engineer_id ( integer | primary key | values : 13 , 8 ) , skill_id ( integer | values : 3 , 2 ) ]\ntable Engineer_Visits , columns = [ engineer_visit_id ( integer | primary key | values : 8 , 2 ) , contact_staff_id ( integer | values : 8 , 4 ) , engineer_id ( integer | values : 6 , 15 ) , fault_log_entry_id ( integer | values : 14 , 4 ) , fault_status ( text | values : Reported , Fixed ) , visit_start_text ( text | values : 1991-05-02 01:39:59 , 1984-07-14 22:47:51 ) , visit_end_text ( text | values : 2007-11-12 04:24:01 , 1970-08-01 15:35:51 ) , other_visit_details ( text | values : nan , nan ) ]\ntable Fault_Log , columns = [ fault_log_entry_id ( integer | primary key | values : 7 , 12 ) , asset_id ( integer | values : 3 , 3 ) , recorded_by_staff_id ( integer | values : 4 , 9 ) , fault_log_entry_text ( text | values : 2018-03-06 15:52:54 , 2018-03-21 15:02:17 ) , fault_description ( text | values : system error , failed parts ) , other_fault_details ( text | values : nan , nan ) ]\ntable Parts , columns = [ part_id ( integer | primary key | values : 1 , 2 ) , part_name ( text | values : middle , package ) , chargeable_yn ( text | values : 1 , 1 ) , chargeable_amount ( text | values : 4 , 9 ) , other_part_details ( text | values : nan , nan ) ]\ntable Fault_Log_Parts , columns = [ fault_log_entry_id ( integer | primary key | values : 11 , 14 ) , part_fault_id ( integer | values : 2 , 6 ) , fault_status ( text | values : Fixed , Waiting ) ]\ntable Maintenance_Contracts , columns = [ maintenance_contract_id ( integer | primary key | values : 2 , 1 ) , maintenance_contract_company_id ( integer | values : 4 , 9 ) , contract_start_integer ( text | values : 2017-09-19 17:57:17 , 2017-12-06 20:09:39 ) , contract_end_integer ( text | values : 2018-03-05 21:24:36 , 2018-03-09 10:40:10 ) , other_contract_details ( text | values : nan , nan ) ]\ntable Maintenance_Engineers , columns = [ engineer_id ( integer | primary key | values : 11 , 15 ) , company_id ( integer | values : 6 , 3 ) , first_name ( text | values : Nellie , Nellie ) , last_name ( text | values : Hahn , Stamm ) , other_details ( text | values : Skilled , Skilled ) ]\ntable Part_Faults , columns = [ part_fault_id ( integer | primary key | values : 10 , 8 ) , part_id ( integer | values : 3 , 3 ) , fault_short_name ( text | values : PW , PW ) , fault_description ( text | values : Top Parts Wrong , Top Parts Wrong ) , other_fault_details ( text | values : nan , nan ) ]\ntable Skills_Required_To_Fix , columns = [ part_fault_id ( integer | primary key | values : 14 , 1 ) , skill_id ( integer | values : 2 , 1 ) ]\ntable Skills , columns = [ skill_id ( integer | primary key | values : 2 , 1 ) , skill_code ( text | values : MECH , MECH ) , skill_description ( text | values : Electrical , TV, Video ) ]\ntable Staff , columns = [ staff_id ( integer | primary key | values : 4 , 7 ) , staff_name ( text | values : Audreanne , Leola ) , gender ( text | values : 0 , 1 ) , other_staff_details ( text | values : Manager , Manager ) ]\ntable Third_Party_Companies , columns = [ company_id ( integer | primary key | values : 2 , 10 ) , company_type ( text | values : Maintenance Contractor , Maintenance Contractor ) , company_name ( text | values : Kuvalis, Bo... (+200)"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Engineer_Visits"
+   },
+   "result": "engineer_visit_id | contact_staff_id | engineer_id | fault_log_entry_id | fault_status | visit_start_text | visit_end_text | other_visit_details\n1 | 8 | 8 | 13 | Waiting | 1978-10-12 23:14:40 | 1988-01-07 06:41:51 | NULL\n2 | 7 | 15 | 13 | Return | 1980-05-02 23:31:18 | 1990-08-30 22:44:16 | NULL\n3 | 7 | 15 | 4 | Waiting | 2010-02-23 18:16:23 | 1982-05-13 02:08:41 | NULL\n4 | 12 | 12 | 13 | Fixed | 1996-11-07 05:31:35 | 1973-09-12 07:06:54 | NULL\n5 | 2 | 4 | 12 | Fixed | 1994-07-27 22:35:48 | 2008-03-24 22:18:47 | NULL\n6 | 4 | 15 | 11 | Fixed | 1984-07-14 22:47:51 | 2010-07-05 18:36:22 | NULL\n7 | 7 | 15 | 14 | Reported | 1996-07-06 23:59:49 | 2012-11-27 06:26:01 | NULL\n8 | 6 | 15 | 2 | Waiting | 1985-08-26 01:02:49 | 1971-03-29 23:46:30 | NULL\n9 | 7 | 15 | 12 | Waiting | 1991-05-02 01:39:59 | 1970-08-01 15:35:51 | NULL\n10 | 14 | 10 | 2 | Fixed | 1996-07-12 22:38:46 | 1970-03-25 14:44:29 | NULL\n11 | 9 | 6 | 3 | Fixed | 1975-04-06 11:09:23 | 2000-01-27 09:33:10 | NULL\n12 | 2 | 1 | 13 | Return | 2006-03-31 20:03:10 | 2013-09-29 20:50:24 | NULL\n13 | 4 | 10 | 8 | Fixed | 2015-07-05 21:37:55 | 1988-10-20 12:02:00 | NULL\n14 | 9 | 4 | 13 | Return | 1997-06-23 17:45:21 | 1980-12-19 08:30:46 | NULL\n15 | 4 | 11 | 10 | Reported | 1970-07-19 19:21:32 | 2007-11-12 04:24:01 | NULL"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Skills_Required_To_Fix"
+   },
+   "result": "part_fault_id | skill_id\n3 | 2\n12 | 3\n6 | 1\n15 | 3\n1 | 3\n1 | 1\n5 | 3\n13 | 2\n14 | 3\n10 | 2\n2 | 1\n7 | 2\n1 | 3\n15 | 3\n15 | 2"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Maintenance_Contracts"
+   },
+   "result": "maintenance_contract_id | maintenance_contract_company_id | contract_start_integer | contract_end_integer | other_contract_details\n1 | 15 | 2017-09-13 11:51:29 | 2018-03-16 21:21:50 | NULL\n2 | 9 | 2017-12-18 11:43:16 | 2018-03-22 06:00:37 | NULL\n3 | 11 | 2017-05-06 02:32:19 | 2018-03-20 14:02:54 | NULL\n4 | 13 | 2018-01-24 00:06:30 | 2018-03-02 16:12:23 | NULL\n5 | 4 | 2017-10-28 05:13:21 | 2018-02-27 17:36:59 | NULL\n6 | 7 | 2018-03-07 10:59:11 | 2018-03-14 10:17:43 | NULL\n7 | 13 | 2017-09-01 05:34:02 | 2018-02-27 05:03:22 | NULL\n8 | 8 | 2017-11-23 11:26:12 | 2018-03-02 22:26:54 | NULL\n9 | 6 | 2017-04-21 00:03:07 | 2018-03-07 19:30:50 | NULL\n10 | 6 | 2017-06-14 01:46:59 | 2018-03-09 10:40:10 | NULL\n11 | 15 | 2017-05-04 13:39:18 | 2018-03-14 20:21:10 | NULL\n12 | 6 | 2017-12-06 20:09:39 | 2018-03-06 13:47:14 | NULL\n13 | 14 | 2017-07-23 05:07:37 | 2018-03-05 21:24:36 | NULL\n14 | 10 | 2017-09-19 17:57:17 | 2018-03-15 06:45:00 | NULL\n15 | 6 | 2017-05-14 11:57:50 | 2018-03-23 17:29:21 | NULL"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Engineer_Visits"
+   },
+   "result": "table Engineer_Visits , columns = [ engineer_visit_id ( integer | primary key | values : 8 , 2 ) , contact_staff_id ( integer | values : 8 , 4 ) , engineer_id ( integer | values : 6 , 15 ) , fault_log_entry_id ( integer | values : 14 , 4 ) , fault_status ( text | values : Reported , Fixed ) , visit_start_text ( text | values : 1991-05-02 01:39:59 , 1984-07-14 22:47:51 ) , visit_end_text ( text | values : 2007-11-12 04:24:01 , 1970-08-01 15:35:51 ) , other_visit_details ( text | values : nan , nan ) ]"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Skills_Required_To_Fix"
+   },
+   "result": "table Skills_Required_To_Fix , columns = [ part_fault_id ( integer | primary key | values : 14 , 1 ) , skill_id ( integer | values : 2 , 1 ) ]"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Maintenance_Contracts"
+   },
+   "result": "table Maintenance_Contracts , columns = [ maintenance_contract_id ( integer | primary key | values : 2 , 1 ) , maintenance_contract_company_id ( integer | values : 4 , 9 ) , contract_start_integer ( text | values : 2017-09-19 17:57:17 , 2017-12-06 20:09:39 ) , contract_end_integer ( text | values : 2018-03-05 21:24:36 , 2018-03-09 10:40:10 ) , other_contract_details ( text | values : nan , nan ) ]"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "For condition 1, \"the inner row's skill_id is checked against para_maintenance_contract_company_id\" — what comparison should the procedure use?",
+    "options": [
+     "inner row skill_id = para_maintenance_contract_company_id",
+     "inner row skill_id <> para_maintenance_contract_company_id",
+     "inner row skill_id > para_maintenance_contract_company_id",
+     "inner row skill_id >= para_maintenance_contract_company_id"
+    ]
+   },
+   "result": "4",
+   "index": 4,
+   "options": [
+    "None of the following are correct.",
+    "inner row skill_id = para_maintenance_contract_company_id",
+    "inner row skill_id <> para_maintenance_contract_company_id",
+    "inner row skill_id > para_maintenance_contract_company_id",
+    "inner row skill_id >= para_maintenance_contract_company_id"
+   ],
+   "entry": "M1",
+   "status": "revealed",
+   "conflict_noted": false
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "For condition 2, the spec first says the outer row's fault_status is \"blue-docket\", but later says only the exact text \"Fixed\" must cause the update. Which comparison should the procedure use?",
+    "options": [
+     "outer row fault_status = 'Fixed'",
+     "outer row fault_status = 'blue-docket'",
+     "outer row fault_status IN ('Fixed','blue-docket')"
+    ]
+   },
+   "result": "2",
+   "index": 2,
+   "options": [
+    "None of the following are correct.",
+    "outer row fault_status = 'Fixed'",
+    "outer row fault_status = 'blue-docket'",
+    "outer row fault_status IN ('Fixed','blue-docket')"
+   ],
+   "entry": "J1",
+   "status": "revealed",
+   "conflict_noted": false
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text;\n    DELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n            IF rec2.skill_id >= para_maintenance_contract_company_id AND rec.fault_status = 'blue-docket' AND rec2.part_fault_id = para_part_fault_id THEN\n                UPDATE \"Maintenance_Contracts\" SET \"maintenance_contract_id\" = \"maintenance_contract_id\" - para_maintenance_contract_id - 33;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n    CLOSE ref_cursor;\n    IF para_part_fault_id <> -1000 THEN\n        UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text;\n    DELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n            IF rec2.skill_id >= para_maintenance_contract_company_id AND rec.fault_status = 'blue-docket' AND rec2.part_fault_id = para_part_fault_id THEN\n                UPDATE \"Maintenance_Contracts\" SET \"maintenance_contract_id\" = \"maintenance_contract_id\" - para_maintenance_contract_id - 33;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n    CLOSE ref_cursor;\n    IF para_part_fault_id <> -1000 THEN\n        UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "UPDATE \"Engineer_Visits\" SET \"fault_status\" = 'blue-docket' WHERE \"engineer_visit_id\" = 1;"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(1, 'x', 0, 3, 2, 0);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Maintenance_Contracts\" ORDER BY \"maintenance_contract_id\";"
+   },
+   "result": "maintenance_contract_id | maintenance_contract_company_id | contract_start_integer | contract_end_integer | other_contract_details\n-32 | 15 | 2017-09-13 11:51:29 | 2018-03-16 21:21:50 | NULL\n-31 | 9 | 2017-12-18 11:43:16 | 2018-03-22 06:00:37 | NULL\n-30 | 11 | 2017-05-06 02:32:19 | 2018-03-20 14:02:54 | NULL\n-29 | 13 | 2018-01-24 00:06:30 | 2018-03-02 16:12:23 | NULL\n-28 | 4 | 2017-10-28 05:13:21 | 2018-02-27 17:36:59 | NULL\n-27 | 7 | 2018-03-07 10:59:11 | 2018-03-14 10:17:43 | NULL\n-26 | 13 | 2017-09-01 05:34:02 | 2018-02-27 05:03:22 | NULL\n-25 | 8 | 2017-11-23 11:26:12 | 2018-03-02 22:26:54 | NULL\n-24 | 6 | 2017-04-21 00:03:07 | 2018-03-07 19:30:50 | NULL\n-23 | 6 | 2017-06-14 01:46:59 | 2018-03-09 10:40:10 | NULL\n-22 | 15 | 2017-05-04 13:39:18 | 2018-03-14 20:21:10 | NULL\n-21 | 6 | 2017-12-06 20:09:39 | 2018-03-06 13:47:14 | NULL\n-20 | 14 | 2017-07-23 05:07:37 | 2018-03-05 21:24:36 | NULL\n-19 | 10 | 2017-09-19 17:57:17 | 2018-03-15 06:45:00 | NULL\n-18 | 6 | 2017-05-14 11:57:50 | 2018-03-23 17:29:21 | NULL"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text;\n    DELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n            IF rec2.skill_id > para_maintenance_contract_company_id AND rec.fault_status = 'Fixed' AND rec2.part_fault_id = para_part_fault_id THEN\n                UPDATE \"Maintenance_Contracts\" SET \"maintenance_contract_id\" = \"maintenance_contract_id\" - para_maintenance_contract_id - 33;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n    CLOSE ref_cursor;\n    IF para_part_fault_id <> -1000 THEN\n        UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text;\n    DELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n            IF rec2.skill_id > para_maintenance_contract_company_id AND rec.fault_status = 'Fixed' AND rec2.part_fault_id = para_part_fault_id THEN\n                UPDATE \"Maintenance_Contracts\" SET \"maintenance_contract_id\" = \"maintenance_contract_id\" - para_maintenance_contract_id - 33;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n    CLOSE ref_cursor;\n    IF para_part_fault_id <> -1000 THEN\n        UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(1, 'x', 0, 3, 1, 0);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"maintenance_contract_id\" FROM \"Maintenance_Contracts\" ORDER BY \"maintenance_contract_id\";"
+   },
+   "result": "maintenance_contract_id\n-197\n-196\n-195\n-194\n-193\n-192\n-191\n-190\n-189\n-188\n-187\n-186\n-185\n-184\n-183"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Skills_Required_To_Fix\" ORDER BY 1,2;"
+   },
+   "result": "part_fault_id | skill_id\n1 | 1\n1 | 3\n1 | 3\n2 | 1\n3 | 2\n5 | 3\n6 | 1\n7 | 2\n10 | 2\n12 | 3\n13 | 2\n14 | 3\n15 | 2\n15 | 3\n15 | 3"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text;\n    DELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n            IF rec2.skill_id > para_maintenance_contract_company_id AND rec.fault_status = 'Fixed' AND rec2.part_fault_id = para_part_fault_id THEN\n                UPDATE \"Maintenance_Contracts\" SET \"maintenance_contract_id\" = \"maintenance_contract_id\" - para_maintenance_contract_id - 33;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n    CLOSE ref_cursor;\n    IF para_part_fault_id <> -1000 THEN\n        UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(1, 'x', 0, 3, 2, 0);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"maintenance_contract_id\" FROM \"Maintenance_Contracts\" ORDER BY \"maintenance_contract_id\";"
+   },
+   "result": "maintenance_contract_id\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15"
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(1, 'x', 0, 3, 1, 0);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"maintenance_contract_id\" FROM \"Maintenance_Contracts\" ORDER BY \"maintenance_contract_id\";"
+   },
+   "result": "maintenance_contract_id\n-197\n-196\n-195\n-194\n-193\n-192\n-191\n-190\n-189\n-188\n-187\n-186\n-185\n-184\n-183"
+  },
+  {
+   "step": 28,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text;\n    DELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n            IF rec2.skill_id > para_maintenance_contract_company_id AND rec.fault_status = 'Fixed' AND rec2.part_fault_id = para_part_fault_id THEN\n                UPDATE \"Maintenance_Contracts\" SET \"maintenance_contract_id\" = \"maintenance_contract_id\" - para_maintenance_contract_id - 33;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n    CLOSE ref_cursor;\n    IF para_part_fault_id <> -1000 THEN\n        UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text;\n    DELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n            IF rec2.skill_id > para_maintenance_contract_company_id AND rec.fault_status = 'Fixed' AND rec2.part_fault_id = para_part_fault_id THEN\n                UPDATE \"Maintenance_Contracts\" SET \"maintenance_contract_id\" = \"maintenance_contract_id\" - para_maintenance_contract_id - 33;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n    CLOSE ref_cursor;\n    IF para_part_fault_id <> -1000 THEN\n        UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id;\n    END IF;\nEND;\n$$;"
+ },
+ "pair": {
+  "single_run": "st04",
+  "single_task": "postgres_b4_000"
+ }
+}

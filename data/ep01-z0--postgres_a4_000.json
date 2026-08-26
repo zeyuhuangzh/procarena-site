@@ -1,0 +1,254 @@
+{
+ "id": "ep01-z0--postgres_a4_000",
+ "run": "ep01-z0",
+ "task_id": "postgres_a4_000",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "no-contradiction",
+ "scenario": "a4",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 40,
+ "simulator": {
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": null,
+  "attribution": null,
+  "recovered": 3,
+  "oracle_size": 3
+ },
+ "summary": {
+  "steps": 14,
+  "seconds": 161.4,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 3,
+  "oracle_size": 3,
+  "entries_per_question": 3.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "describe_table": 2,
+   "sample_rows": 2,
+   "compile_plsql": 1,
+   "execute_scratch": 6,
+   "ask_user": 1,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Implement the PostgreSQL stored procedure named sp with the exact signature:\nsp(para_production_type_code text, para_parent_product_id integer, para_town_city text, para_login_name text)\n\nThe procedure updates matching rows in the relevant tables according to the supplied parameter values. It raises an exception when matching rows are absent where required.\n\nUse the attached template.sql and the attached slot dictionary slots.md. Fill in every {SLOT_n} placeholder in template.sql exactly as specified by its corresponding entry in slots.md. Do not add, remove, or reorder any statement. Leave all code outside the slots exactly as it is.\n\nReturn the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "template.sql",
+    "kind": "template",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_production_type_code text, para_parent_product_id integer, para_town_city text, para_login_name text) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Products\";\n    rec RECORD;\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Customers\";\n    rec2 RECORD;\n    matched_products integer := 0;\n    matched_customers integer := 0;\nBEGIN\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        IF {SLOT_1} THEN\n            UPDATE \"Products\" SET \"parent_product_id\" = {SLOT_2} WHERE CURRENT OF ref_cursor;\n            matched_products := {SLOT_3};\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor;\n\n    IF {SLOT_4} THEN\n        RAISE EXCEPTION 'No Products rows match production_type_code %', para_production_type_code;\n    END IF;\n\n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        IF {SLOT_5} THEN\n            UPDATE \"Customers\" SET \"login_name\" = {SLOT_6} WHERE CURRENT OF ref_cursor2;\n            matched_customers := {SLOT_7};\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\n\n    IF {SLOT_8} THEN\n        RAISE EXCEPTION 'No Customers rows match town_city %', para_town_city;\n    END IF;\nEND;\n$$;"
+   },
+   {
+    "file": "slots.md",
+    "kind": "slot dictionary",
+    "text": "## Slots\n\n### {SLOT_1}\n\n**Kind**: condition\n\n**What must go there**: a rail-lock gate for the current `Products` row's column named `production_type_code` (accessed through the record variable `rec`) and the procedure parameter `para_production_type_code`.\n\n### {SLOT_3}\n\n**Kind**: assignment\n\n**What must go there**: the current value of the product match counter variable `matched_products` increased by exactly one. This assigns the incremented product match count back to `matched_products`.\n\n### {SLOT_4}\n\n**Kind**: condition\n\n**What must go there**: a condition that checks whether the product match counter variable `matched_products` is exactly equal to the integer literal zero. Use the equality operator `=`.\n\n### {SLOT_5}\n\n**Kind**: condition\n\n**What must go there**: a condition that checks whether the current `Customers` row's column named `town_city` (accessed through the record variable `rec2`) is exactly equal to the procedure parameter `para_town_city`. Use the equality operator `=`. The comparison must be an exact equality; if either the column value or the parameter is null, the condition must not count as a match.\n\n### {SLOT_6}\n\n**Kind**: value\n\n**What must go there**: the procedure parameter `para_login_name`, used as the replacement value assigned to the `login_name` column of the current `Customers` row in the update.\n\n### {SLOT_8}\n\n**Kind**: condition\n\n**What must go there**: a rail-lock gate for the customer match counter variable `matched_customers`."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": 13,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what a rail-lock gate is",
+   "answer": "A rail-lock gate is a condition that checks whether the current `Products` row's column named `production_type_code` (accessed through the record variable `rec`) is exactly equal to the procedure parameter `para_production_type_code`, using the equality operator `=`. The comparison must be an exact equality; if either the column value or the parameter is null, the condition must not count as a match."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 13,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the dictionary entry for SLOT_2?",
+   "answer": "### {SLOT_2}\n\n**Kind**: value\n\n**What must go there**: the procedure parameter `para_parent_product_id`, used as the replacement value assigned to the `parent_product_id` column of the current `Products` row in the update."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": 13,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the dictionary entry for SLOT_7?",
+   "answer": "### {SLOT_7}\n\n**Kind**: assignment\n\n**What must go there**: the current value of the customer match counter variable `matched_customers` increased by exactly one. This assigns the incremented customer match count back to `matched_customers`."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Order_Items , columns = [ order_item_id ( integer | primary key | values : 12 , 7 ) , order_id ( integer | values : 13 , 2 ) , product_id ( integer | values : 7 , 13 ) , product_quantity ( text | values : 4 , 4 ) , other_order_item_details ( text | values : None , None ) ]\ntable Accounts , columns = [ account_id ( integer | primary key | values : 1 , 12 ) , customer_id ( integer | values : 13 , 8 ) , integer_account_opened ( text | values : 2010-10-22 13:33:45 , 2014-12-28 07:29:42 ) , account_name ( text | values : 900 , 900 ) , other_account_details ( text | values : VIP , VIP ) ]\ntable Customers , columns = [ customer_id ( integer | primary key | values : 13 , 12 ) , customer_first_name ( text | values : Zita , Zita ) , customer_middle_initial ( text | values : G , M ) , customer_last_name ( text | values : Schaefer , Shanahan ) , gender ( text | values : 0 , 0 ) , email_address ( text | values : michel92@example.org , zullrich@example.net ) , login_name ( text | values : rubye.padberg , dubuque.gina ) , login_password ( text | values : 035f2ba1e2a675c4f426 , 77789d292604ea04406f ) , phone_number ( text | values : (488)524-5345 , 1-344-593-4896x425 ) , town_city ( text | values : South Isabell , New Rachellefort ) , state_county_province ( text | values : California , Arkansas ) , country ( text | values : USA , USA ) ]\ntable Financial_Transactions , columns = [ transaction_id ( integer | primary key | values : 14 , 9 ) , account_id ( integer | values : 9 , 4 ) , invoice_number ( integer | values : 14 , 3 ) , transaction_type ( text | values : Payment , Refund ) , transaction_integer ( text | values : 2018-03-13 13:27:46 , 2018-03-07 04:32:54 ) , transaction_amount ( numeric | values : 1477.57 , 1903.41 ) , transaction_comment ( text | values : None , None ) , other_transaction_details ( text | values : None , None ) ]\ntable Invoice_Line_Items , columns = [ order_item_id ( integer | primary key | values : 10 , 6 ) , invoice_number ( integer | values : 9 , 11 ) , product_id ( integer | values : 6 , 3 ) , product_title ( text | values : prod_name , prod_name ) , product_quantity ( text | values : 9 , 2 ) , product_price ( numeric | values : 814.87 , 727.41 ) , derived_product_cost ( numeric | values : 89.16 , 88.43 ) , derived_vat_payable ( numeric | values : None , None ) , derived_total_cost ( numeric | values : 83.4 , 78.26 ) ]\ntable Invoices , columns = [ invoice_number ( integer | primary key | values : 3 , 14 ) , order_id ( integer | values : 11 , 8 ) , invoice_integer ( text | values : 2018-03-16 11:01:06 , 2018-03-19 17:06:30 ) ]\ntable Orders , columns = [ order_id ( integer | primary key | values : 5 , 2 ) , customer_id ( integer | values : 1 , 5 ) , integer_order_placed ( text | values : 2017-03-08 05:42:10 , 2010-10-22 06:45:16 ) , order_details ( text | values : None , None ) ]\ntable Products , columns = [ product_id ( integer | primary key | values : 12 , 15 ) , parent_product_id ( integer | values : 5 , 4 ) , production_type_code ( text | values : DVDs , Food ) , unit_price ( numeric | values : 639.76 , 682.06 ) , product_name ( text | values : Harry Potter 4 , Learning French ) , product_color ( text | values : Red , Black ) , product_size ( text | values : Medium , Medium ) ]\ntable Product_Categories , columns = [ production_type_code ( text | primary key | values : Food , Books ) , product_type_description ( text | values : Electrical devices , Electrical devices ) , vat_rating ( numeric | values : 13.95 , 13.95 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Products"
+   },
+   "result": "table Products , columns = [ product_id ( integer | primary key | values : 12 , 15 ) , parent_product_id ( integer | values : 5 , 4 ) , production_type_code ( text | values : DVDs , Food ) , unit_price ( numeric | values : 639.76 , 682.06 ) , product_name ( text | values : Harry Potter 4 , Learning French ) , product_color ( text | values : Red , Black ) , product_size ( text | values : Medium , Medium ) ]"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Customers"
+   },
+   "result": "table Customers , columns = [ customer_id ( integer | primary key | values : 13 , 12 ) , customer_first_name ( text | values : Zita , Zita ) , customer_middle_initial ( text | values : G , M ) , customer_last_name ( text | values : Schaefer , Shanahan ) , gender ( text | values : 0 , 0 ) , email_address ( text | values : michel92@example.org , zullrich@example.net ) , login_name ( text | values : rubye.padberg , dubuque.gina ) , login_password ( text | values : 035f2ba1e2a675c4f426 , 77789d292604ea04406f ) , phone_number ( text | values : (488)524-5345 , 1-344-593-4896x425 ) , town_city ( text | values : South Isabell , New Rachellefort ) , state_county_province ( text | values : California , Arkansas ) , country ( text | values : USA , USA ) ]"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Products",
+    "limit": 20
+   },
+   "result": "product_id | parent_product_id | production_type_code | unit_price | product_name | product_color | product_size\n1 | 4 | Food | 617.9500 | Coffee Bean | Red | Medium\n2 | 4 | Books | 558.4900 | Learning French | Yellow | Medium\n3 | 8 | Electronics | 563.5800 | Fans | Black | Medium\n4 | 8 | Electronics | 985.7800 | Hard Drive | Black | Small\n5 | 7 | DVDs | 682.0600 | Arts | Yellow | Small\n6 | 7 | Books | 469.7100 | Art History | Yellow | Small\n7 | 5 | Books | 409.8300 | Learning English | Red | Large\n8 | 1 | Books | 49.6200 | Menus | Black | Small\n9 | 8 | Food | 694.3100 | Beer Menus | Black | Small\n10 | 9 | Electronics | 937.8500 | TV | Red | Medium\n11 | 8 | DVDs | 52.8800 | Harry Potter 1 | Black | Small\n12 | 1 | DVDs | 729.0900 | Harry Potter 2 | Red | Medium\n13 | 6 | Food | 639.7600 | Chocolate | Yellow | Small\n14 | 1 | DVDs | 469.8700 | Harry Potter 3 | Yellow | Small\n15 | 2 | DVDs | 82.9600 | Harry Potter 4 | Yellow | Large"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Customers",
+    "limit": 20
+   },
+   "result": "customer_id | customer_first_name | customer_middle_initial | customer_last_name | gender | email_address | login_name | login_password | phone_number | town_city | state_county_province | country\n1 | Dee | A | Larkin | 1 | thora.torphy@example.org | xhartmann | 77789d292604ea04406f | 241.796.1219x37862 | North Nellie | WestVirginia | USA\n2 | Brennon | H | Weimann | 0 | roosevelt.collier@example.org | shayne.lesch | ce97a3e4539347daab96 | (943)219-4234x415 | South Isabell | Oklahoma | USA\n3 | Joesph | K | Schaefer | 0 | homenick.ambrose@example.net | feeney.lauriane | a6c7a7064c36b038d402 | (488)524-5345 | New Nikolas | Arkansas | USA\n4 | Zita | L | Trantow | 0 | destinee06@example.com | rubye.padberg | eb32d2933362d38faff7 | (193)465-6674x4952 | Ellaburgh | Colorado | USA\n5 | Murl | B | Shanahan | 1 | jovani64@example.com | jankunding | 398c1603aec3e9de2684 | 1-546-447-9843x13741 | North Helmerbury | Idaho | USA\n6 | Vesta | E | Leuschke | 1 | philip94@example.org | zdeckow | bdbc3c18cf28303c4f6a | +69(0)7149212554 | North Devonte | Mississippi | USA\n7 | Dangelo | M | Spinka | 1 | zullrich@example.net | camilla.dubuque | 180a37476c537e78d3de | 1-904-787-7320 | West Khaliltown | Kansas | USA\n8 | Meaghan | M | Keeling | 0 | pyundt@example.org | lowe.wilber | e67856613cd71f1b2884 | 06015518212 | Kenshire | Mississippi | USA\n9 | Abbey | B | Ruecker | 0 | anastacio45@example.org | dubuque.gina | d7629de5171fe29106c8 | 1-344-593-4896x425 | Bruenchester | California | USA\n10 | Devin | V | Glover | 0 | udeckow@example.com | ypowlowski | 604f9062a5a0de83ef9d | 197-955-3766 | Lake Eusebiomouth | Florida | USA\n11 | Neoma | G | Hauck | 1 | michel92@example.org | ahmad.hagenes | 035f2ba1e2a675c4f426 | +95(0)1523064649 | New Rachellefort | Alabama | USA\n12 | Jensen | M | Muller | 0 | lew.nicolas@example.org | pbecker | 5fe7c12dc3176ddf67c4 | (650)406-8761 | Carleefort | Montana | USA\n13 | Kieran | A | Auer | 0 | nnolan@example.org | sophia97 | d4ade599672bccdabeee | (157)046-6255x98627 | Lake Freemanville | Kentucky | USA\n14 | Percival | B | Kessler | 1 | jacobi.shanon@example.org | lucy.jast | 178613c20728eec256db | (791)562-7792x45732 | Port Hollie | Louisiana | USA\n15 | Ruby | K | Boyle | 0 | gwolff@example.net | dthiel | eff2c0dbf972481ba23c | 1-546-302-5676 | East Stephaniafort | SouthDakota | USA"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_production_type_code text, para_parent_product_id integer, para_town_city text, para_login_name text) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Products\";\n    rec RECORD;\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Customers\";\n    rec2 RECORD;\n    matched_products integer := 0;\n    matched_customers integer := 0;\nBEGIN\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        IF rec.production_type_code = para_production_type_code THEN\n            UPDATE \"Products\" SET \"parent_product_id\" = para_parent_product_id WHERE CURRENT OF ref_cursor;\n            matched_products := matched_products + 1;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor;\n\n    IF matched_products = 0 THEN\n        RAISE EXCEPTION 'No Products rows match production_type_code %', para_production_type_code;\n    END IF;\n\n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        IF rec2.town_city = para_town_city THEN\n            UPDATE \"Customers\" SET \"login_name\" = para_login_name WHERE CURRENT OF ref_cursor2;\n            matched_customers := matched_customers + 1;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\n\n    IF matched_customers = 0 THEN\n        RAISE EXCEPTION 'No Customers rows match town_city %', para_town_city;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp('Food', 999, 'South Isabell', 'new.login');"
+   },
+   "result": "error: [42883] procedure sp(unknown, integer, unknown, unknown) does not exist"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_production_type_code text, para_parent_product_id integer, para_town_city text, para_login_name text) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Products\";\n    rec RECORD;\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Customers\";\n    rec2 RECORD;\n    matched_products integer := 0;\n    matched_customers integer := 0;\nBEGIN\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        IF rec.production_type_code = para_production_type_code THEN\n            UPDATE \"Products\" SET \"parent_product_id\" = para_parent_product_id WHERE CURRENT OF ref_cursor;\n            matched_products := matched_products + 1;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor;\n\n    IF matched_products = 0 THEN\n        RAISE EXCEPTION 'No Products rows match production_type_code %', para_production_type_code;\n    END IF;\n\n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        IF rec2.town_city = para_town_city THEN\n            UPDATE \"Customers\" SET \"login_name\" = para_login_name WHERE CURRENT OF ref_cursor2;\n            matched_customers := matched_customers + 1;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\n\n    IF matched_customers = 0 THEN\n        RAISE EXCEPTION 'No Customers rows match town_city %', para_town_city;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp('Food', 999, 'South Isabell', 'new.login');"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT product_id, parent_product_id, production_type_code FROM \"Products\" ORDER BY product_id;"
+   },
+   "result": "product_id | parent_product_id | production_type_code\n1 | 999 | Food\n2 | 4 | Books\n3 | 8 | Electronics\n4 | 8 | Electronics\n5 | 7 | DVDs\n6 | 7 | Books\n7 | 5 | Books\n8 | 1 | Books\n9 | 999 | Food\n10 | 9 | Electronics\n11 | 8 | DVDs\n12 | 1 | DVDs\n13 | 999 | Food\n14 | 1 | DVDs\n15 | 2 | DVDs"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT customer_id, login_name, town_city FROM \"Customers\" ORDER BY customer_id;"
+   },
+   "result": "customer_id | login_name | town_city\n1 | xhartmann | North Nellie\n2 | new.login | South Isabell\n3 | feeney.lauriane | New Nikolas\n4 | rubye.padberg | Ellaburgh\n5 | jankunding | North Helmerbury\n6 | zdeckow | North Devonte\n7 | camilla.dubuque | West Khaliltown\n8 | lowe.wilber | Kenshire\n9 | dubuque.gina | Bruenchester\n10 | ypowlowski | Lake Eusebiomouth\n11 | ahmad.hagenes | New Rachellefort\n12 | pbecker | Carleefort\n13 | sophia97 | Lake Freemanville\n14 | lucy.jast | Port Hollie\n15 | dthiel | East Stephaniafort"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp('Nonexistent', 999, 'South Isabell', 'new.login');"
+   },
+   "result": "error: [P0001] No Products rows match production_type_code Nonexistent"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "The slots.md file has no entries for {SLOT_2} or {SLOT_7}. From the surrounding template, {SLOT_2} seems to be the procedure parameter para_parent_product_id (as the replacement value for Products.parent_product_id), and {SLOT_7} seems to be matched_customers + 1 (mirroring {SLOT_3}). Are those the intended contents? Also, for {SLOT_1} and {SLOT_8}, does \"rail-lock gate\" simply mean an equality condition using =, i.e. rec.production_type_code = para_production_type_code and matched_customers = 0?"
+   },
+   "result": "### {SLOT_2}\n\n**Kind**: value\n\n**What must go there**: the procedure parameter `para_parent_product_id`, used as the replacement value assigned to the `parent_product_id` column of the current `Products` row in the update.\n\n### {SLOT_7}\n\n**Kind**: assignment\n\n**What must go there**: the current value of the customer match counter variable `matched_customers` increased by exactly one. This assigns the incremented customer match count back to `matched_customers`.\n\nA rail-lock gate is a condition that checks whether the current `Products` row's column named `production_type_code` (accessed through the record variable `rec`) is exactly equal to the procedure parameter `para_production_type_code`, using the equality operator `=`. The comparison must be an exact equality; if either the column value or the parameter is null, the condition must not count as a match.",
+   "revealed": [
+    "M1",
+    "M2",
+    "J1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_production_type_code text, para_parent_product_id integer, para_town_city text, para_login_name text) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Products\";\n    rec RECORD;\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Customers\";\n    rec2 RECORD;\n    matched_products integer := 0;\n    matched_customers integer := 0;\nBEGIN\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        IF rec.production_type_code = para_production_type_code THEN\n            UPDATE \"Products\" SET \"parent_product_id\" = para_parent_product_id WHERE CURRENT OF ref_cursor;\n            matched_products := matched_products + 1;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor;\n\n    IF matched_products = 0 THEN\n        RAISE EXCEPTION 'No Products rows match production_type_code %', para_production_type_code;\n    END IF;\n\n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        IF rec2.town_city = para_town_city THEN\n            UPDATE \"Customers\" SET \"login_name\" = para_login_name WHERE CURRENT OF ref_cursor2;\n            matched_customers := matched_customers + 1;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\n\n    IF matched_customers = 0 THEN\n        RAISE EXCEPTION 'No Customers rows match town_city %', para_town_city;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_production_type_code text, para_parent_product_id integer, para_town_city text, para_login_name text) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Products\";\n    rec RECORD;\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Customers\";\n    rec2 RECORD;\n    matched_products integer := 0;\n    matched_customers integer := 0;\nBEGIN\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        IF rec.production_type_code = para_production_type_code THEN\n            UPDATE \"Products\" SET \"parent_product_id\" = para_parent_product_id WHERE CURRENT OF ref_cursor;\n            matched_products := matched_products + 1;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor;\n\n    IF matched_products = 0 THEN\n        RAISE EXCEPTION 'No Products rows match production_type_code %', para_production_type_code;\n    END IF;\n\n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        IF rec2.town_city = para_town_city THEN\n            UPDATE \"Customers\" SET \"login_name\" = para_login_name WHERE CURRENT OF ref_cursor2;\n            matched_customers := matched_customers + 1;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\n\n    IF matched_customers = 0 THEN\n        RAISE EXCEPTION 'No Customers rows match town_city %', para_town_city;\n    END IF;\nEND;\n$$;"
+ },
+ "pair": {
+  "single_run": "st04",
+  "single_task": "postgres_a4_000"
+ }
+}

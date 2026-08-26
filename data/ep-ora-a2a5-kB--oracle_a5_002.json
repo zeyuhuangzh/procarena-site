@@ -1,0 +1,409 @@
+{
+ "id": "ep-ora-a2a5-kB--oracle_a5_002",
+ "run": "ep-ora-a2a5-kB",
+ "task_id": "oracle_a5_002",
+ "stage": "multi",
+ "condition": "tools+ask@B14+2L+6",
+ "tier": "full",
+ "scenario": "a5",
+ "dialect": "oracle",
+ "model": "deepseek-v4-flash",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "candidate did not create: line 14:14 PL/SQL: ORA-00942: table or view does not exist; line 13:9 PL/SQL: SQL Statement ignored; line 21:14 PL/SQL: ORA-00942: table or view does not exist; line 20:9 PL/SQL: SQL Statement ignored; line 27:10 PL/SQL: ORA-00942: table or view does not exist; line 25:5 PL/SQL: SQL Statement ignored; line 36:20 PL/SQL: ORA-00942: table or view does not exist; line 36:13 PL/SQL: SQL Statement ignored; line 42:21 PL/SQL: ORA-00942: table or view does not exist; line 42:9 PL/SQL: SQL Statement ignored; line 55:16 PL/SQL: ORA-00942: table or view does not exist; line 55:9 PL/SQL: SQL Statement ignored",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "spec",
+  "recovered": 1,
+  "oracle_size": 3
+ },
+ "summary": {
+  "steps": 28,
+  "seconds": 145.1,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 1,
+   "off_oracle": 0
+  },
+  "recovered": 1,
+  "oracle_size": 3,
+  "entries_per_question": 1.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "describe_table": 1,
+   "sample_rows": 1,
+   "ask_selector": 1,
+   "execute_scratch": 20,
+   "compile_plsql": 3,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 26.0,
+   "base": 14.0,
+   "per_entry": 2.0,
+   "patience": 6.0,
+   "rounding": 0,
+   "spent": 25.5,
+   "by_tool": {
+    "get_schema": 1.0,
+    "describe_table": 0.5,
+    "sample_rows": 0.5,
+    "ask_selector": 2.0,
+    "execute_scratch": 20.0,
+    "compile_plsql": 1.5,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false
+ },
+ "task": {
+  "prompt": "Write one Oracle PL/SQL stored procedure.\n\nThe procedure must be named sp and its parameter list must be exactly:\nsp(para_dribbling NUMBER, para_player_fifa_api_id NUMBER, para_long_shots NUMBER, para_sliding_tackle NUMBER)\n\nWork with the table Player_Attributes. The only column values the procedure explicitly reads or writes are dribbling, player_fifa_api_id, long_shots, and sliding_tackle. Cursors may retrieve rows for updating, but no other column values may be used to decide behavior.\n\nUse the existing routines documented in the attached builtins.md where applicable. Do not reimplement or modify them.\n\nFollow this order exactly.\n\n1. Before changing any data, determine how many rows in Player_Attributes satisfy both conditions at the same time:\n   - dribbling equals para_dribbling\n   - player_fifa_api_id equals para_player_fifa_api_id\nTreat null as not satisfying either equality.\n\n   If the number of matching rows is greater than zero:\n   - Open a row-locking cursor over all rows that satisfy those same two equality conditions.\n   - Fetch the matching rows one at a time until there are no more.\n   - For each fetched row, update only that current cursor row and set long_shots to para_long_shots.\n   - Then close the cursor.\n   - Do not insert any new row in this branch.\n\n   If the number of matching rows is zero:\n   - Do not open that cursor and do not perform those row updates.\n   - Instead insert one new row into Player_Attributes supplying exactly these three column values:\n     - touchline-carry the dribbling\n     - player_fifa_api_id set to its parameter\n     - long_shots set to para_long_shots\n   - Do not supply any other column values, including id.\n\n2. After step 1 is completely finished, always perform a second pass:\n   - Open a row-locking cursor over all Player_Attributes rows where sliding_tackle is null or sliding_tackle is exactly 0.\n   - Fetch those rows one at a time until there are no more.\n   - For each fetched row, choose the replacement value for sliding_tackle from that same fetched row:\n       - If the row's current long_shots value is both not null and not equal to 0, use that long_shots value.\n       - Otherwise, if the row's long_shots value is null or exactly 0, use para_sliding_tackle.\n   - Update only the current cursor row, setting sliding_tackle to the chosen replacement value.\n   - Continue through all rows returned by this cursor, then close it.\n\nThis second pass must see the data as it exists after step 1, including any long_shots values updated in step 1 and any newly inserted row. If the inserted row has a sliding_tackle value of null, it qualifies for this second pass and is processed the same way. If no rows qualify for the second cursor, the second pass performs no updates.\n\nFor both cursors, each update must affect exactly the row currently fetched from that cursor.\n\nThe procedure must not commit or roll back its work, and must not include any exception handlers. Any error raised during execution must propagate to the caller.\n\nThe insert performed in step 1 must supply exactly two column values.\n\nReturn the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "builtins.md",
+    "kind": "built-in function signatures",
+    "text": "# Built-in functions you may rely on\n\n- `count`\n- `coalesce`\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what is touchline-carry",
+   "answer": "It means setting the dribbling column to the value of the para_dribbling parameter."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Which parameter is player_fifa_api_id set to?",
+   "answer": "player_fifa_api_id is set to para_player_fifa_api_id."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": 4,
+   "via": "ask_selector",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "how many column values the step 1 insert must supply",
+   "answer": "The step 1 insert supplies exactly three column values: dribbling, player_fifa_api_id, and long_shots; the statement saying two is incorrect."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Country , columns = [ id ( NUMBER | primary key | values : 13274 , 4769 ) , name ( VARCHAR2 | values : Spain , Poland ) ]\ntable League , columns = [ id ( NUMBER | primary key | values : 4769 , 13274 ) , country_id ( NUMBER | values : 13274 , 21518 ) , name ( VARCHAR2 | values : Belgium Jupiler League , Switzerland Super League ) ]\ntable Player , columns = [ id ( NUMBER | primary key | values : 18 , 13 ) , player_api_id ( NUMBER | values : 155782 , 30895 ) , player_name ( VARCHAR2 | values : Aaron Kuhl , Aaron Doran ) , player_fifa_api_id ( NUMBER | values : 158138 , 2335 ) , birthday ( VARCHAR2 | values : 1990-12-26 00:00:00 , 1991-04-08 00:00:00 ) , height ( NUMBER | values : 172.72 , 170.18 ) , weight ( NUMBER | values : 176 , 163 ) ]\ntable Player_Attributes , columns = [ id ( NUMBER | primary key | values : 64 , 57 ) , player_fifa_api_id ( NUMBER | values : 186170 , 186170 ) , player_api_id ( NUMBER | values : 162549 , 162549 ) , NUMBER ( VARCHAR2 | values : 2013-09-20 00:00:00 , 2012-02-22 00:00:00 ) , overall_rating ( NUMBER | values : 68 , 59 ) , potential ( NUMBER | values : 76 , 76 ) , preferred_foot ( VARCHAR2 | values : right , right ) , attacking_work_rate ( VARCHAR2 | values : medium , medium ) , defensive_work_rate ( VARCHAR2 | values : medium , medium ) , crossing ( NUMBER | values : 67 , 69 ) , finishing ( NUMBER | values : 52 , 52 ) , heading_accuracy ( NUMBER | values : 62 , 62 ) , short_passing ( NUMBER | values : 63 , 66 ) , volleys ( NUMBER | values : 51 , 56 ) , dribbling ( NUMBER | values : 65 , 69 ) , curve ( NUMBER | values : 70 , 68 ) , free_kick_accuracy ( NUMBER | values : 41 , 64 ) , long_passing ( NUMBER | values : 64 , 64 ) , ball_control ( NUMBER | values : 72 , 68 ) , acceleration ( NUMBER | values : 71 , 74 ) , sprint_speed ( NUMBER | values : 79 , 72 ) , agility ( NUMBER | values : 81 , 81 ) , reactions ( NUMBER | values : 50 , 50 ) , balance ( NUMBER | values : 56 , 84 ) , shot_power ( NUMBER | values : 67 , 62 ) , jumping ( NUMBER | values : 56 , 56 ) , stamina ( NUMBER | values : 73 , 72 ) , strength ( NUMBER | values : 71 , 71 ) , long_shots ( NUMBER | values : 56 , 52 ) , aggression ( NUMBER | values : 59 , 59 ) , interceptions ( NUMBER | values : 44 , 44 ) , positioning ( NUMBER | values : 67 , 30 ) , vision ( NUMBER | values : 72 , 73 ) , penalties ( NUMBER | values : 63 , 63 ) , marking ( NUMBER | values : 22 , 22 ) , standing_tackle ( NUMBER | values : 21 , 21 ) , sliding_tackle ( NUMBER | values : 21 , 21 ) , gk_diving ( NUMBER | values : 15 , 8 ) , gk_handling ( NUMBER | values : 10 , 10 ) , gk_kicking ( NUMBER | values : 11 , 11 ) , gk_positioning ( NUMBER | values : 8 , 8 ) , gk_reflexes ( NUMBER | values : 12 , 12 ) ]\ntable Team , columns = [ id ( NUMBER | primary key | values : 8 , 7 ) , team_api_id ( NUMBER | values : 9997 , 8571 ) , team_fifa_api_id ( NUMBER | values : 231 , 1750 ) , team_long_name ( VARCHAR2 | values : RSC Anderlecht , RAEC Mons ) , team_short_name ( VARCHAR2 | values : CHA , WES ) ]\ntable Team_Attributes , columns = [ id ( NUMBER | primary key | values : 49 , 50 ) , team_fifa_api_id ( NUMBER | values : 111989 , 229 ) , team_api_id ( NUMBER | values : 9912 , 108893 ) , NUMBER ( VARCHAR2 | values : 2011-02-22 00:00:00 , 2011-02-22 00:00:00 ) , buildUpPlaySpeed ( NUMBER | values : 30 , 65 ) , buildUpPlaySpeedClass ( VARCHAR2 | values : Slow , Slow ) , buildUpPlayDribbling ( NUMBER | values : 66 , 46 ) , buildUpPlayDribblingClass ( VARCHAR2 | values : Normal , Normal ) , buildUpPlayPassing ( NUMBER | values : 45 , 55 ) , buildUpPlayPassingClass ( VARCHAR2 | values : Mixed , Mixed ) , buildUpPlayPositioningClass ( VARCHAR2 | values : Organised , Organised ) , chanceCreationPassing ( NUMBER | values : 30 , 40 ) , chanceCreationPassingClass ( VARCHAR2 | values : Normal , Normal ) , chanceCreationCrossing ( NUMBER | values : 51 , 52 ) , chanceCreationCrossingClass ( VARCHAR2 | values : Normal , Little ) , chanceCreationShooting ( NUMBER | val... (+586)"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Player_Attributes"
+   },
+   "result": "table Player_Attributes , columns = [ id ( NUMBER | primary key | values : 64 , 57 ) , player_fifa_api_id ( NUMBER | values : 186170 , 186170 ) , player_api_id ( NUMBER | values : 162549 , 162549 ) , NUMBER ( VARCHAR2 | values : 2013-09-20 00:00:00 , 2012-02-22 00:00:00 ) , overall_rating ( NUMBER | values : 68 , 59 ) , potential ( NUMBER | values : 76 , 76 ) , preferred_foot ( VARCHAR2 | values : right , right ) , attacking_work_rate ( VARCHAR2 | values : medium , medium ) , defensive_work_rate ( VARCHAR2 | values : medium , medium ) , crossing ( NUMBER | values : 67 , 69 ) , finishing ( NUMBER | values : 52 , 52 ) , heading_accuracy ( NUMBER | values : 62 , 62 ) , short_passing ( NUMBER | values : 63 , 66 ) , volleys ( NUMBER | values : 51 , 56 ) , dribbling ( NUMBER | values : 65 , 69 ) , curve ( NUMBER | values : 70 , 68 ) , free_kick_accuracy ( NUMBER | values : 41 , 64 ) , long_passing ( NUMBER | values : 64 , 64 ) , ball_control ( NUMBER | values : 72 , 68 ) , acceleration ( NUMBER | values : 71 , 74 ) , sprint_speed ( NUMBER | values : 79 , 72 ) , agility ( NUMBER | values : 81 , 81 ) , reactions ( NUMBER | values : 50 , 50 ) , balance ( NUMBER | values : 56 , 84 ) , shot_power ( NUMBER | values : 67 , 62 ) , jumping ( NUMBER | values : 56 , 56 ) , stamina ( NUMBER | values : 73 , 72 ) , strength ( NUMBER | values : 71 , 71 ) , long_shots ( NUMBER | values : 56 , 52 ) , aggression ( NUMBER | values : 59 , 59 ) , interceptions ( NUMBER | values : 44 , 44 ) , positioning ( NUMBER | values : 67 , 30 ) , vision ( NUMBER | values : 72 , 73 ) , penalties ( NUMBER | values : 63 , 63 ) , marking ( NUMBER | values : 22 , 22 ) , standing_tackle ( NUMBER | values : 21 , 21 ) , sliding_tackle ( NUMBER | values : 21 , 21 ) , gk_diving ( NUMBER | values : 15 , 8 ) , gk_handling ( NUMBER | values : 10 , 10 ) , gk_kicking ( NUMBER | values : 11 , 11 ) , gk_positioning ( NUMBER | values : 8 , 8 ) , gk_reflexes ( NUMBER | values : 12 , 12 ) ]"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Player_Attributes",
+    "limit": 10
+   },
+   "result": "id | player_fifa_api_id | player_api_id | NUMBER | overall_rating | potential | preferred_foot | attacking_work_rate | defensive_work_rate | crossing | finishing | heading_accuracy | short_passing | volleys | dribbling | curve | free_kick_accuracy | long_passing | ball_control | acceleration | sprint_speed | agility | reactions | balance | shot_power | jumping | stamina | strength | long_shots | aggression | interceptions | positioning | vision | penalties | marking | standing_tackle | sliding_tackle | gk_diving | gk_handling | gk_kicking | gk_positioning | gk_reflexes\n1 | 218353 | 505942 | 2016-02-18 00:00:00 | 67 | 71 | right | medium | medium | 49 | 44 | 71 | 61 | 44 | 51 | 45 | 39 | 64 | 49 | 60 | 64 | 59 | 47 | 65 | 55 | 58 | 54 | 76 | 35 | 71 | 70 | 45 | 54 | 48 | 65 | 69 | 69 | 6 | 11 | 10 | 8 | 8\n2 | 218353 | 505942 | 2015-11-19 00:00:00 | 67 | 71 | right | medium | medium | 49 | 44 | 71 | 61 | 44 | 51 | 45 | 39 | 64 | 49 | 60 | 64 | 59 | 47 | 65 | 55 | 58 | 54 | 76 | 35 | 71 | 70 | 45 | 54 | 48 | 65 | 69 | 69 | 6 | 11 | 10 | 8 | 8\n3 | 218353 | 505942 | 2015-09-21 00:00:00 | 62 | 66 | right | medium | medium | 49 | 44 | 71 | 61 | 44 | 51 | 45 | 39 | 64 | 49 | 60 | 64 | 59 | 47 | 65 | 55 | 58 | 54 | 76 | 35 | 63 | 41 | 45 | 54 | 48 | 65 | 66 | 69 | 6 | 11 | 10 | 8 | 8\n4 | 218353 | 505942 | 2015-03-20 00:00:00 | 61 | 65 | right | medium | medium | 48 | 43 | 70 | 60 | 43 | 50 | 44 | 38 | 63 | 48 | 60 | 64 | 59 | 46 | 65 | 54 | 58 | 54 | 76 | 34 | 62 | 40 | 44 | 53 | 47 | 62 | 63 | 66 | 5 | 10 | 9 | 7 | 7\n5 | 218353 | 505942 | 2007-02-22 00:00:00 | 61 | 65 | right | medium | medium | 48 | 43 | 70 | 60 | 43 | 50 | 44 | 38 | 63 | 48 | 60 | 64 | 59 | 46 | 65 | 54 | 58 | 54 | 76 | 34 | 62 | 40 | 44 | 53 | 47 | 62 | 63 | 66 | 5 | 10 | 9 | 7 | 7\n6 | 189615 | 155782 | 2016-04-21 00:00:00 | 74 | 76 | left | high | medium | 80 | 53 | 58 | 71 | 40 | 73 | 70 | 69 | 68 | 71 | 79 | 78 | 78 | 67 | 90 | 71 | 85 | 79 | 56 | 62 | 68 | 67 | 60 | 66 | 59 | 76 | 75 | 78 | 14 | 7 | 9 | 9 | 12\n7 | 189615 | 155782 | 2016-04-07 00:00:00 | 74 | 76 | left | high | medium | 80 | 53 | 58 | 71 | 32 | 73 | 70 | 69 | 68 | 71 | 79 | 78 | 78 | 67 | 90 | 71 | 85 | 79 | 56 | 60 | 68 | 67 | 60 | 66 | 59 | 76 | 75 | 78 | 14 | 7 | 9 | 9 | 12\n8 | 189615 | 155782 | 2016-01-07 00:00:00 | 73 | 75 | left | high | medium | 79 | 52 | 57 | 70 | 29 | 71 | 68 | 69 | 68 | 70 | 79 | 78 | 78 | 67 | 90 | 71 | 84 | 79 | 56 | 59 | 67 | 66 | 58 | 65 | 59 | 76 | 75 | 78 | 14 | 7 | 9 | 9 | 12\n9 | 189615 | 155782 | 2015-12-24 00:00:00 | 73 | 75 | left | high | medium | 79 | 51 | 57 | 70 | 29 | 71 | 68 | 69 | 68 | 70 | 79 | 78 | 78 | 67 | 90 | 71 | 84 | 79 | 56 | 58 | 67 | 66 | 58 | 65 | 59 | 76 | 75 | 78 | 14 | 7 | 9 | 9 | 12\n10 | 189615 | 155782 | 2015-12-17 00:00:00 | 73 | 75 | left | high | medium | 79 | 51 | 57 | 70 | 29 | 71 | 68 | 69 | 68 | 70 | 79 | 78 | 78 | 67 | 90 | 71 | 84 | 79 | 56 | 58 | 67 | 66 | 58 | 65 | 59 | 76 | 75 | 78 | 14 | 7 | 9 | 9 | 12"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "In step 1's insert (when zero rows match), which column values must the INSERT statement supply?",
+    "options": [
+     "The INSERT supplies all three columns: dribbling (=para_dribbling), player_fifa_api_id (=para_player_fifa_api_id), and long_shots (=para_long_shots).",
+     "The INSERT supplies exactly two columns: dribbling (=para_dribbling) and long_shots (=para_long_shots); player_fifa_api_id is not supplied (left null).",
+     "The INSERT supplies exactly two columns: player_fifa_api_id (=para_player_fifa_api_id) and long_shots (=para_long_shots); dribbling is not supplied (left null).",
+     "The INSERT supplies exactly two columns: dribbling (=para_dribbling) and player_fifa_api_id (=para_player_fifa_api_id); long_shots is not supplied (left null)."
+    ]
+   },
+   "result": "2",
+   "index": 2,
+   "options": [
+    "None of the following are correct.",
+    "The INSERT supplies all three columns: dribbling (=para_dribbling), player_fifa_api_id (=para_player_fifa_api_id), and long_shots (=para_long_shots).",
+    "The INSERT supplies exactly two columns: dribbling (=para_dribbling) and long_shots (=para_long_shots); player_fifa_api_id is not supplied (left null).",
+    "The INSERT supplies exactly two columns: player_fifa_api_id (=para_player_fifa_api_id) and long_shots (=para_long_shots); dribbling is not supplied (left null).",
+    "The INSERT supplies exactly two columns: dribbling (=para_dribbling) and player_fifa_api_id (=para_player_fifa_api_id); long_shots is not supplied (left null)."
+   ],
+   "entry": "C1",
+   "status": "revealed",
+   "conflict_noted": true
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO Player_Attributes (dribbling, player_fifa_api_id, long_shots) VALUES (999, 999999, 77);"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables ORDER BY table_name"
+   },
+   "result": "TABLE_NAME\nAQ$_INTERNET_AGENTS\nAQ$_INTERNET_AGENT_PRIVS\nAQ$_KEY_SHARD_MAP\nAQ$_QUEUES\nAQ$_QUEUE_TABLES\nAQ$_SCHEDULES\nHELP\nLOGMNRC_CONCOL_GG\nLOGMNRC_CON_GG\nLOGMNRC_DBNAME_UID_MAP\nLOGMNRC_GSBA\nLOGMNRC_GSII\nLOGMNRC_GTCS\nLOGMNRC_GTLO\nLOGMNRC_INDCOL_GG\nLOGMNRC_IND_GG\nLOGMNRC_SEQ_GG\nLOGMNRC_SHARD_TS\nLOGMNRC_TS\nLOGMNRC_TSPART\nLOGMNRC_USER\nLOGMNRGGC_GTCS\nLOGMNRGGC_GTLO\nLOGMNRP_CTAS_PART_MAP\nLOGMNRT_MDDL$\nLOGMNR_AGE_SPILL$\nLOGMNR_ATTRCOL$\nLOGMNR_ATTRIBUTE$\nLOGMNR_CCOL$\nLOGMNR_CDEF$\nLOGMNR_COL$\nLOGMNR_COLTYPE$\nLOGMNR_CON$\nLOGMNR_CONTAINER$\nLOGMNR_DICTIONARY$\nLOGMNR_DICTSTATE$\nLOGMNR_DID$\nLOGMNR_ENC$\nLOGMNR_ERROR$\nLOGMNR_FILTER$\nLOGMNR_GLOBAL$\nLOGMNR_GT_TAB_INCLUDE$\nLOGMNR_GT_USER_INCLUDE$\nLOGMNR_GT_XID_INCLUDE$\nLOGMNR_ICOL$\nLOGMNR_IDNSEQ$\nLOGMNR_IND$\nLOGMNR_INDCOMPART$\nLOGMNR_INDPART$\nLOGMNR_INDSUBPART$\n... (more rows not shown)"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name FROM all_tables WHERE table_name = 'PLAYER_ATTRIBUTES'"
+   },
+   "result": "(OWNER | TABLE_NAME)\n(no rows)"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, object_name, object_type FROM all_objects WHERE object_name LIKE '%PLAYER%' OR object_name LIKE '%ATTRIBUTE%'"
+   },
+   "result": "OWNER | OBJECT_NAME | OBJECT_TYPE\nSYS | DIR$DATABASE_ATTRIBUTES | TABLE\nSYS | I_DIR$DB_ATTRIBUTES_UI | INDEX\nSYS | DIR$NODE_ATTRIBUTES | TABLE\nSYS | I_DIR$NODE_ATTRIBUTES_ATTR | INDEX\nSYS | DIR$SERVICE_ATTRIBUTES | TABLE\nSYS | I_DIR$SERVICE_ATTRIBUTES_UI | INDEX\nSYS | I_DIR$SERVICE_ATTRIBUTES_ATTR | INDEX\nSYS | ATTRIBUTE$ | TABLE\nSYS | I_ATTRIBUTE1 | INDEX\nSYS | I_ATTRIBUTE2 | INDEX\nSYS | OLAP_ATTRIBUTES$ | TABLE\nSYS | I_OLAP_ATTRIBUTES$ | INDEX\nSYS | OLAP_ATTRIBUTE_VISIBILITY$ | TABLE\nSYS | I_OLAP_ATTRIBUTE_VISIBILITY$ | INDEX\nSYS | LOGMNRG_ATTRIBUTE$ | TABLE\nSYS | ATTRIBUTE_TRANSFORMATIONS$ | TABLE\nSYS | ATTRIBUTE_TRANSFORMATIONS_PK | INDEX\nSYS | GV_$ASM_ATTRIBUTE | VIEW\nPUBLIC | GV$ASM_ATTRIBUTE | SYNONYM\nSYS | V_$ASM_ATTRIBUTE | VIEW\nPUBLIC | V$ASM_ATTRIBUTE | SYNONYM\nSYS | V_$XS_SESSION_NS_ATTRIBUTES | VIEW\nPUBLIC | V$XS_SESSION_NS_ATTRIBUTES | SYNONYM\nPUBLIC | V$XS_SESSION_NS_ATTRIBUTE | SYNONYM\nSYS | GV_$XS_SESSION_NS_ATTRIBUTES | VIEW\nPUBLIC | GV$XS_SESSION_NS_ATTRIBUTES | SYNONYM\nPUBLIC | GV$XS_SESSION_NS_ATTRIBUTE | SYNONYM\nSYS | USER_MINING_MODEL_ATTRIBUTES | VIEW\nPUBLIC | USER_MINING_MODEL_ATTRIBUTES | SYNONYM\nSYS | ALL_MINING_MODEL_ATTRIBUTES | VIEW\nPUBLIC | ALL_MINING_MODEL_ATTRIBUTES | SYNONYM\nSYS | DBA_MINING_MODEL_ATTRIBUTES | VIEW\nPUBLIC | DBA_MINING_MODEL_ATTRIBUTES | SYNONYM\nSYS | CDB_MINING_MODEL_ATTRIBUTES | VIEW\nPUBLIC | CDB_MINING_MODEL_ATTRIBUTES | SYNONYM\nSYS | DBA_ATTRIBUTE_DIM_ORDER_ATTRS | VIEW\nPUBLIC | DBA_ATTRIBUTE_DIM_ORDER_ATTRS | SYNONYM\nSYS | CDB_ATTRIBUTE_DIM_ORDER_ATTRS | VIEW\nPUBLIC | CDB_ATTRIBUTE_DIM_ORDER_ATTRS | SYNONYM\nSYS | USER_ATTRIBUTE_DIM_ORDER_ATTRS | VIEW\nPUBLIC | USER_ATTRIBUTE_DIM_ORDER_ATTRS | SYNONYM\nSYS | ALL_ATTRIBUTE_DIM_ORDER_ATTRS | VIEW\nPUBLIC | ALL_ATTRIBUTE_DIM_ORDER_ATTRS | SYNONYM\nSYS | DBA_ATTRIBUTE_DIM_CLASS | VIEW\nPUBLIC | DBA_ATTRIBUTE_DIM_CLASS | SYNONYM\nSYS | CDB_ATTRIBUTE_DIM_CLASS | VIEW\nPUBLIC | CDB_ATTRIBUTE_DIM_CLASS | SYNONYM\nSYS | USER_ATTRIBUTE_DIM_CLASS | VIEW\nPUBLIC | USER_ATTRIBUTE_DIM_CLASS | SYNONYM\nSYS | ALL_ATTRIBUTE_DIM_CLASS | VIEW\n... (more rows not shown)"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT user FROM dual"
+   },
+   "result": "USER\nSYSTEM"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, object_name, object_type FROM dba_objects WHERE object_name IN ('PLAYER_ATTRIBUTES','PLAYER','COUNTRY','LEAGUE','TEAM')"
+   },
+   "result": "(OWNER | OBJECT_NAME | OBJECT_TYPE)\n(no rows)"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_dribbling NUMBER,\n    para_player_fifa_api_id NUMBER,\n    para_long_shots NUMBER,\n    para_sliding_tackle NUMBER\n) IS\n    v_count NUMBER;\n    v_dummy NUMBER;\n    v_long_shots NUMBER;\n    v_new_sliding_tackle NUMBER;\n\n    CURSOR c1 IS\n        SELECT id\n        FROM Player_Attributes\n        WHERE dribbling = para_dribbling\n          AND player_fifa_api_id = para_player_fifa_api_id\n        FOR UPDATE;\n\n    CURSOR c2 IS\n        SELECT long_shots\n        FROM Player_Attributes\n        WHERE sliding_tackle IS NULL OR sliding_tackle = 0\n        FOR UPDATE;\nBEGIN\n    SELECT COUNT(*)\n    INTO v_count\n    FROM Player_Attributes\n    WHERE dribbling = para_dribbling\n      AND player_fifa_api_id = para_player_fifa_api_id;\n\n    IF v_count > 0 THEN\n        OPEN c1;\n        LOOP\n            FETCH c1 INTO v_dummy;\n            EXIT WHEN c1%NOTFOUND;\n            UPDATE Player_Attributes\n            SET long_shots = para_long_shots\n            WHERE CURRENT OF c1;\n        END LOOP;\n        CLOSE c1;\n    ELSE\n        INSERT INTO Player_Attributes (dribbling, player_fifa_api_id, long_shots)\n        VALUES (para_dribbling, para_player_fifa_api_id, para_long_shots);\n    END IF;\n\n    OPEN c2;\n    LOOP\n        FETCH c2 INTO v_long_shots;\n        EXIT WHEN c2%NOTFOUND;\n        IF v_long_shots IS NOT NULL AND v_long_shots <> 0 THEN\n            v_new_sliding_tackle := v_long_shots;\n        ELSE\n            v_new_sliding_tackle := para_sliding_tackle;\n        END IF;\n        UPDATE Player_Attributes\n        SET sliding_tackle = v_new_sliding_tackle\n        WHERE CURRENT OF c2;\n    END LOOP;\n    CLOSE c2;\nEND sp;"
+   },
+   "result": "compile error: line 14:14 PL/SQL: ORA-00942: table or view does not exist; line 13:9 PL/SQL: SQL Statement ignored; line 21:14 PL/SQL: ORA-00942: table or view does not exist; line 20:9 PL/SQL: SQL Statement ignored; line 27:10 PL/SQL: ORA-00942: table or view does not exist; line 25:5 PL/SQL: SQL Statement ignored; line 36:20 PL/SQL: ORA-00942: table or view does not exist; line 36:13 PL/SQL: SQL Statement ignored; line 42:21 PL/SQL: ORA-00942: table or view does not exist; line 42:9 PL/SQL: SQL Statement ignored; line 55:16 PL/SQL: ORA-00942: table or view does not exist; line 55:9 PL/SQL: SQL Statement ignored",
+   "compiled": false
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TABLE Player_Attributes (\n  id NUMBER PRIMARY KEY,\n  player_fifa_api_id NUMBER,\n  player_api_id NUMBER,\n  overall_rating NUMBER,\n  dribbling NUMBER,\n  long_shots NUMBER,\n  sliding_tackle NUMBER\n)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_dribbling NUMBER,\n    para_player_fifa_api_id NUMBER,\n    para_long_shots NUMBER,\n    para_sliding_tackle NUMBER\n) IS\n    v_count NUMBER;\n    v_dummy NUMBER;\n    v_long_shots NUMBER;\n    v_new_sliding_tackle NUMBER;\n\n    CURSOR c1 IS\n        SELECT id\n        FROM Player_Attributes\n        WHERE dribbling = para_dribbling\n          AND player_fifa_api_id = para_player_fifa_api_id\n        FOR UPDATE;\n\n    CURSOR c2 IS\n        SELECT long_shots\n        FROM Player_Attributes\n        WHERE sliding_tackle IS NULL OR sliding_tackle = 0\n        FOR UPDATE;\nBEGIN\n    SELECT COUNT(*)\n    INTO v_count\n    FROM Player_Attributes\n    WHERE dribbling = para_dribbling\n      AND player_fifa_api_id = para_player_fifa_api_id;\n\n    IF v_count > 0 THEN\n        OPEN c1;\n        LOOP\n            FETCH c1 INTO v_dummy;\n            EXIT WHEN c1%NOTFOUND;\n            UPDATE Player_Attributes\n            SET long_shots = para_long_shots\n            WHERE CURRENT OF c1;\n        END LOOP;\n        CLOSE c1;\n    ELSE\n        INSERT INTO Player_Attributes (dribbling, player_fifa_api_id, long_shots)\n        VALUES (para_dribbling, para_player_fifa_api_id, para_long_shots);\n    END IF;\n\n    OPEN c2;\n    LOOP\n        FETCH c2 INTO v_long_shots;\n        EXIT WHEN c2%NOTFOUND;\n        IF v_long_shots IS NOT NULL AND v_long_shots <> 0 THEN\n            v_new_sliding_tackle := v_long_shots;\n        ELSE\n            v_new_sliding_tackle := para_sliding_tackle;\n        END IF;\n        UPDATE Player_Attributes\n        SET sliding_tackle = v_new_sliding_tackle\n        WHERE CURRENT OF c2;\n    END LOOP;\n    CLOSE c2;\nEND sp;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_dribbling NUMBER,\n    para_player_fifa_api_id NUMBER,\n    para_long_shots NUMBER,\n    para_sliding_tackle NUMBER\n) IS\n    v_count NUMBER;\n    v_dummy NUMBER;\n    v_long_shots NUMBER;\n    v_new_sliding_tackle NUMBER;\n\n    CURSOR c1 IS\n        SELECT id\n        FROM Player_Attributes\n        WHERE dribbling = para_dribbling\n          AND player_fifa_api_id = para_player_fifa_api_id\n        FOR UPDATE;\n\n    CURSOR c2 IS\n        SELECT long_shots\n        FROM Player_Attributes\n        WHERE sliding_tackle IS NULL OR sliding_tackle = 0\n        FOR UPDATE;\nBEGIN\n    SELECT COUNT(*)\n    INTO v_count\n    FROM Player_Attributes\n    WHERE dribbling = para_dribbling\n      AND player_fifa_api_id = para_player_fifa_api_id;\n\n    IF v_count > 0 THEN\n        OPEN c1;\n        LOOP\n            FETCH c1 INTO v_dummy;\n            EXIT WHEN c1%NOTFOUND;\n            UPDATE Player_Attributes\n            SET long_shots = para_long_shots\n            WHERE CURRENT OF c1;\n        END LOOP;\n        CLOSE c1;\n    ELSE\n        INSERT INTO Player_Attributes (dribbling, player_fifa_api_id, long_shots)\n        VALUES (para_dribbling, para_player_fifa_api_id, para_long_shots);\n    END IF;\n\n    OPEN c2;\n    LOOP\n        FETCH c2 INTO v_long_shots;\n        EXIT WHEN c2%NOTFOUND;\n        IF v_long_shots IS NOT NULL AND v_long_shots <> 0 THEN\n            v_new_sliding_tackle := v_long_shots;\n        ELSE\n            v_new_sliding_tackle := para_sliding_tackle;\n        END IF;\n        UPDATE Player_Attributes\n        SET sliding_tackle = v_new_sliding_tackle\n        WHERE CURRENT OF c2;\n    END LOOP;\n    CLOSE c2;\nEND sp;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO Player_Attributes (id, player_fifa_api_id, dribbling, long_shots, sliding_tackle) VALUES (1, 100, 10, 5, 0);\nINSERT INTO Player_Attributes (id, player_fifa_api_id, dribbling, long_shots, sliding_tackle) VALUES (2, 100, 10, 8, NULL);\nINSERT INTO Player_Attributes (id, player_fifa_api_id, dribbling, long_shots, sliding_tackle) VALUES (3, 200, 20, NULL, 3);\nINSERT INTO Player_Attributes (id, player_fifa_api_id, dribbling, long_shots, sliding_tackle) VALUES (4, 400, 40, 0, NULL);\nINSERT INTO Player_Attributes (id, player_fifa_api_id, dribbling, long_shots, sliding_tackle) VALUES (5, 500, 50, NULL, 0);\nCALL sp(10, 100, 99, 55);"
+   },
+   "result": "error: DatabaseError: ORA-00933: SQL command not properly ended\nHelp: https://docs.oracle.com/error-help/db/ora-00933/"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO Player_Attributes (id, player_fifa_api_id, dribbling, long_shots, sliding_tackle) VALUES (1, 100, 10, 5, 0)"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO Player_Attributes (id, player_fifa_api_id, dribbling, long_shots, sliding_tackle) VALUES (2, 100, 10, 8, NULL)"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO Player_Attributes (id, player_fifa_api_id, dribbling, long_shots, sliding_tackle) VALUES (3, 200, 20, NULL, 3)"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO Player_Attributes (id, player_fifa_api_id, dribbling, long_shots, sliding_tackle) VALUES (4, 400, 40, 0, NULL)"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO Player_Attributes (id, player_fifa_api_id, dribbling, long_shots, sliding_tackle) VALUES (5, 500, 50, NULL, 0)"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(10, 100, 99, 55)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, player_fifa_api_id, dribbling, long_shots, sliding_tackle FROM Player_Attributes ORDER BY id"
+   },
+   "result": "ID | PLAYER_FIFA_API_ID | DRIBBLING | LONG_SHOTS | SLIDING_TACKLE\n1 | 100 | 10 | 99 | 99\n2 | 100 | 10 | 99 | 99\n3 | 200 | 20 | NULL | 3\n4 | 400 | 40 | 0 | 55\n5 | 500 | 50 | NULL | 55"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DROP TABLE Player_Attributes"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TABLE Player_Attributes (\n  id NUMBER GENERATED BY DEFAULT ON NULL AS IDENTITY PRIMARY KEY,\n  player_fifa_api_id NUMBER,\n  player_api_id NUMBER,\n  overall_rating NUMBER,\n  dribbling NUMBER,\n  long_shots NUMBER,\n  sliding_tackle NUMBER\n)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(30, 300, 44, 7)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, player_fifa_api_id, dribbling, long_shots, sliding_tackle FROM Player_Attributes"
+   },
+   "result": "ID | PLAYER_FIFA_API_ID | DRIBBLING | LONG_SHOTS | SLIDING_TACKLE\n1 | 300 | 30 | 44 | 44"
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_dribbling NUMBER,\n    para_player_fifa_api_id NUMBER,\n    para_long_shots NUMBER,\n    para_sliding_tackle NUMBER\n) IS\n    v_count NUMBER;\n    v_dummy NUMBER;\n    v_long_shots NUMBER;\n    v_new_sliding_tackle NUMBER;\n\n    CURSOR c1 IS\n        SELECT long_shots\n        FROM Player_Attributes\n        WHERE dribbling = para_dribbling\n          AND player_fifa_api_id = para_player_fifa_api_id\n        FOR UPDATE;\n\n    CURSOR c2 IS\n        SELECT long_shots\n        FROM Player_Attributes\n        WHERE sliding_tackle IS NULL OR sliding_tackle = 0\n        FOR UPDATE;\nBEGIN\n    SELECT COUNT(*)\n    INTO v_count\n    FROM Player_Attributes\n    WHERE dribbling = para_dribbling\n      AND player_fifa_api_id = para_player_fifa_api_id;\n\n    IF v_count > 0 THEN\n        OPEN c1;\n        LOOP\n            FETCH c1 INTO v_dummy;\n            EXIT WHEN c1%NOTFOUND;\n            UPDATE Player_Attributes\n            SET long_shots = para_long_shots\n            WHERE CURRENT OF c1;\n        END LOOP;\n        CLOSE c1;\n    ELSE\n        INSERT INTO Player_Attributes (dribbling, player_fifa_api_id, long_shots)\n        VALUES (para_dribbling, para_player_fifa_api_id, para_long_shots);\n    END IF;\n\n    OPEN c2;\n    LOOP\n        FETCH c2 INTO v_long_shots;\n        EXIT WHEN c2%NOTFOUND;\n        IF v_long_shots IS NOT NULL AND v_long_shots <> 0 THEN\n            v_new_sliding_tackle := v_long_shots;\n        ELSE\n            v_new_sliding_tackle := para_sliding_tackle;\n        END IF;\n        UPDATE Player_Attributes\n        SET sliding_tackle = v_new_sliding_tackle\n        WHERE CURRENT OF c2;\n    END LOOP;\n    CLOSE c2;\nEND sp;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 28,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    para_dribbling NUMBER,\n    para_player_fifa_api_id NUMBER,\n    para_long_shots NUMBER,\n    para_sliding_tackle NUMBER\n) IS\n    v_count NUMBER;\n    v_dummy NUMBER;\n    v_long_shots NUMBER;\n    v_new_sliding_tackle NUMBER;\n\n    CURSOR c1 IS\n        SELECT long_shots\n        FROM Player_Attributes\n        WHERE dribbling = para_dribbling\n          AND player_fifa_api_id = para_player_fifa_api_id\n        FOR UPDATE;\n\n    CURSOR c2 IS\n        SELECT long_shots\n        FROM Player_Attributes\n        WHERE sliding_tackle IS NULL OR sliding_tackle = 0\n        FOR UPDATE;\nBEGIN\n    SELECT COUNT(*)\n    INTO v_count\n    FROM Player_Attributes\n    WHERE dribbling = para_dribbling\n      AND player_fifa_api_id = para_player_fifa_api_id;\n\n    IF v_count > 0 THEN\n        OPEN c1;\n        LOOP\n            FETCH c1 INTO v_dummy;\n            EXIT WHEN c1%NOTFOUND;\n            UPDATE Player_Attributes\n            SET long_shots = para_long_shots\n            WHERE CURRENT OF c1;\n        END LOOP;\n        CLOSE c1;\n    ELSE\n        INSERT INTO Player_Attributes (dribbling, player_fifa_api_id, long_shots)\n        VALUES (para_dribbling, para_player_fifa_api_id, para_long_shots);\n    END IF;\n\n    OPEN c2;\n    LOOP\n        FETCH c2 INTO v_long_shots;\n        EXIT WHEN c2%NOTFOUND;\n        IF v_long_shots IS NOT NULL AND v_long_shots <> 0 THEN\n            v_new_sliding_tackle := v_long_shots;\n        ELSE\n            v_new_sliding_tackle := para_sliding_tackle;\n        END IF;\n        UPDATE Player_Attributes\n        SET sliding_tackle = v_new_sliding_tackle\n        WHERE CURRENT OF c2;\n    END LOOP;\n    CLOSE c2;\nEND sp;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    para_dribbling NUMBER,\n    para_player_fifa_api_id NUMBER,\n    para_long_shots NUMBER,\n    para_sliding_tackle NUMBER\n) IS\n    v_count NUMBER;\n    v_dummy NUMBER;\n    v_long_shots NUMBER;\n    v_new_sliding_tackle NUMBER;\n\n    CURSOR c1 IS\n        SELECT long_shots\n        FROM Player_Attributes\n        WHERE dribbling = para_dribbling\n          AND player_fifa_api_id = para_player_fifa_api_id\n        FOR UPDATE;\n\n    CURSOR c2 IS\n        SELECT long_shots\n        FROM Player_Attributes\n        WHERE sliding_tackle IS NULL OR sliding_tackle = 0\n        FOR UPDATE;\nBEGIN\n    SELECT COUNT(*)\n    INTO v_count\n    FROM Player_Attributes\n    WHERE dribbling = para_dribbling\n      AND player_fifa_api_id = para_player_fifa_api_id;\n\n    IF v_count > 0 THEN\n        OPEN c1;\n        LOOP\n            FETCH c1 INTO v_dummy;\n            EXIT WHEN c1%NOTFOUND;\n            UPDATE Player_Attributes\n            SET long_shots = para_long_shots\n            WHERE CURRENT OF c1;\n        END LOOP;\n        CLOSE c1;\n    ELSE\n        INSERT INTO Player_Attributes (dribbling, player_fifa_api_id, long_shots)\n        VALUES (para_dribbling, para_player_fifa_api_id, para_long_shots);\n    END IF;\n\n    OPEN c2;\n    LOOP\n        FETCH c2 INTO v_long_shots;\n        EXIT WHEN c2%NOTFOUND;\n        IF v_long_shots IS NOT NULL AND v_long_shots <> 0 THEN\n            v_new_sliding_tackle := v_long_shots;\n        ELSE\n            v_new_sliding_tackle := para_sliding_tackle;\n        END IF;\n        UPDATE Player_Attributes\n        SET sliding_tackle = v_new_sliding_tackle\n        WHERE CURRENT OF c2;\n    END LOOP;\n    CLOSE c2;\nEND sp;"
+ },
+ "pair": {
+  "single_run": "st-oracle-a2a5",
+  "single_task": "oracle_a5_002"
+ }
+}

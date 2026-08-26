@@ -1,0 +1,288 @@
+{
+ "id": "ep01--postgres_a5_002",
+ "run": "ep01",
+ "task_id": "postgres_a5_002",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "full",
+ "scenario": "a5",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 40,
+ "simulator": {
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "database state differs after call 3",
+  "checks": {
+   "submission": true,
+   "component_usage": true,
+   "ex": false
+  },
+  "metrics": null,
+  "attribution": "spec",
+  "recovered": 0,
+  "oracle_size": 5
+ },
+ "summary": {
+  "steps": 16,
+  "seconds": 336.2,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 1,
+   "off_oracle": 1
+  },
+  "recovered": 0,
+  "oracle_size": 5,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "ask_selector": 1,
+   "compile_plsql": 2,
+   "execute_scratch": 8,
+   "describe_table": 1,
+   "reset_scratch": 1,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Write a PostgreSQL PL/pgSQL stored procedure named `sp` with the exact signature:\n`sp(para_Roller_Coaster_ID integer, para_Country_ID integer, para_Park text, para_Height real, para_Languages text, para_New_Country_ID integer, para_Name text)`\nThe parameters must appear in that order, with those names and types.\n\nThe attached file `components.sql` contains two existing stored procedures, `sp_part1` and `sp_part2`. Call them exactly as described below. Do not recreate them or modify them.\n\nYour code must only read or write these tables and columns directly:\n- `roller_coaster`: the ride-record access covenant.\n- `country`: the columns defined for it.\n\nBehavior:\n1. First count the rows in `roller_coaster` where `Roller_Coaster_ID` is equal to `para_Roller_Coaster_ID` and `Country_ID` is equal to `para_Country_ID`. This count must happen before any other operation.\n\n2. If the count is greater than 0:\n   a. Call `sp_part1(para_Roller_Coaster_ID, para_Height, para_Park, para_Country_ID, para_Languages)`.\n   b. Then evaluate `para_Height`:\n      - If `para_Height` is strictly greater than 50, call `sp_part2(para_Roller_Coaster_ID, para_New_Country_ID, para_Name)`. Do nothing else in this height branch.\n      - If `para_Height` is less than or equal to 50, do not call `sp_part2`. Instead, check whether a `country` row exists with `Country_ID` equal to `para_New_Country_ID`:\n         * If it exists, increase its `Population` by exactly 1000.\n         * If it does not exist, insert a new row into `country` with `Country_ID` equal to `para_New_Country_ID`, `Name` equal to `para_Name`, and `Population` equal to 1000. Provide only these three columns on the insert.\n      - If `para_Height` is null, do not call `sp_part2` and do not perform any population update or insert.\n\n3. If the count is 0:\n   a. Check `para_Park`:\n      - If `para_Park` is null, insert a new row into `roller_coaster` with `Roller_Coaster_ID` equal to `para_Roller_Coaster_ID`, `Name` equal to `para_Name`, `Park` equal to null, and `Height` equal to `para_Height`. Do not call `sp_part2` in this sub-branch.\n      - If `para_Park` is not null, first call `sp_part2(para_Roller_Coaster_ID, para_New_Country_ID, para_Name)`, then update the `roller_coaster` row whose `Roller_Coaster_ID` equals `para_Roller_Coaster_ID` so that its `Name` becomes `para_Name`.\n   b. After the park-dependent action above, call `sp_part1(para_Roller_Coaster_ID, para_Height, para_Park, para_Country_ID, para_Languages)`.\n\nOrdering requirements:\n- The initial count must happen before any other operation.\n- In the count-greater-than-zero branch, `sp_part1` must run before the height-dependent action.\n- In the height-less-than-or-equal-to-50 sub-branch, the country existence check must run before the update or insert, and the population update or insert must happen exactly once.\n- In the count-zero branch, `sp_part1` must adhere to the turnstile handoff.\n- In the count-zero non-null-park sub-branch, `sp_part2` must run before the `roller_coaster.Name` update.\n\nDo not catch exceptions. Any error from the described operations or from `sp_part1` or `sp_part2` must propagate to the caller and stop execution at the point of failure. Do not add explicit transaction control, rollback, or retry logic.\n\n- If `para_Height` is -1, do not call `sp_part2` and do not perform any population update or insert.\n\nReturn the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "components.sql",
+    "kind": "existing component procedures",
+    "text": "-- These procedures already exist in the database. Call them.\n-- Do not recreate them, and do not change them.\n\nCREATE OR REPLACE PROCEDURE sp_part1(para_Roller_Coaster_ID integer, para_Height real, para_Park text, para_Country_ID integer, para_Languages text) LANGUAGE plpgsql AS\n$$\nDECLARE\n    var1 integer;\n    var2 text;\nBEGIN\n    var1 := para_Roller_Coaster_ID;\n    var2 := 'init';\n    IF var1 < 10 THEN\n        UPDATE \"roller_coaster\" SET \"Roller_Coaster_ID\" = para_Roller_Coaster_ID + para_Height WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID;\n        UPDATE \"country\" SET \"Languages\" = para_Languages WHERE \"Country_ID\" = para_Roller_Coaster_ID;\n        var2 := 'low';\n    ELSIF var1 < 20 THEN\n        DELETE FROM \"country\" WHERE \"Country_ID\" = para_Country_ID;\n        INSERT INTO \"country\" (\"Country_ID\", \"Languages\") VALUES (para_Country_ID, para_Languages);\n        var2 := 'mid';\n    ELSIF var1 < 30 THEN\n        UPDATE \"roller_coaster\" SET \"Park\" = para_Park || '_' || \"Roller_Coaster_ID\" WHERE \"Roller_Coaster_ID\" > 0;\n        var2 := 'high';\n    ELSIF var1 < 40 THEN\n        UPDATE \"country\" SET \"Languages\" = \"Languages\" || 'X' WHERE \"Country_ID\" IN (SELECT \"Roller_Coaster_ID\" FROM \"roller_coaster\");\n        var2 := 'veryhigh';\n    ELSE\n        UPDATE \"roller_coaster\" SET \"Height\" = 'default' WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID;\n        var2 := 'reset';\n    END IF;\n    IF para_Park IS NOT NULL THEN\n        UPDATE \"roller_coaster\" SET \"Park\" = var2 || '_' || para_Park WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID;\n    ELSE\n        DELETE FROM \"country\" WHERE \"Country_ID\" = para_Country_ID;\n    END IF;\nEND;\n$$;\n\nCREATE OR REPLACE PROCEDURE sp_part2(para_Roller_Coaster_ID integer, para_New_Country_ID integer, para_Name text) LANGUAGE plpgsql AS\n$$\nBEGIN\n    UPDATE \"roller_coaster\" SET \"Country_ID\" = para_New_Country_ID WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID;\n    UPDATE \"country\" SET \"Name\" = para_Name WHERE \"Country_ID\" = para_New_Country_ID;\nEND;\n$$;\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the ride-record access covenant for `roller_coaster`?",
+   "answer": "The ride-record access covenant is the direct read/write allowance for `roller_coaster`: only `Roller_Coaster_ID`, `Name`, `Park`, `Country_ID`, and `Height` may be touched directly by this procedure."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the turnstile handoff?",
+   "answer": "The turnstile handoff is the ordering rule that, in the count-zero branch, `sp_part1` must be called only after the park-dependent action has completed."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Which columns of `country` are directly accessible?",
+   "answer": "`Country_ID`, `Name`, `Population`, and `Languages`."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What value must be used for `Country_ID` in the inserted `roller_coaster` row when `para_Park` is null?",
+   "answer": "`para_New_Country_ID`."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Which value of `para_Height` triggers the no-update branch: null or -1?",
+   "answer": "The numbered height branch is correct: the branch applies when `para_Height` is null. The value is null, not -1. For -1 the procedure takes the <=50 sub-branch and must update or insert population."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable country , columns = [ Country_ID ( integer | primary key | values : 3 , 2 ) , Name ( text | values : Austria , Sweden ) , Population ( integer | values : 8206524 , 8206524 ) , Area ( integer | values : 449964 , 83871 ) , Languages ( text | values : Finnish Swedish , Finnish Swedish ) ]\ntable roller_coaster , columns = [ Roller_Coaster_ID ( integer | primary key | values : 3 , 1 ) , Name ( text | values : Dauling Dragon , Twister ) , Park ( text | values : Holiday World , Kemah Boardwalk ) , Country_ID ( integer | values : 1 , 1 ) , Length ( real | values : 4726.0 , 6442.0 ) , Height ( real | values : 120.0 , 163.0 ) , Speed ( text | values : 37.9 , 51 ) , Opened ( text | values : August 31, 2007 , May 6, 2006 ) , Status ( text | values : Operating , Operating ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "How should the rule \\\"If para_Height is -1, do not call sp_part2 and do not perform any population update or insert\\\" apply when the initial count is 0 and para_Park is not null?",
+    "options": [
+     "It applies globally: with para_Height = -1, sp_part2 must not be called anywhere, so the count=0 non-null-park branch skips sp_part2 (but still updates roller_coaster.Name and then calls sp_part1).",
+     "It applies only to the para_Height evaluation inside the count>0 branch: with count=0 and para_Park not null, sp_part2 is still called even if para_Height = -1."
+    ]
+   },
+   "result": "3",
+   "index": 3,
+   "options": [
+    "None of the following are correct.",
+    "It applies globally: with para_Height = -1, sp_part2 must not be called anywhere, so the count=0 non-null-park branch skips sp_part2 (but still updates roller_coaster.Name and then calls sp_part1).",
+    "It applies only to the para_Height evaluation inside the count>0 branch: with count=0 and para_Park not null, sp_part2 is still called even if para_Height = -1."
+   ],
+   "entry": null,
+   "status": "off_oracle",
+   "conflict_noted": false
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Roller_Coaster_ID integer, para_Country_ID integer, para_Park text, para_Height real, para_Languages text, para_New_Country_ID integer, para_Name text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    var_count bigint;\nBEGIN\n    SELECT count(*) INTO var_count\n    FROM \"roller_coaster\"\n    WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID\n      AND \"Country_ID\" = para_Country_ID;\n\n    IF var_count > 0 THEN\n        CALL sp_part1(para_Roller_Coaster_ID, para_Height, para_Park, para_Country_ID, para_Languages);\n\n        IF para_Height > 50 THEN\n            CALL sp_part2(para_Roller_Coaster_ID, para_New_Country_ID, para_Name);\n        ELSIF para_Height <= 50 AND para_Height <> -1 THEN\n            IF EXISTS (SELECT 1 FROM \"country\" WHERE \"Country_ID\" = para_New_Country_ID) THEN\n                UPDATE \"country\"\n                   SET \"Population\" = \"Population\" + 1000\n                 WHERE \"Country_ID\" = para_New_Country_ID;\n            ELSE\n                INSERT INTO \"country\" (\"Country_ID\", \"Name\", \"Population\")\n                VALUES (para_New_Country_ID, para_Name, 1000);\n            END IF;\n        END IF;\n    ELSE\n        IF para_Park IS NULL THEN\n            INSERT INTO \"roller_coaster\" (\"Roller_Coaster_ID\", \"Name\", \"Park\", \"Height\")\n            VALUES (para_Roller_Coaster_ID, para_Name, NULL, para_Height);\n        ELSE\n            CALL sp_part2(para_Roller_Coaster_ID, para_New_Country_ID, para_Name);\n            UPDATE \"roller_coaster\"\n               SET \"Name\" = para_Name\n             WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID;\n        END IF;\n\n        CALL sp_part1(para_Roller_Coaster_ID, para_Height, para_Park, para_Country_ID, para_Languages);\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DO $$ BEGIN IF NULL THEN RAISE NOTICE 'x'; ELSE RAISE NOTICE 'y'; END IF; END $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT proname, pg_get_function_identity_arguments(oid) FROM pg_proc WHERE proname IN ('sp_part1','sp_part2') ORDER BY proname;"
+   },
+   "result": "proname | pg_get_function_identity_arguments\nsp_part1 | para_roller_coaster_id integer, para_height real, para_park text, para_country_id integer, para_languages text\nsp_part2 | para_roller_coaster_id integer, para_new_country_id integer, para_name text"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Roller_Coaster_ID integer, para_Country_ID integer, para_Park text, para_Height real, para_Languages text, para_New_Country_ID integer, para_Name text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    var_count bigint;\nBEGIN\n    SELECT count(*) INTO var_count\n    FROM \"roller_coaster\"\n    WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID\n      AND \"Country_ID\" = para_Country_ID;\n\n    IF var_count > 0 THEN\n        CALL sp_part1(para_Roller_Coaster_ID, para_Height, para_Park, para_Country_ID, para_Languages);\n\n        IF para_Height > 50 THEN\n            CALL sp_part2(para_Roller_Coaster_ID, para_New_Country_ID, para_Name);\n        ELSIF para_Height <= 50 AND para_Height IS DISTINCT FROM -1 THEN\n            IF EXISTS (SELECT 1 FROM \"country\" WHERE \"Country_ID\" = para_New_Country_ID) THEN\n                UPDATE \"country\"\n                   SET \"Population\" = \"Population\" + 1000\n                 WHERE \"Country_ID\" = para_New_Country_ID;\n            ELSE\n                INSERT INTO \"country\" (\"Country_ID\", \"Name\", \"Population\")\n                VALUES (para_New_Country_ID, para_Name, 1000);\n            END IF;\n        END IF;\n    ELSE\n        IF para_Park IS NULL THEN\n            INSERT INTO \"roller_coaster\" (\"Roller_Coaster_ID\", \"Name\", \"Park\", \"Height\")\n            VALUES (para_Roller_Coaster_ID, para_Name, NULL, para_Height);\n        ELSE\n            CALL sp_part2(para_Roller_Coaster_ID, para_New_Country_ID, para_Name);\n            UPDATE \"roller_coaster\"\n               SET \"Name\" = para_Name\n             WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID;\n        END IF;\n\n        CALL sp_part1(para_Roller_Coaster_ID, para_Height, para_Park, para_Country_ID, para_Languages);\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"roller_coaster\" ORDER BY \"Roller_Coaster_ID\";"
+   },
+   "result": "Roller_Coaster_ID | Name | Park | Country_ID | Length | Height | Speed | Opened | Status\n1 | Boardwalk Bullet | Kemah Boardwalk | 1 | 3236.0 | 96.0 | 51 | August 31, 2007 | Operating\n2 | Dauling Dragon | Happy Valley | 1 | 3914.0 | 105.0 | 55 | 2012 | Operating\n3 | Hades 360 | Mt. Olympus | 1 | 4726.0 | 136.0 | 70 | May 14, 2005 | Operating\n4 | Ravine Flyer II | Waldameer | 2 | 2900.0 | 120.0 | 57 | May 17, 2008 | Operating\n5 | Twister | Gröna Lund | 2 | 1574.0 | 50.0 | 37.9 | 2011 | Operating\n6 | The Voyage | Holiday World | 3 | 6442.0 | 163.0 | 67 | May 6, 2006 | Operating"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"country\" ORDER BY \"Country_ID\";"
+   },
+   "result": "Country_ID | Name | Population | Area | Languages\n1 | Austria | 8206524 | 83871 | German\n2 | Finland | 5261008 | 338145 | Finnish Swedish\n3 | Sweden | 9047752 | 449964 | Swedish"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_Roller_Coaster_ID integer, para_Country_ID integer, para_Park text, para_Height real, para_Languages text, para_New_Country_ID integer, para_Name text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    var_count bigint;\nBEGIN\n    SELECT count(*) INTO var_count\n    FROM \"roller_coaster\"\n    WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID\n      AND \"Country_ID\" = para_Country_ID;\n\n    IF var_count > 0 THEN\n        CALL sp_part1(para_Roller_Coaster_ID, para_Height, para_Park, para_Country_ID, para_Languages);\n\n        IF para_Height > 50 THEN\n            CALL sp_part2(para_Roller_Coaster_ID, para_New_Country_ID, para_Name);\n        ELSIF para_Height <= 50 AND para_Height IS DISTINCT FROM -1 THEN\n            IF EXISTS (SELECT 1 FROM \"country\" WHERE \"Country_ID\" = para_New_Country_ID) THEN\n                UPDATE \"country\"\n                   SET \"Population\" = \"Population\" + 1000\n                 WHERE \"Country_ID\" = para_New_Country_ID;\n            ELSE\n                INSERT INTO \"country\" (\"Country_ID\", \"Name\", \"Population\")\n                VALUES (para_New_Country_ID, para_Name, 1000);\n            END IF;\n        END IF;\n    ELSE\n        IF para_Park IS NULL THEN\n            INSERT INTO \"roller_coaster\" (\"Roller_Coaster_ID\", \"Name\", \"Park\", \"Height\")\n            VALUES (para_Roller_Coaster_ID, para_Name, NULL, para_Height);\n        ELSE\n            CALL sp_part2(para_Roller_Coaster_ID, para_New_Country_ID, para_Name);\n            UPDATE \"roller_coaster\"\n               SET \"Name\" = para_Name\n             WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID;\n        END IF;\n\n        CALL sp_part1(para_Roller_Coaster_ID, para_Height, para_Park, para_Country_ID, para_Languages);\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(3, 1, 'X', 50.0, 'en', 1, 'N');"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"roller_coaster\" ORDER BY \"Roller_Coaster_ID\";"
+   },
+   "result": "Roller_Coaster_ID | Name | Park | Country_ID | Length | Height | Speed | Opened | Status\n1 | Boardwalk Bullet | Kemah Boardwalk | 1 | 3236.0 | 96.0 | 51 | August 31, 2007 | Operating\n2 | Dauling Dragon | Happy Valley | 1 | 3914.0 | 105.0 | 55 | 2012 | Operating\n4 | Ravine Flyer II | Waldameer | 2 | 2900.0 | 120.0 | 57 | May 17, 2008 | Operating\n5 | Twister | Gröna Lund | 2 | 1574.0 | 50.0 | 37.9 | 2011 | Operating\n6 | The Voyage | Holiday World | 3 | 6442.0 | 163.0 | 67 | May 6, 2006 | Operating\n53 | Hades 360 | Mt. Olympus | 1 | 4726.0 | 136.0 | 70 | May 14, 2005 | Operating"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"country\" ORDER BY \"Country_ID\";"
+   },
+   "result": "Country_ID | Name | Population | Area | Languages\n1 | Austria | 8207524 | 83871 | German\n2 | Finland | 5261008 | 338145 | Finnish Swedish\n3 | Sweden | 9047752 | 449964 | en"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "country"
+   },
+   "result": "table country , columns = [ Country_ID ( integer | primary key | values : 3 , 2 ) , Name ( text | values : Austria , Sweden ) , Population ( integer | values : 8206524 , 8206524 ) , Area ( integer | values : 449964 , 83871 ) , Languages ( text | values : Finnish Swedish , Finnish Swedish ) ]"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 15,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "CREATE OR REPLACE PROCEDURE sp(para_Roller_Coaster_ID integer, para_Country_ID integer, para_Park text, para_Height real, para_Languages text, para_New_Country_ID integer, para_Name text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    var_count bigint;\nBEGIN\n    SELECT count(*) INTO var_count\n    FROM \"roller_coaster\"\n    WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID\n      AND \"Country_ID\" = para_Country_ID;\n\n    IF var_count > 0 THEN\n        CALL sp_part1(para_Roller_Coaster_ID, para_Height, para_Park, para_Country_ID, para_Languages);\n\n        IF para_Height > 50 THEN\n            CALL sp_part2(para_Roller_Coaster_ID, para_New_Country_ID, para_Name);\n        ELSIF para_Height <= 50 AND para_Height IS DISTINCT FROM -1 THEN\n            IF EXISTS (SELECT 1 FROM \"country\" WHERE \"Country_ID\" = para_New_Country_ID) THEN\n                UPDATE \"country\"\n                   SET \"Population\" = \"Population\" + 1000\n                 WHERE \"Country_ID\" = para_New_Country_ID;\n            ELSE\n                INSERT INTO \"country\" (\"Country_ID\", \"Name\", \"Population\")\n                VALUES (para_New_Country_ID, para_Name, 1000);\n            END IF;\n        END IF;\n    ELSE\n        IF para_Park IS NULL THEN\n            INSERT INTO \"roller_coaster\" (\"Roller_Coaster_ID\", \"Name\", \"Park\", \"Height\")\n            VALUES (para_Roller_Coaster_ID, para_Name, NULL, para_Height);\n        ELSE\n            CALL sp_part2(para_Roller_Coaster_ID, para_New_Country_ID, para_Name);\n            UPDATE \"roller_coaster\"\n               SET \"Name\" = para_Name\n             WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID;\n        END IF;\n\n        CALL sp_part1(para_Roller_Coaster_ID, para_Height, para_Park, para_Country_ID, para_Languages);\n    END IF;\nEND;\n$$;"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_Roller_Coaster_ID integer, para_Country_ID integer, para_Park text, para_Height real, para_Languages text, para_New_Country_ID integer, para_Name text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    var_count bigint;\nBEGIN\n    SELECT count(*) INTO var_count\n    FROM \"roller_coaster\"\n    WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID\n      AND \"Country_ID\" = para_Country_ID;\n\n    IF var_count > 0 THEN\n        CALL sp_part1(para_Roller_Coaster_ID, para_Height, para_Park, para_Country_ID, para_Languages);\n\n        IF para_Height > 50 THEN\n            CALL sp_part2(para_Roller_Coaster_ID, para_New_Country_ID, para_Name);\n        ELSIF para_Height <= 50 AND para_Height IS DISTINCT FROM -1 THEN\n            IF EXISTS (SELECT 1 FROM \"country\" WHERE \"Country_ID\" = para_New_Country_ID) THEN\n                UPDATE \"country\"\n                   SET \"Population\" = \"Population\" + 1000\n                 WHERE \"Country_ID\" = para_New_Country_ID;\n            ELSE\n                INSERT INTO \"country\" (\"Country_ID\", \"Name\", \"Population\")\n                VALUES (para_New_Country_ID, para_Name, 1000);\n            END IF;\n        END IF;\n    ELSE\n        IF para_Park IS NULL THEN\n            INSERT INTO \"roller_coaster\" (\"Roller_Coaster_ID\", \"Name\", \"Park\", \"Height\")\n            VALUES (para_Roller_Coaster_ID, para_Name, NULL, para_Height);\n        ELSE\n            CALL sp_part2(para_Roller_Coaster_ID, para_New_Country_ID, para_Name);\n            UPDATE \"roller_coaster\"\n               SET \"Name\" = para_Name\n             WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID;\n        END IF;\n\n        CALL sp_part1(para_Roller_Coaster_ID, para_Height, para_Park, para_Country_ID, para_Languages);\n    END IF;\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_Roller_Coaster_ID integer, para_Country_ID integer, para_Park text, para_Height real, para_Languages text, para_New_Country_ID integer, para_Name text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    var_count bigint;\nBEGIN\n    SELECT count(*) INTO var_count\n    FROM \"roller_coaster\"\n    WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID\n      AND \"Country_ID\" = para_Country_ID;\n\n    IF var_count > 0 THEN\n        CALL sp_part1(para_Roller_Coaster_ID, para_Height, para_Park, para_Country_ID, para_Languages);\n\n        IF para_Height > 50 THEN\n            CALL sp_part2(para_Roller_Coaster_ID, para_New_Country_ID, para_Name);\n        ELSIF para_Height <= 50 AND para_Height IS DISTINCT FROM -1 THEN\n            IF EXISTS (SELECT 1 FROM \"country\" WHERE \"Country_ID\" = para_New_Country_ID) THEN\n                UPDATE \"country\"\n                   SET \"Population\" = \"Population\" + 1000\n                 WHERE \"Country_ID\" = para_New_Country_ID;\n            ELSE\n                INSERT INTO \"country\" (\"Country_ID\", \"Name\", \"Population\")\n                VALUES (para_New_Country_ID, para_Name, 1000);\n            END IF;\n        END IF;\n    ELSE\n        IF para_Park IS NULL THEN\n            INSERT INTO \"roller_coaster\" (\"Roller_Coaster_ID\", \"Name\", \"Park\", \"Height\")\n            VALUES (para_Roller_Coaster_ID, para_Name, NULL, para_Height);\n        ELSE\n            CALL sp_part2(para_Roller_Coaster_ID, para_New_Country_ID, para_Name);\n            UPDATE \"roller_coaster\"\n               SET \"Name\" = para_Name\n             WHERE \"Roller_Coaster_ID\" = para_Roller_Coaster_ID;\n        END IF;\n\n        CALL sp_part1(para_Roller_Coaster_ID, para_Height, para_Park, para_Country_ID, para_Languages);\n    END IF;\nEND;\n$$;"
+ },
+ "pair": {
+  "single_run": "st04",
+  "single_task": "postgres_a5_002"
+ }
+}

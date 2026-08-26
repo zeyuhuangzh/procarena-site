@@ -1,0 +1,940 @@
+{
+ "id": "sp-pg-b2-100--postgres_b2_000",
+ "run": "sp-pg-b2-100",
+ "task_id": "postgres_b2_000",
+ "stage": "single",
+ "condition": "tools-only",
+ "tier": "single-turn",
+ "scenario": "b2",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 100,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "no submission",
+  "checks": null,
+  "metrics": null,
+  "attribution": "impl",
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 100,
+  "seconds": 911.8,
+  "termination": "max_steps",
+  "submitted": false,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 3,
+   "describe_table": 2,
+   "execute_scratch": 76,
+   "reset_scratch": 15,
+   "compile_plsql": 2
+  }
+ },
+ "task": {
+  "prompt": "We have a PostgreSQL PL/pgSQL stored procedure whose current implementation is attached as current_procedure.sql. It is functionally correct and defines the required behaviour. On real data volumes it runs too slowly.\n\nPlease rewrite the attached procedure so that it does exactly the same thing with less database work. For every input, the final database state must be identical to what the attached procedure produces.\n\nThe procedure must keep exactly this signature and parameter list:\nsp(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text)\n\nReturn only the complete stored procedure and nothing else.",
+  "materials": [
+   {
+    "file": "current_procedure.sql",
+    "kind": "current procedure (correct but slow)",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE cur CURSOR FOR SELECT \"Attendance\", \"integer\" FROM \"performance\" WHERE \"Attendance\" > para_Attendance; rec RECORD; att RECORD; var1 integer; var2 text; v_attendance integer; v_integer text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" < var1 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\", \"integer\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance AND rec.\"integer\" LIKE var2 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance THEN UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" >= var1 THEN UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 20 THEN OPEN cur; LOOP FETCH cur INTO rec; EXIT WHEN NOT FOUND; v_attendance := rec.\"Attendance\"; v_integer := rec.\"integer\"; FOR att IN SELECT ctid AS row_id FROM \"member_attendance\" WHERE \"Num_of_Pieces\" = v_attendance LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = v_integer WHERE ctid = att.row_id; END LOOP; var1 := var1 + 1; END LOOP; CLOSE cur; ELSIF para_Num_of_Pieces < 30 THEN FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" < para_Attendance THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated') WHERE ctid = rec.row_id; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" % 5 = 0 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 40 THEN FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP IF para_Performance_ID > 50 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" / 2 WHERE ctid = rec.row_id; ELSE UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" * 3 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"integer\" FROM \"performance\" LOOP IF rec.\"integer\" IS NULL THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" > 100 THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE ctid = rec.row_id; END IF; END LOOP; END IF; END; $$;\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable member , columns = [ Member_ID ( text | primary key | values : 7 , 10 ) , Name ( text | values : Charlie Burke , Joshua Pittman ) , Nationality ( text | values : Argentina , United States ) , Role ( text | values : Bass , Cello ) ]\ntable member_attendance , columns = [ Member_ID ( integer | primary key | values : 7 , 7 ) , Performance_ID ( integer | values : 3 , 3 ) , Num_of_Pieces ( integer | values : 1 , 3 ) ]\ntable performance , columns = [ Performance_ID ( real | primary key | values : 6.0 , 4.0 ) , integer ( text | values : February 11 , February 11 ) , Host ( text | values : New York Rangers , Boston Bruins ) , Location ( text | values : Madison Square Garden , Bell Centre ) , Attendance ( integer | values : 1820 , 1878 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "performance"
+   },
+   "result": "Performance_ID | integer | Host | Location | Attendance\n1.0 | February 2 | Boston Bruins | TD Garden | 165\n2.0 | February 4 | New York Rangers | Madison Square Garden | 1820\n3.0 | February 5 | Atlanta Thrashers | Verizon Center | 1878\n4.0 | February 7 | Pittsburgh Penguins | Verizon Center | 1877\n5.0 | February 10 | Montreal Canadiens | Bell Centre | 2173\n6.0 | February 11 | Ottawa Senators | Scotiabank Place | 1982"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "member_attendance"
+   },
+   "result": "Member_ID | Performance_ID | Num_of_Pieces\n1 | 4 | 4\n2 | 1 | 1\n3 | 1 | 1\n4 | 3 | 2\n4 | 6 | 4\n5 | 1 | 2\n7 | 2 | 3\n11 | 3 | 2"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "member"
+   },
+   "result": "Member_ID | Name | Nationality | Role\n1 | Wilfredo Ruiz | Uruguay | Prime Violin\n10 | Joshua Pittman | United States | Bass\n11 | Joseph Bunn | United States | Bass\n2 | Luis González | Argentina | Violin\n3 | Héctor Campana | Argentina | Violin\n4 | Héctor Campana | Argentina | Violin\n5 | Juan Espil | Argentina | Viola\n6 | Andrew Moten | United States | Viola\n7 | Charlie Burke | United States | Viola\n8 | Corey Allen | United States | Cello\n9 | John Eubanks | United States | Cello"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "performance"
+   },
+   "result": "table performance , columns = [ Performance_ID ( real | primary key | values : 6.0 , 4.0 ) , integer ( text | values : February 11 , February 11 ) , Host ( text | values : New York Rangers , Boston Bruins ) , Location ( text | values : Madison Square Garden , Bell Centre ) , Attendance ( integer | values : 1820 , 1878 ) ]"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "member_attendance"
+   },
+   "result": "table member_attendance , columns = [ Member_ID ( integer | primary key | values : 7 , 7 ) , Performance_ID ( integer | values : 3 , 3 ) , Num_of_Pieces ( integer | values : 1 , 3 ) ]"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT indexname, indexdef FROM pg_indexes WHERE tablename IN ('performance','member_attendance')"
+   },
+   "result": "indexname | indexdef\nmember_attendance_pkey | CREATE UNIQUE INDEX member_attendance_pkey ON public.member_attendance USING btree (\"Member_ID\", \"Performance_ID\")\nperformance_pkey | CREATE UNIQUE INDEX performance_pkey ON public.performance USING btree (\"Performance_ID\")"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT ctid, \"Attendance\", \"integer\" FROM \"performance\" WHERE \"Attendance\" > 0"
+   },
+   "result": "ctid | Attendance | integer\n(0,1) | 165 | February 2\n(0,2) | 1820 | February 4\n(0,3) | 1878 | February 5\n(0,4) | 1877 | February 7\n(0,5) | 2173 | February 10\n(0,6) | 1982 | February 11"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT ctid, \"Attendance\", \"integer\" FROM \"performance\" WHERE \"Attendance\" > 0 ORDER BY ctid"
+   },
+   "result": "ctid | Attendance | integer\n(0,1) | 165 | February 2\n(0,2) | 1820 | February 4\n(0,3) | 1878 | February 5\n(0,4) | 1877 | February 7\n(0,5) | 2173 | February 10\n(0,6) | 1982 | February 11"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_orig(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE cur CURSOR FOR SELECT \"Attendance\", \"integer\" FROM \"performance\" WHERE \"Attendance\" > para_Attendance; rec RECORD; att RECORD; var1 integer; var2 text; v_attendance integer; v_integer text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" < var1 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\", \"integer\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance AND rec.\"integer\" LIKE var2 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance THEN UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" >= var1 THEN UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 20 THEN OPEN cur; LOOP FETCH cur INTO rec; EXIT WHEN NOT FOUND; v_attendance := rec.\"Attendance\"; v_integer := rec.\"integer\"; FOR att IN SELECT ctid AS row_id FROM \"member_attendance\" WHERE \"Num_of_Pieces\" = v_attendance LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = v_integer WHERE ctid = att.row_id; END LOOP; var1 := var1 + 1; END LOOP; CLOSE cur; ELSIF para_Num_of_Pieces < 30 THEN FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" < para_Attendance THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated') WHERE ctid = rec.row_id; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" % 5 = 0 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 40 THEN FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP IF para_Performance_ID > 50 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" / 2 WHERE ctid = rec.row_id; ELSE UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" * 3 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"integer\" FROM \"performance\" LOOP IF rec.\"integer\" IS NULL THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" > 100 THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE ctid = rec.row_id; END IF; END LOOP; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_new(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE var1 integer; var2 text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE \"Num_of_Pieces\" < var1; DELETE FROM \"performance\" WHERE \"Attendance\" = para_Attendance AND \"integer\" LIKE var2; UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE \"Attendance\" = para_Attendance; UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE \"Attendance\" >= var1; ELSIF para_Num_of_Pieces < 20 THEN UPDATE \"member_attendance\" AS ma SET \"Performance_ID\" = sub.\"integer\" FROM (SELECT DISTINCT ON (p.\"Attendance\") p.\"Attendance\", p.\"integer\" FROM \"performance\" AS p WHERE p.\"Attendance\" > para_Attendance ORDER BY p.\"Attendance\", p.ctid DESC) AS sub WHERE ma.\"Num_of_Pieces\" = sub.\"Attendance\"; ELSIF para_Num_of_Pieces < 30 THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE \"Attendance\" < para_Attendance; UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated'); DELETE FROM \"performance\" WHERE \"Attendance\" % 5 = 0; ELSIF para_Num_of_Pieces < 40 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = CASE WHEN para_Performance_ID > 50 THEN \"Num_of_Pieces\" / 2 ELSE \"Num_of_Pieces\" * 3 END; DELETE FROM \"performance\" WHERE \"integer\" IS NULL; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE \"Num_of_Pieces\" > 100; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_orig(3,5,1820,'x'); SELECT * FROM member_attendance ORDER BY Member_ID, Performance_ID; SELECT * FROM performance ORDER BY Performance_ID;"
+   },
+   "result": "error: [42703] column \"member_id\" does not exist"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM member_attendance ORDER BY \"Member_ID\", \"Performance_ID\"; SELECT * FROM performance ORDER BY \"Performance_ID\";"
+   },
+   "result": "Member_ID | Performance_ID | Num_of_Pieces\n1 | 4 | 4\n2 | 1 | 1\n3 | 1 | 1\n4 | 3 | 2\n4 | 6 | 4\n5 | 1 | 2\n7 | 2 | 3\n11 | 3 | 2"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_orig(3,5,1820,'x')"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM member_attendance ORDER BY \"Member_ID\", \"Performance_ID\"; SELECT * FROM performance ORDER BY \"Performance_ID\";"
+   },
+   "result": "Member_ID | Performance_ID | Num_of_Pieces\n1 | 4 | 9\n2 | 1 | 6\n3 | 1 | 6\n4 | 3 | 7\n4 | 6 | 9\n5 | 1 | 7\n7 | 2 | 8\n11 | 3 | 7"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM performance ORDER BY \"Performance_ID\";"
+   },
+   "result": "Performance_ID | integer | Host | Location | Attendance\n1.0 | February 2 | Boston Bruins:5 | TD Garden | 165\n2.0 | February 4 | New York Rangers:5 | Madison Square Garden:5 | 1820\n3.0 | February 5 | Atlanta Thrashers:5 | Verizon Center | 1878\n4.0 | February 7 | Pittsburgh Penguins:5 | Verizon Center | 1877\n5.0 | February 10 | Montreal Canadiens:5 | Bell Centre | 2173\n6.0 | February 11 | Ottawa Senators:5 | Scotiabank Place | 1982"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_new(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE var1 integer; var2 text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE \"Num_of_Pieces\" < var1; DELETE FROM \"performance\" WHERE \"Attendance\" = para_Attendance AND \"integer\" LIKE var2; UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE \"Attendance\" = para_Attendance; UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE \"Attendance\" >= var1; ELSIF para_Num_of_Pieces < 20 THEN UPDATE \"member_attendance\" AS ma SET \"Performance_ID\" = sub.\"integer\" FROM (SELECT DISTINCT ON (p.\"Attendance\") p.\"Attendance\", p.\"integer\" FROM \"performance\" AS p WHERE p.\"Attendance\" > para_Attendance ORDER BY p.\"Attendance\", p.ctid DESC) AS sub WHERE ma.\"Num_of_Pieces\" = sub.\"Attendance\"; ELSIF para_Num_of_Pieces < 30 THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE \"Attendance\" < para_Attendance; UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated'); DELETE FROM \"performance\" WHERE \"Attendance\" % 5 = 0; ELSIF para_Num_of_Pieces < 40 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = CASE WHEN para_Performance_ID > 50 THEN \"Num_of_Pieces\" / 2 ELSE \"Num_of_Pieces\" * 3 END; DELETE FROM \"performance\" WHERE \"integer\" IS NULL; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE \"Num_of_Pieces\" > 100; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_new(3,5,1820,'x')"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM member_attendance ORDER BY \"Member_ID\", \"Performance_ID\";"
+   },
+   "result": "Member_ID | Performance_ID | Num_of_Pieces\n1 | 4 | 9\n2 | 1 | 6\n3 | 1 | 6\n4 | 3 | 7\n4 | 6 | 9\n5 | 1 | 7\n7 | 2 | 8\n11 | 3 | 7"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM performance ORDER BY \"Performance_ID\";"
+   },
+   "result": "Performance_ID | integer | Host | Location | Attendance\n1.0 | February 2 | Boston Bruins:5 | TD Garden | 165\n2.0 | February 4 | New York Rangers:5 | Madison Square Garden:5 | 1820\n3.0 | February 5 | Atlanta Thrashers:5 | Verizon Center | 1878\n4.0 | February 7 | Pittsburgh Penguins:5 | Verizon Center | 1877\n5.0 | February 10 | Montreal Canadiens:5 | Bell Centre | 2173\n6.0 | February 11 | Ottawa Senators:5 | Scotiabank Place | 1982"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_orig(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE cur CURSOR FOR SELECT \"Attendance\", \"integer\" FROM \"performance\" WHERE \"Attendance\" > para_Attendance; rec RECORD; att RECORD; var1 integer; var2 text; v_attendance integer; v_integer text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" < var1 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\", \"integer\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance AND rec.\"integer\" LIKE var2 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance THEN UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" >= var1 THEN UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 20 THEN OPEN cur; LOOP FETCH cur INTO rec; EXIT WHEN NOT FOUND; v_attendance := rec.\"Attendance\"; v_integer := rec.\"integer\"; FOR att IN SELECT ctid AS row_id FROM \"member_attendance\" WHERE \"Num_of_Pieces\" = v_attendance LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = v_integer WHERE ctid = att.row_id; END LOOP; var1 := var1 + 1; END LOOP; CLOSE cur; ELSIF para_Num_of_Pieces < 30 THEN FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" < para_Attendance THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated') WHERE ctid = rec.row_id; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" % 5 = 0 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 40 THEN FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP IF para_Performance_ID > 50 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" / 2 WHERE ctid = rec.row_id; ELSE UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" * 3 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"integer\" FROM \"performance\" LOOP IF rec.\"integer\" IS NULL THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" > 100 THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE ctid = rec.row_id; END IF; END LOOP; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_new(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE var1 integer; var2 text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE \"Num_of_Pieces\" < var1; DELETE FROM \"performance\" WHERE \"Attendance\" = para_Attendance AND \"integer\" LIKE var2; UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE \"Attendance\" = para_Attendance; UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE \"Attendance\" >= var1; ELSIF para_Num_of_Pieces < 20 THEN UPDATE \"member_attendance\" AS ma SET \"Performance_ID\" = sub.\"integer\" FROM (SELECT DISTINCT ON (p.\"Attendance\") p.\"Attendance\", p.\"integer\" FROM \"performance\" AS p WHERE p.\"Attendance\" > para_Attendance ORDER BY p.\"Attendance\", p.ctid DESC) AS sub WHERE ma.\"Num_of_Pieces\" = sub.\"Attendance\"; ELSIF para_Num_of_Pieces < 30 THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE \"Attendance\" < para_Attendance; UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated'); DELETE FROM \"performance\" WHERE \"Attendance\" % 5 = 0; ELSIF para_Num_of_Pieces < 40 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = CASE WHEN para_Performance_ID > 50 THEN \"Num_of_Pieces\" / 2 ELSE \"Num_of_Pieces\" * 3 END; DELETE FROM \"performance\" WHERE \"integer\" IS NULL; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE \"Num_of_Pieces\" > 100; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_orig(30,40,1820,'x')"
+   },
+   "result": "error: [23502] null value in column \"Performance_ID\" violates not-null constraint -- Failing row contains (null, fallback, null, null, 60)."
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name='performance' ORDER BY ordinal_position;"
+   },
+   "result": "column_name | data_type | is_nullable | column_default\nPerformance_ID | real | NO | NULL\ninteger | text | YES | NULL\nHost | text | YES | NULL\nLocation | text | YES | NULL\nAttendance | integer | YES | NULL"
+  },
+  {
+   "step": 28,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) FROM performance; SELECT count(*) FROM member_attendance;"
+   },
+   "result": "count\n6"
+  },
+  {
+   "step": 29,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_orig(10,5,0,'x')"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 30,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM member_attendance ORDER BY \"Member_ID\", \"Performance_ID\";"
+   },
+   "result": "Member_ID | Performance_ID | Num_of_Pieces\n1 | 4 | 4\n2 | 1 | 1\n3 | 1 | 1\n4 | 3 | 2\n4 | 6 | 4\n5 | 1 | 2\n7 | 2 | 3\n11 | 3 | 2"
+  },
+  {
+   "step": 31,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 32,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_orig(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE cur CURSOR FOR SELECT \"Attendance\", \"integer\" FROM \"performance\" WHERE \"Attendance\" > para_Attendance; rec RECORD; att RECORD; var1 integer; var2 text; v_attendance integer; v_integer text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" < var1 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\", \"integer\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance AND rec.\"integer\" LIKE var2 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance THEN UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" >= var1 THEN UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 20 THEN OPEN cur; LOOP FETCH cur INTO rec; EXIT WHEN NOT FOUND; v_attendance := rec.\"Attendance\"; v_integer := rec.\"integer\"; FOR att IN SELECT ctid AS row_id FROM \"member_attendance\" WHERE \"Num_of_Pieces\" = v_attendance LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = v_integer WHERE ctid = att.row_id; END LOOP; var1 := var1 + 1; END LOOP; CLOSE cur; ELSIF para_Num_of_Pieces < 30 THEN FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" < para_Attendance THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated') WHERE ctid = rec.row_id; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" % 5 = 0 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 40 THEN FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP IF para_Performance_ID > 50 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" / 2 WHERE ctid = rec.row_id; ELSE UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" * 3 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"integer\" FROM \"performance\" LOOP IF rec.\"integer\" IS NULL THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" > 100 THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE ctid = rec.row_id; END IF; END LOOP; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 33,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_new(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE var1 integer; var2 text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE \"Num_of_Pieces\" < var1; DELETE FROM \"performance\" WHERE \"Attendance\" = para_Attendance AND \"integer\" LIKE var2; UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE \"Attendance\" = para_Attendance; UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE \"Attendance\" >= var1; ELSIF para_Num_of_Pieces < 20 THEN UPDATE \"member_attendance\" AS ma SET \"Performance_ID\" = sub.\"integer\" FROM (SELECT DISTINCT ON (p.\"Attendance\") p.\"Attendance\", p.\"integer\" FROM \"performance\" AS p WHERE p.\"Attendance\" > para_Attendance ORDER BY p.\"Attendance\", p.ctid DESC) AS sub WHERE ma.\"Num_of_Pieces\" = sub.\"Attendance\"; ELSIF para_Num_of_Pieces < 30 THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE \"Attendance\" < para_Attendance; UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated'); DELETE FROM \"performance\" WHERE \"Attendance\" % 5 = 0; ELSIF para_Num_of_Pieces < 40 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = CASE WHEN para_Performance_ID > 50 THEN \"Num_of_Pieces\" / 2 ELSE \"Num_of_Pieces\" * 3 END; DELETE FROM \"performance\" WHERE \"integer\" IS NULL; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE \"Num_of_Pieces\" > 100; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 34,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO \"performance\" (\"Performance_ID\",\"Attendance\",\"integer\") VALUES (100,999,'111'), (101,999,'222'); INSERT INTO \"member_attendance\" (\"Member_ID\",\"Performance_ID\",\"Num_of_Pieces\") VALUES (100,1,999),(101,1,999);"
+   },
+   "result": "ok, 2 row(s) affected"
+  },
+  {
+   "step": 35,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_orig(10,5,0,'x')"
+   },
+   "result": "error: [42804] column \"Performance_ID\" is of type integer but expression is of type text"
+  },
+  {
+   "step": 36,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_new(10,5,999999,'x')"
+   },
+   "result": "error: [42804] column \"Performance_ID\" is of type integer but expression is of type text"
+  },
+  {
+   "step": 37,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DELETE FROM member_attendance; UPDATE member_attendance SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated');"
+   },
+   "result": "error: [42804] column \"Performance_ID\" is of type integer but expression is of type text"
+  },
+  {
+   "step": 38,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT tgname, tgtype, pg_get_triggerdef(oid) FROM pg_trigger WHERE tgrelid = 'performance'::regclass AND NOT tgisinternal;"
+   },
+   "result": "(tgname | tgtype | pg_get_triggerdef)\n(no rows)"
+  },
+  {
+   "step": 39,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 40,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_orig(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE cur CURSOR FOR SELECT \"Attendance\", \"integer\" FROM \"performance\" WHERE \"Attendance\" > para_Attendance; rec RECORD; att RECORD; var1 integer; var2 text; v_attendance integer; v_integer text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" < var1 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\", \"integer\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance AND rec.\"integer\" LIKE var2 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance THEN UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" >= var1 THEN UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 20 THEN OPEN cur; LOOP FETCH cur INTO rec; EXIT WHEN NOT FOUND; v_attendance := rec.\"Attendance\"; v_integer := rec.\"integer\"; FOR att IN SELECT ctid AS row_id FROM \"member_attendance\" WHERE \"Num_of_Pieces\" = v_attendance LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = v_integer WHERE ctid = att.row_id; END LOOP; var1 := var1 + 1; END LOOP; CLOSE cur; ELSIF para_Num_of_Pieces < 30 THEN FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" < para_Attendance THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated') WHERE ctid = rec.row_id; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" % 5 = 0 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 40 THEN FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP IF para_Performance_ID > 50 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" / 2 WHERE ctid = rec.row_id; ELSE UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" * 3 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"integer\" FROM \"performance\" LOOP IF rec.\"integer\" IS NULL THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" > 100 THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE ctid = rec.row_id; END IF; END LOOP; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 41,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_new(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE var1 integer; var2 text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE \"Num_of_Pieces\" < var1; DELETE FROM \"performance\" WHERE \"Attendance\" = para_Attendance AND \"integer\" LIKE var2; UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE \"Attendance\" = para_Attendance; UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE \"Attendance\" >= var1; ELSIF para_Num_of_Pieces < 20 THEN IF EXISTS (SELECT 1 FROM \"performance\" p JOIN \"member_attendance\" ma ON ma.\"Num_of_Pieces\" = p.\"Attendance\" WHERE p.\"Attendance\" > para_Attendance) THEN RAISE EXCEPTION 'column \"Performance_ID\" is of type integer but expression is of type text' USING ERRCODE = '42804'; END IF; ELSIF para_Num_of_Pieces < 30 THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE \"Attendance\" < para_Attendance; IF EXISTS (SELECT 1 FROM \"member_attendance\") THEN RAISE EXCEPTION 'column \"Performance_ID\" is of type integer but expression is of type text' USING ERRCODE = '42804'; END IF; DELETE FROM \"performance\" WHERE \"Attendance\" % 5 = 0; ELSIF para_Num_of_Pieces < 40 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = CASE WHEN para_Performance_ID > 50 THEN \"Num_of_Pieces\" / 2 ELSE \"Num_of_Pieces\" * 3 END; DELETE FROM \"performance\" WHERE \"integer\" IS NULL; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE \"Num_of_Pieces\" > 100; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 42,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_orig(10,5,999999,'x')"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 43,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) AS perf_count FROM performance; SELECT count(*) AS ma_count FROM member_attendance;"
+   },
+   "result": "perf_count\n6"
+  },
+  {
+   "step": 44,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 45,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_new(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE var1 integer; var2 text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE \"Num_of_Pieces\" < var1; DELETE FROM \"performance\" WHERE \"Attendance\" = para_Attendance AND \"integer\" LIKE var2; UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE \"Attendance\" = para_Attendance; UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE \"Attendance\" >= var1; ELSIF para_Num_of_Pieces < 20 THEN IF EXISTS (SELECT 1 FROM \"performance\" p JOIN \"member_attendance\" ma ON ma.\"Num_of_Pieces\" = p.\"Attendance\" WHERE p.\"Attendance\" > para_Attendance) THEN RAISE EXCEPTION 'column \"Performance_ID\" is of type integer but expression is of type text' USING ERRCODE = '42804'; END IF; ELSIF para_Num_of_Pieces < 30 THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE \"Attendance\" < para_Attendance; IF EXISTS (SELECT 1 FROM \"member_attendance\") THEN RAISE EXCEPTION 'column \"Performance_ID\" is of type integer but expression is of type text' USING ERRCODE = '42804'; END IF; DELETE FROM \"performance\" WHERE \"Attendance\" % 5 = 0; ELSIF para_Num_of_Pieces < 40 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = CASE WHEN para_Performance_ID > 50 THEN \"Num_of_Pieces\" / 2 ELSE \"Num_of_Pieces\" * 3 END; DELETE FROM \"performance\" WHERE \"integer\" IS NULL; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE \"Num_of_Pieces\" > 100; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 46,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_new(10,5,999999,'x')"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 47,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_new(10,5,0,'x')"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 48,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM member_attendance ORDER BY \"Member_ID\", \"Performance_ID\";"
+   },
+   "result": "Member_ID | Performance_ID | Num_of_Pieces\n1 | 4 | 4\n2 | 1 | 1\n3 | 1 | 1\n4 | 3 | 2\n4 | 6 | 4\n5 | 1 | 2\n7 | 2 | 3\n11 | 3 | 2"
+  },
+  {
+   "step": 49,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO \"performance\" (\"Performance_ID\",\"Attendance\",\"integer\") VALUES (100,999,'111'), (101,999,'222'); INSERT INTO \"member_attendance\" (\"Member_ID\",\"Performance_ID\",\"Num_of_Pieces\") VALUES (100,1,999),(101,1,999);"
+   },
+   "result": "ok, 2 row(s) affected"
+  },
+  {
+   "step": 50,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_new(10,5,0,'x')"
+   },
+   "result": "error: [42804] column \"Performance_ID\" is of type integer but expression is of type text"
+  },
+  {
+   "step": 51,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM member_attendance WHERE \"Member_ID\" IN (100,101) ORDER BY \"Member_ID\";"
+   },
+   "result": "Member_ID | Performance_ID | Num_of_Pieces\n100 | 1 | 999\n101 | 1 | 999"
+  },
+  {
+   "step": 52,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DELETE FROM member_attendance;"
+   },
+   "result": "ok, 10 row(s) affected"
+  },
+  {
+   "step": 53,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_new(20,7,2000,'x')"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 54,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM performance ORDER BY \"Performance_ID\";"
+   },
+   "result": "Performance_ID | integer | Host | Location | Attendance\n3.0 | 7 | Atlanta Thrashers | Verizon Center | 1878\n4.0 | 7 | Pittsburgh Penguins | Verizon Center | 1877\n5.0 | February 10 | Montreal Canadiens | Bell Centre | 2173\n6.0 | 7 | Ottawa Senators | Scotiabank Place | 1982\n100.0 | 7 | NULL | NULL | 999\n101.0 | 7 | NULL | NULL | 999"
+  },
+  {
+   "step": 55,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 56,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_orig(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE cur CURSOR FOR SELECT \"Attendance\", \"integer\" FROM \"performance\" WHERE \"Attendance\" > para_Attendance; rec RECORD; att RECORD; var1 integer; var2 text; v_attendance integer; v_integer text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" < var1 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\", \"integer\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance AND rec.\"integer\" LIKE var2 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance THEN UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" >= var1 THEN UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 20 THEN OPEN cur; LOOP FETCH cur INTO rec; EXIT WHEN NOT FOUND; v_attendance := rec.\"Attendance\"; v_integer := rec.\"integer\"; FOR att IN SELECT ctid AS row_id FROM \"member_attendance\" WHERE \"Num_of_Pieces\" = v_attendance LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = v_integer WHERE ctid = att.row_id; END LOOP; var1 := var1 + 1; END LOOP; CLOSE cur; ELSIF para_Num_of_Pieces < 30 THEN FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" < para_Attendance THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated') WHERE ctid = rec.row_id; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" % 5 = 0 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 40 THEN FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP IF para_Performance_ID > 50 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" / 2 WHERE ctid = rec.row_id; ELSE UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" * 3 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"integer\" FROM \"performance\" LOOP IF rec.\"integer\" IS NULL THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" > 100 THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE ctid = rec.row_id; END IF; END LOOP; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 57,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DELETE FROM member_attendance; CALL sp_orig(20,7,2000,'x')"
+   },
+   "result": "ok, 8 row(s) affected"
+  },
+  {
+   "step": 58,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM performance ORDER BY \"Performance_ID\";"
+   },
+   "result": "Performance_ID | integer | Host | Location | Attendance\n3.0 | 7 | Atlanta Thrashers | Verizon Center | 1878\n4.0 | 7 | Pittsburgh Penguins | Verizon Center | 1877\n5.0 | February 10 | Montreal Canadiens | Bell Centre | 2173\n6.0 | 7 | Ottawa Senators | Scotiabank Place | 1982"
+  },
+  {
+   "step": 59,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO member_attendance (\"Member_ID\",\"Performance_ID\",\"Num_of_Pieces\") VALUES (200,1,10); CALL sp_orig(20,7,2000,'x')"
+   },
+   "result": "error: [42804] column \"Performance_ID\" is of type integer but expression is of type text"
+  },
+  {
+   "step": 60,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 61,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_new2(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE var1 integer; var2 text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE \"Num_of_Pieces\" < var1; DELETE FROM \"performance\" WHERE \"Attendance\" = para_Attendance AND \"integer\" LIKE var2; UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE \"Attendance\" = para_Attendance; UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE \"Attendance\" >= var1; ELSIF para_Num_of_Pieces < 20 THEN IF EXISTS (SELECT 1 FROM \"performance\" p JOIN \"member_attendance\" ma ON ma.\"Num_of_Pieces\" = p.\"Attendance\" WHERE p.\"Attendance\" > para_Attendance) THEN UPDATE \"member_attendance\" AS ma SET \"Performance_ID\" = p.\"integer\" FROM \"performance\" AS p WHERE p.\"Attendance\" > para_Attendance AND ma.\"Num_of_Pieces\" = p.\"Attendance\"; END IF; ELSIF para_Num_of_Pieces < 30 THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE \"Attendance\" < para_Attendance; IF EXISTS (SELECT 1 FROM \"member_attendance\") THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated'); END IF; DELETE FROM \"performance\" WHERE \"Attendance\" % 5 = 0; ELSIF para_Num_of_Pieces < 40 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = CASE WHEN para_Performance_ID > 50 THEN \"Num_of_Pieces\" / 2 ELSE \"Num_of_Pieces\" * 3 END; DELETE FROM \"performance\" WHERE \"integer\" IS NULL; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE \"Num_of_Pieces\" > 100; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 62,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_new2(3,5,1820,'x')"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 63,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM member_attendance ORDER BY \"Member_ID\", \"Performance_ID\";"
+   },
+   "result": "Member_ID | Performance_ID | Num_of_Pieces\n1 | 4 | 9\n2 | 1 | 6\n3 | 1 | 6\n4 | 3 | 7\n4 | 6 | 9\n5 | 1 | 7\n7 | 2 | 8\n11 | 3 | 7"
+  },
+  {
+   "step": 64,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM performance ORDER BY \"Performance_ID\";"
+   },
+   "result": "Performance_ID | integer | Host | Location | Attendance\n1.0 | February 2 | Boston Bruins:5 | TD Garden | 165\n2.0 | February 4 | New York Rangers:5 | Madison Square Garden:5 | 1820\n3.0 | February 5 | Atlanta Thrashers:5 | Verizon Center | 1878\n4.0 | February 7 | Pittsburgh Penguins:5 | Verizon Center | 1877\n5.0 | February 10 | Montreal Canadiens:5 | Bell Centre | 2173\n6.0 | February 11 | Ottawa Senators:5 | Scotiabank Place | 1982"
+  },
+  {
+   "step": 65,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 66,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_orig(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE cur CURSOR FOR SELECT \"Attendance\", \"integer\" FROM \"performance\" WHERE \"Attendance\" > para_Attendance; rec RECORD; att RECORD; var1 integer; var2 text; v_attendance integer; v_integer text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" < var1 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\", \"integer\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance AND rec.\"integer\" LIKE var2 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance THEN UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" >= var1 THEN UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 20 THEN OPEN cur; LOOP FETCH cur INTO rec; EXIT WHEN NOT FOUND; v_attendance := rec.\"Attendance\"; v_integer := rec.\"integer\"; FOR att IN SELECT ctid AS row_id FROM \"member_attendance\" WHERE \"Num_of_Pieces\" = v_attendance LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = v_integer WHERE ctid = att.row_id; END LOOP; var1 := var1 + 1; END LOOP; CLOSE cur; ELSIF para_Num_of_Pieces < 30 THEN FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" < para_Attendance THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated') WHERE ctid = rec.row_id; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" % 5 = 0 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 40 THEN FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP IF para_Performance_ID > 50 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" / 2 WHERE ctid = rec.row_id; ELSE UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" * 3 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"integer\" FROM \"performance\" LOOP IF rec.\"integer\" IS NULL THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" > 100 THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE ctid = rec.row_id; END IF; END LOOP; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 67,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO \"performance\" (\"Performance_ID\",\"Attendance\",\"integer\",\"Host\",\"Location\") VALUES (50,1820,'5','TestHost','TestLoc'), (51,1820,'not5','OtherHost','OtherLoc')"
+   },
+   "result": "ok, 2 row(s) affected"
+  },
+  {
+   "step": 68,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_orig(3,5,1820,'x')"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 69,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM performance ORDER BY \"Performance_ID\";"
+   },
+   "result": "Performance_ID | integer | Host | Location | Attendance\n1.0 | February 2 | Boston Bruins:5 | TD Garden | 165\n2.0 | February 4 | New York Rangers:5 | Madison Square Garden:5 | 1820\n3.0 | February 5 | Atlanta Thrashers:5 | Verizon Center | 1878\n4.0 | February 7 | Pittsburgh Penguins:5 | Verizon Center | 1877\n5.0 | February 10 | Montreal Canadiens:5 | Bell Centre | 2173\n6.0 | February 11 | Ottawa Senators:5 | Scotiabank Place | 1982\n51.0 | not5 | OtherHost:5 | OtherLoc:5 | 1820"
+  },
+  {
+   "step": 70,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 71,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_new2(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE var1 integer; var2 text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE \"Num_of_Pieces\" < var1; DELETE FROM \"performance\" WHERE \"Attendance\" = para_Attendance AND \"integer\" LIKE var2; UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE \"Attendance\" = para_Attendance; UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE \"Attendance\" >= var1; ELSIF para_Num_of_Pieces < 20 THEN IF EXISTS (SELECT 1 FROM \"performance\" p JOIN \"member_attendance\" ma ON ma.\"Num_of_Pieces\" = p.\"Attendance\" WHERE p.\"Attendance\" > para_Attendance) THEN UPDATE \"member_attendance\" AS ma SET \"Performance_ID\" = p.\"integer\" FROM \"performance\" AS p WHERE p.\"Attendance\" > para_Attendance AND ma.\"Num_of_Pieces\" = p.\"Attendance\"; END IF; ELSIF para_Num_of_Pieces < 30 THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE \"Attendance\" < para_Attendance; IF EXISTS (SELECT 1 FROM \"member_attendance\") THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated'); END IF; DELETE FROM \"performance\" WHERE \"Attendance\" % 5 = 0; ELSIF para_Num_of_Pieces < 40 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = CASE WHEN para_Performance_ID > 50 THEN \"Num_of_Pieces\" / 2 ELSE \"Num_of_Pieces\" * 3 END; DELETE FROM \"performance\" WHERE \"integer\" IS NULL; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE \"Num_of_Pieces\" > 100; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 72,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO \"performance\" (\"Performance_ID\",\"Attendance\",\"integer\",\"Host\",\"Location\") VALUES (50,1820,'5','TestHost','TestLoc'), (51,1820,'not5','OtherHost','OtherLoc'); CALL sp_new2(3,5,1820,'x')"
+   },
+   "result": "ok, 2 row(s) affected"
+  },
+  {
+   "step": 73,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM performance ORDER BY \"Performance_ID\";"
+   },
+   "result": "Performance_ID | integer | Host | Location | Attendance\n1.0 | February 2 | Boston Bruins:5 | TD Garden | 165\n2.0 | February 4 | New York Rangers:5 | Madison Square Garden:5 | 1820\n3.0 | February 5 | Atlanta Thrashers:5 | Verizon Center | 1878\n4.0 | February 7 | Pittsburgh Penguins:5 | Verizon Center | 1877\n5.0 | February 10 | Montreal Canadiens:5 | Bell Centre | 2173\n6.0 | February 11 | Ottawa Senators:5 | Scotiabank Place | 1982\n51.0 | not5 | OtherHost:5 | OtherLoc:5 | 1820"
+  },
+  {
+   "step": 74,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO \"performance\" (\"Performance_ID\",\"Attendance\",\"integer\") VALUES (100,999,'111'),(101,999,'222'); INSERT INTO \"member_attendance\" (\"Member_ID\",\"Performance_ID\",\"Num_of_Pieces\") VALUES (200,1,999);"
+   },
+   "result": "ok, 2 row(s) affected"
+  },
+  {
+   "step": 75,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_new2(10,5,0,'x')"
+   },
+   "result": "error: [42804] column \"Performance_ID\" is of type integer but expression is of type text"
+  },
+  {
+   "step": 76,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM member_attendance WHERE \"Member_ID\"=200; SELECT * FROM performance WHERE \"Performance_ID\" IN (100,101) ORDER BY \"Performance_ID\";"
+   },
+   "result": "Member_ID | Performance_ID | Num_of_Pieces\n200 | 1 | 999"
+  },
+  {
+   "step": 77,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM performance WHERE \"Performance_ID\" IN (100,101) ORDER BY \"Performance_ID\";"
+   },
+   "result": "Performance_ID | integer | Host | Location | Attendance\n100.0 | 111 | NULL | NULL | 999\n101.0 | 222 | NULL | NULL | 999"
+  },
+  {
+   "step": 78,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_new2(10,5,999999,'x')"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 79,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE var1 integer; var2 text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE \"Num_of_Pieces\" < var1; DELETE FROM \"performance\" WHERE \"Attendance\" = para_Attendance AND \"integer\" LIKE var2; UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE \"Attendance\" = para_Attendance; UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE \"Attendance\" >= var1; ELSIF para_Num_of_Pieces < 20 THEN IF EXISTS (SELECT 1 FROM \"performance\" p JOIN \"member_attendance\" ma ON ma.\"Num_of_Pieces\" = p.\"Attendance\" WHERE p.\"Attendance\" > para_Attendance) THEN UPDATE \"member_attendance\" AS ma SET \"Performance_ID\" = p.\"integer\" FROM \"performance\" AS p WHERE p.\"Attendance\" > para_Attendance AND ma.\"Num_of_Pieces\" = p.\"Attendance\"; END IF; ELSIF para_Num_of_Pieces < 30 THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE \"Attendance\" < para_Attendance; IF EXISTS (SELECT 1 FROM \"member_attendance\") THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated'); END IF; DELETE FROM \"performance\" WHERE \"Attendance\" % 5 = 0; ELSIF para_Num_of_Pieces < 40 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = CASE WHEN para_Performance_ID > 50 THEN \"Num_of_Pieces\" / 2 ELSE \"Num_of_Pieces\" * 3 END; DELETE FROM \"performance\" WHERE \"integer\" IS NULL; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE \"Num_of_Pieces\" > 100; END IF; END; $$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 80,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 81,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE var1 integer; var2 text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE \"Num_of_Pieces\" < var1; DELETE FROM \"performance\" WHERE \"Attendance\" = para_Attendance AND \"integer\" LIKE var2; UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE \"Attendance\" = para_Attendance; UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE \"Attendance\" >= var1; ELSIF para_Num_of_Pieces < 20 THEN IF EXISTS (SELECT 1 FROM \"performance\" p JOIN \"member_attendance\" ma ON ma.\"Num_of_Pieces\" = p.\"Attendance\" WHERE p.\"Attendance\" > para_Attendance) THEN UPDATE \"member_attendance\" AS ma SET \"Performance_ID\" = p.\"integer\" FROM \"performance\" AS p WHERE p.\"Attendance\" > para_Attendance AND ma.\"Num_of_Pieces\" = p.\"Attendance\"; END IF; ELSIF para_Num_of_Pieces < 30 THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE \"Attendance\" < para_Attendance; IF EXISTS (SELECT 1 FROM \"member_attendance\") THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated'); END IF; DELETE FROM \"performance\" WHERE \"Attendance\" % 5 = 0; ELSIF para_Num_of_Pieces < 40 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = CASE WHEN para_Performance_ID > 50 THEN \"Num_of_Pieces\" / 2 ELSE \"Num_of_Pieces\" * 3 END; DELETE FROM \"performance\" WHERE \"integer\" IS NULL; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE \"Num_of_Pieces\" > 100; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 82,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DELETE FROM member_attendance; CALL sp(20,7,2000,'x')"
+   },
+   "result": "ok, 8 row(s) affected"
+  },
+  {
+   "step": 83,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM performance ORDER BY \"Performance_ID\";"
+   },
+   "result": "Performance_ID | integer | Host | Location | Attendance\n3.0 | 7 | Atlanta Thrashers | Verizon Center | 1878\n4.0 | 7 | Pittsburgh Penguins | Verizon Center | 1877\n5.0 | February 10 | Montreal Canadiens | Bell Centre | 2173\n6.0 | 7 | Ottawa Senators | Scotiabank Place | 1982"
+  },
+  {
+   "step": 84,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO member_attendance (\"Member_ID\",\"Performance_ID\",\"Num_of_Pieces\") VALUES (200,1,10); CALL sp(20,7,2000,'x')"
+   },
+   "result": "error: [42804] column \"Performance_ID\" is of type integer but expression is of type text"
+  },
+  {
+   "step": 85,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 86,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE \"Num_of_Pieces\" > 100"
+   },
+   "result": "error: [22P02] invalid input syntax for type integer: \"final_state\""
+  },
+  {
+   "step": 87,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE var1 integer; var2 text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE \"Num_of_Pieces\" < var1; DELETE FROM \"performance\" WHERE \"Attendance\" = para_Attendance AND \"integer\" LIKE var2; UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE \"Attendance\" = para_Attendance; UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE \"Attendance\" >= var1; ELSIF para_Num_of_Pieces < 20 THEN IF EXISTS (SELECT 1 FROM \"performance\" p JOIN \"member_attendance\" ma ON ma.\"Num_of_Pieces\" = p.\"Attendance\" WHERE p.\"Attendance\" > para_Attendance) THEN UPDATE \"member_attendance\" AS ma SET \"Performance_ID\" = p.\"integer\" FROM \"performance\" AS p WHERE p.\"Attendance\" > para_Attendance AND ma.\"Num_of_Pieces\" = p.\"Attendance\"; END IF; ELSIF para_Num_of_Pieces < 30 THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE \"Attendance\" < para_Attendance; IF EXISTS (SELECT 1 FROM \"member_attendance\") THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated'); END IF; DELETE FROM \"performance\" WHERE \"Attendance\" % 5 = 0; ELSIF para_Num_of_Pieces < 40 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = CASE WHEN para_Performance_ID > 50 THEN \"Num_of_Pieces\" / 2 ELSE \"Num_of_Pieces\" * 3 END; DELETE FROM \"performance\" WHERE \"integer\" IS NULL; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); IF EXISTS (SELECT 1 FROM \"member_attendance\" WHERE \"Num_of_Pieces\" > 100) THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE \"Num_of_Pieces\" > 100; END IF; END IF; END; $$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 88,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 89,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_orig(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE cur CURSOR FOR SELECT \"Attendance\", \"integer\" FROM \"performance\" WHERE \"Attendance\" > para_Attendance; rec RECORD; att RECORD; var1 integer; var2 text; v_attendance integer; v_integer text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" < var1 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\", \"integer\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance AND rec.\"integer\" LIKE var2 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" = para_Attendance THEN UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" >= var1 THEN UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 20 THEN OPEN cur; LOOP FETCH cur INTO rec; EXIT WHEN NOT FOUND; v_attendance := rec.\"Attendance\"; v_integer := rec.\"integer\"; FOR att IN SELECT ctid AS row_id FROM \"member_attendance\" WHERE \"Num_of_Pieces\" = v_attendance LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = v_integer WHERE ctid = att.row_id; END LOOP; var1 := var1 + 1; END LOOP; CLOSE cur; ELSIF para_Num_of_Pieces < 30 THEN FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" < para_Attendance THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated') WHERE ctid = rec.row_id; END LOOP; FOR rec IN SELECT ctid AS row_id, \"Attendance\" FROM \"performance\" LOOP IF rec.\"Attendance\" % 5 = 0 THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; ELSIF para_Num_of_Pieces < 40 THEN FOR rec IN SELECT ctid AS row_id FROM \"member_attendance\" LOOP IF para_Performance_ID > 50 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" / 2 WHERE ctid = rec.row_id; ELSE UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" * 3 WHERE ctid = rec.row_id; END IF; END LOOP; FOR rec IN SELECT ctid AS row_id, \"integer\" FROM \"performance\" LOOP IF rec.\"integer\" IS NULL THEN DELETE FROM \"performance\" WHERE ctid = rec.row_id; END IF; END LOOP; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); FOR rec IN SELECT ctid AS row_id, \"Num_of_Pieces\" FROM \"member_attendance\" LOOP IF rec.\"Num_of_Pieces\" > 100 THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE ctid = rec.row_id; END IF; END LOOP; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 90,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_new2(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE var1 integer; var2 text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE \"Num_of_Pieces\" < var1; DELETE FROM \"performance\" WHERE \"Attendance\" = para_Attendance AND \"integer\" LIKE var2; UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE \"Attendance\" = para_Attendance; UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE \"Attendance\" >= var1; ELSIF para_Num_of_Pieces < 20 THEN IF EXISTS (SELECT 1 FROM \"performance\" p JOIN \"member_attendance\" ma ON ma.\"Num_of_Pieces\" = p.\"Attendance\" WHERE p.\"Attendance\" > para_Attendance) THEN UPDATE \"member_attendance\" AS ma SET \"Performance_ID\" = p.\"integer\" FROM \"performance\" AS p WHERE p.\"Attendance\" > para_Attendance AND ma.\"Num_of_Pieces\" = p.\"Attendance\"; END IF; ELSIF para_Num_of_Pieces < 30 THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE \"Attendance\" < para_Attendance; IF EXISTS (SELECT 1 FROM \"member_attendance\") THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated'); END IF; DELETE FROM \"performance\" WHERE \"Attendance\" % 5 = 0; ELSIF para_Num_of_Pieces < 40 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = CASE WHEN para_Performance_ID > 50 THEN \"Num_of_Pieces\" / 2 ELSE \"Num_of_Pieces\" * 3 END; DELETE FROM \"performance\" WHERE \"integer\" IS NULL; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); IF EXISTS (SELECT 1 FROM \"member_attendance\" WHERE \"Num_of_Pieces\" > 100) THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE \"Num_of_Pieces\" > 100; END IF; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 91,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "ALTER TABLE performance ALTER COLUMN \"Performance_ID\" SET DEFAULT 99999"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 92,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_orig(40,5,123,'abc')"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 93,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM performance WHERE \"Attendance\"=123; SELECT * FROM member_attendance ORDER BY \"Member_ID\",\"Performance_ID\";"
+   },
+   "result": "Performance_ID | integer | Host | Location | Attendance\n99999.0 | abc | NULL | NULL | 123"
+  },
+  {
+   "step": 94,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 95,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_new2(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text) LANGUAGE plpgsql AS $$ DECLARE var1 integer; var2 text; BEGIN var1 := para_Num_of_Pieces * 2; var2 := para_Performance_ID::text; IF para_Num_of_Pieces < 10 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID WHERE \"Num_of_Pieces\" < var1; DELETE FROM \"performance\" WHERE \"Attendance\" = para_Attendance AND \"integer\" LIKE var2; UPDATE \"performance\" SET \"Location\" = CONCAT(\"Location\", ':', var2) WHERE \"Attendance\" = para_Attendance; UPDATE \"performance\" SET \"Host\" = CONCAT(\"Host\", ':', var2) WHERE \"Attendance\" >= var1; ELSIF para_Num_of_Pieces < 20 THEN IF EXISTS (SELECT 1 FROM \"performance\" p JOIN \"member_attendance\" ma ON ma.\"Num_of_Pieces\" = p.\"Attendance\" WHERE p.\"Attendance\" > para_Attendance) THEN UPDATE \"member_attendance\" AS ma SET \"Performance_ID\" = p.\"integer\" FROM \"performance\" AS p WHERE p.\"Attendance\" > para_Attendance AND ma.\"Num_of_Pieces\" = p.\"Attendance\"; END IF; ELSIF para_Num_of_Pieces < 30 THEN UPDATE \"performance\" SET \"integer\" = var2 WHERE \"Attendance\" < para_Attendance; IF EXISTS (SELECT 1 FROM \"member_attendance\") THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated'); END IF; DELETE FROM \"performance\" WHERE \"Attendance\" % 5 = 0; ELSIF para_Num_of_Pieces < 40 THEN UPDATE \"member_attendance\" SET \"Num_of_Pieces\" = CASE WHEN para_Performance_ID > 50 THEN \"Num_of_Pieces\" / 2 ELSE \"Num_of_Pieces\" * 3 END; DELETE FROM \"performance\" WHERE \"integer\" IS NULL; INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (var1, 'fallback'); ELSE INSERT INTO \"performance\" (\"Attendance\", \"integer\") VALUES (para_Attendance, para_integer); IF EXISTS (SELECT 1 FROM \"member_attendance\" WHERE \"Num_of_Pieces\" > 100) THEN UPDATE \"member_attendance\" SET \"Performance_ID\" = 'final_state' WHERE \"Num_of_Pieces\" > 100; END IF; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 96,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "ALTER TABLE performance ALTER COLUMN \"Performance_ID\" SET DEFAULT 99999; CALL sp_new2(40,5,123,'abc')"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 97,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM performance WHERE \"Attendance\"=123;"
+   },
+   "result": "Performance_ID | integer | Host | Location | Attendance\n99999.0 | abc | NULL | NULL | 123"
+  },
+  {
+   "step": 98,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "CREATE OR REPLACE PROCEDURE sp(para_Num_of_Pieces integer, para_Performance_ID integer, para_Attendance integer, para_integer text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n  var1 integer;\n  var2 text;\nBEGIN\n  var1 := para_Num_of_Pieces * 2;\n  var2 := para_Performance_ID::text;\n\n  IF para_Num_of_Pieces < 10 THEN\n    UPDATE \"member_attendance\"\n       SET \"Num_of_Pieces\" = \"Num_of_Pieces\" + para_Performance_ID\n     WHERE \"Num_of_Pieces\" < var1;\n\n    DELETE FROM \"performance\"\n     WHERE \"Attendance\" = para_Attendance\n       AND \"integer\" LIKE var2;\n\n    UPDATE \"performance\"\n       SET \"Location\" = CONCAT(\"Location\", ':', var2)\n     WHERE \"Attendance\" = para_Attendance;\n\n    UPDATE \"performance\"\n       SET \"Host\" = CONCAT(\"Host\", ':', var2)\n     WHERE \"Attendance\" >= var1;\n\n  ELSIF para_Num_of_Pieces < 20 THEN\n    IF EXISTS (\n      SELECT 1\n        FROM \"performance\" p\n        JOIN \"member_attendance\" ma\n          ON ma.\"Num_of_Pieces\" = p.\"Attendance\"\n       WHERE p.\"Attendance\" > para_Attendance\n    ) THEN\n      UPDATE \"member_attendance\" AS ma\n         SET \"Performance_ID\" = p.\"integer\"\n        FROM \"performance\" AS p\n       WHERE p.\"Attendance\" > para_Attendance\n         AND ma.\"Num_of_Pieces\" = p.\"Attendance\";\n    END IF;\n\n  ELSIF para_Num_of_Pieces < 30 THEN\n    UPDATE \"performance\"\n       SET \"integer\" = var2\n     WHERE \"Attendance\" < para_Attendance;\n\n    IF EXISTS (SELECT 1 FROM \"member_attendance\") THEN\n      UPDATE \"member_attendance\"\n         SET \"Performance_ID\" = CONCAT(\"Performance_ID\", '_updated');\n    END IF;\n\n    DELETE FROM \"performance\"\n     WHERE \"Attendance\" % 5 = 0;\n\n  ELSIF para_Num_of_Pieces < 40 THEN\n    UPDATE \"member_attendance\"\n       SET \"Num_of_Pieces\" = CASE\n             WHEN para_Performance_ID > 50 THEN \"Num_of_Pieces\" / 2\n             ELSE \"Num_of_Pieces\" * 3\n           END;\n\n    DELETE FROM \"performance\"\n     WHERE \"integer\" IS NULL;\n\n    INSERT INTO \"performance\" (\"Attendance\", \"integer\")\n    VALUES (var1, 'fallback');\n\n  ELSE\n    INSERT INTO "
+  },
+  {
+   "step": 99,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT 1 FROM (SELECT NULL::int AS x) s WHERE false; -- noop"
+   },
+   "result": "(?column?)\n(no rows)"
+  },
+  {
+   "step": 100,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  }
+ ],
+ "submission": null,
+ "pair": null
+}

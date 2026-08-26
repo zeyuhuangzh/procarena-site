@@ -1,0 +1,249 @@
+{
+ "id": "sp-pg-a1b2-tools--postgres_a1_001",
+ "run": "sp-pg-a1b2-tools",
+ "task_id": "postgres_a1_001",
+ "stage": "single",
+ "condition": "tools-only",
+ "tier": "single-turn",
+ "scenario": "a1",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 20,
+  "seconds": 215.7,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 2,
+   "compile_plsql": 3,
+   "execute_scratch": 10,
+   "reset_scratch": 2,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Implement a PostgreSQL PL/pgSQL procedure named sp with parameters in this order: para_RAM_MiB of type real, para_WiFi of type text, para_used_kb of type real, and para_Pixels of type text. The procedure declares a local integer variable named result_val initialized to 0 and a local text variable named status_text initialized to 'pending'.\n\nThe tables and columns this procedure reads from or writes to, using these exact names, are: table chip_model with columns RAM_MiB and WiFi; table screen_mode with columns used_kb, Pixels, and Graphics_mode. No other tables or columns are accessed.\n\nLiteral values used by the procedure are: 0, -1, 5, 10, 2, 20, 8, 30, 3, 12, 7, 'pending', 'processed', 'active', 'completed', '_updated', '_old', and '_final'. The value 10 is a strict upper threshold in the first else-if condition, 20 is a strict upper threshold in the next else-if condition, and 30 is a strict upper threshold in the next else-if condition. The value 2 is used both as a multiplier and as a divisor.\n\nBecause para_RAM_MiB is real and result_val is integer, when a computed real value is assigned to result_val, PostgreSQL's normal assignment conversion from real to integer applies.\n\nThe procedure begins by testing para_RAM_MiB through a conditional chain. Only the first branch whose condition is true executes, and then the remaining branch tests are skipped:\n\n1. If para_RAM_MiB is less than 0, set result_val to para_RAM_MiB multiplied by -1. Then update chip_model rows where WiFi equals para_WiFi, setting RAM_MiB to the current result_val.\n\n2. Otherwise, if para_RAM_MiB is less than 10, this branch applies only when para_RAM_MiB is greater than or equal to 0 and less than 10. Set result_val to para_RAM_MiB plus 5. Then delete from chip_model all rows where RAM_MiB equals para_RAM_MiB.\n\n3. Otherwise, if para_RAM_MiB is less than 20, this branch applies only when para_RAM_MiB is greater than or equal to 10 and less than 20. Set result_val to para_RAM_MiB multiplied by 2. Then update screen_mode rows where Pixels equals para_Pixels, setting used_kb to para_used_kb plus result_val.\n\n4. Otherwise, if para_RAM_MiB is less than 30, this branch applies only when para_RAM_MiB is greater than or equal to 20 and less than 30. Set result_val to para_RAM_MiB minus 8. Then delete from screen_mode all rows where used_kb equals para_used_kb.\n\n5. Otherwise, para_RAM_MiB is greater than or equal to 30. Set result_val to para_RAM_MiB divided by 2, using PostgreSQL's normal real-to-integer assignment conversion, and set status_text to 'processed'. In the first four branches, status_text remains 'pending'.\n\nAfter the conditional branch, perform the following operations exactly in this order:\n\n- Update chip_model rows where RAM_MiB equals para_RAM_MiB, setting WiFi to para_WiFi concatenated with the current value of status_text.\n- Add 3 to result_val.\n- Update screen_mode rows where used_kb equals para_used_kb, setting Pixels to para_Pixels concatenated with '_updated'.\n- Delete from chip_model all rows where RAM_MiB is greater than result_val.\n- Set status_text to 'active'.\n- Update screen_mode rows where Pixels equals para_Pixels, setting used_kb to para_used_kb plus 12.\n- Update chip_model rows where WiFi equals para_WiFi, setting RAM_MiB to the current result_val.\n- Subtract 7 from result_val.\n- Delete from screen_mode all rows where Pixels equals para_Pixels concatenated with '_old'.\n- Update chip_model rows where RAM_MiB equals para_RAM_MiB, setting WiFi to para_WiFi concatenated with '_final'.\n- Set status_text to 'completed'.\n- Update screen_mode rows where Pixels equals para_Pixels, setting used_kb to para_used_kb multiplied by 3.\n- Delete from chip_model all rows where WiFi equals para_WiFi concatenated with the current value of status_text, which at that point is 'completed'.\n- Update screen_mode rows where Pixels equals para_Pixels concatenated with '_updated', increasing used_kb by the current value of result_val. Each matching row's used_kb becomes its current used_kb plus result_val.\n- Update the screen_mode row whose Graphics_mode equals the smallest Graphics_mode among all screen_mode rows where Pixels equals para_Pixels, increasing used_kb by the current value of result_val. If no screen_mode row has Pixels equal to para_Pixels, this final update affects no rows.\n\nIf any update or delete has no rows matching its condition at the moment it runs, that operation affects no rows and the procedure continues with the next operation.\n\nThe procedure has no exception handlers. If any statement raises an error, PostgreSQL raises that error and stops the procedure; no explicit error recovery, rollback, or custom error handling is performed inside the procedure. The procedure also has no special handling for null parameter values beyond PostgreSQL's normal behavior.\n\nImplement this as a PostgreSQL (PL/pgSQL) stored procedure named `sp` with the parameter list exactly `sp(para_RAM_MiB real, para_WiFi text, para_used_kb real, para_Pixels text)`. Return the complete stored procedure, and nothing else.\n",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable chip_model , columns = [ Model_name ( text | primary key | values : X5 high end , X30 low-end ) , Launch_year ( real | values : 2004.0 , 2005.0 ) , RAM_MiB ( real | values : 32.0 , 32.0 ) , ROM_MiB ( real | values : 128.0 , 256.0 ) , Slots ( text | values : 1CFII,1SD , 1SD ) , WiFi ( text | values : 802.11b , 802.11b ) , Bluetooth ( text | values : Yes , Yes ) ]\ntable phone , columns = [ Company_name ( text | primary key | values : LG Electronics , Nokia Corporation ) , Hardware_Model_name ( text | values : XPERIA T, XPERIA J , GT-I9300 ) , Accreditation_type ( text | values : Full , Full ) , Accreditation_level ( text | values : joyn , joyn ) , integer ( text | values : Approved (valid until 03.05.13) , Approved (valid until 03.05.13) ) , chip_model ( text | values : X50 Advanced , X5 ) , screen_mode ( text | values : 6 , 5 ) ]\ntable screen_mode , columns = [ Graphics_mode ( real | primary key | values : 3.0 , 6.0 ) , Char_cells ( text | values : 20 × 32 , 40 × 32 ) , Pixels ( text | values : 640 × 256 , 320 × 200 ) , Hardware_colours ( real | values : 2.0 , 2.0 ) , used_kb ( real | values : 16.0 , 16.0 ) , map ( text | values : 4000–7FFF , 3000–7FFF ) , Type ( text | values : Graphics , Graphics ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "screen_mode"
+   },
+   "result": "Graphics_mode | Char_cells | Pixels | Hardware_colours | used_kb | map | Type\n0.0 | 80 × 32 | 640 × 256 | 2.0 | 20.0 | 3000–7FFF | Graphics\n1.0 | 40 × 32 | 320 × 256 | 4.0 | 20.0 | 3000–7FFF | Graphics\n2.0 | 20 × 32 | 160 × 256 | 8.0 | 20.0 | 3000–7FFF | Graphics\n3.0 | 80 × 25 | 640 × 200 | 2.0 | 16.0 | 4000–7FFF | text\n4.0 | 40 × 32 | 320 × 256 | 2.0 | 10.0 | 5800–7FFF | Graphics\n5.0 | 20 × 32 | 160 × 256 | 4.0 | 10.0 | 5800–7FFF | Graphics\n6.0 | 40 × 25 | 320 × 200 | 2.0 | 8.0 | 6000–7FFF | text"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "chip_model"
+   },
+   "result": "Model_name | Launch_year | RAM_MiB | ROM_MiB | Slots | WiFi | Bluetooth\nX30 high-end | 2004.0 | 64.0 | 64.0 | 1SD | 802.11b | 1.1\nX30 low-end | 2004.0 | 32.0 | 32.0 | 1SD | No | No\nX30 mid-range | 2004.0 | 64.0 | 64.0 | 1SD | 802.11b | 1.1\nX3 Advanced | 2003.0 | 64.0 | 64.0 | 1SD | No | No\nX3 Basic | 2003.0 | 32.0 | 32.0 | 1SD | No | No\nX3i | 2003.0 | 64.0 | 64.0 | 1SD | 802.11b | No\nX5 | 2002.0 | 32.0 | 32.0 | 1CFII,1SD | No | No\nX50 Advanced | 2004.0 | 64.0 | 128.0 | 1CFII,1SD | 802.11b | Yes\nX50 Standard | 2004.0 | 64.0 | 64.0 | 1CFII,1SD | No | Yes\nX50v | 2004.0 | 64.0 | 128.0 | 1CFII,1SD | 802.11b | 1.2\nX51 low-end | 2005.0 | 64.0 | 128.0 | 1CFII,1SD | No | 1.2\nX51 mid-range | 2005.0 | 64.0 | 128.0 | 1CFII,1SD | 802.11b | 1.2\nX51v | 2005.0 | 64.0 | 256.0 | 1CFII,1SD | 802.11b | 1.2\nX5 high end | 2002.0 | 64.0 | 48.0 | 1CFII,1SD | No | No"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE PROCEDURE sp(para_RAM_MiB real, para_WiFi text, para_used_kb real, para_Pixels text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    result_val integer := 0;\n    status_text text := 'pending';\nBEGIN\n    IF para_RAM_MiB < 0 THEN\n        result_val := para_RAM_MiB * -1;\n        UPDATE chip_model\n        SET RAM_MiB = result_val\n        WHERE WiFi = para_WiFi;\n    ELSIF para_RAM_MiB < 10 THEN\n        result_val := para_RAM_MiB + 5;\n        DELETE FROM chip_model\n        WHERE RAM_MiB = para_RAM_MiB;\n    ELSIF para_RAM_MiB < 20 THEN\n        result_val := para_RAM_MiB * 2;\n        UPDATE screen_mode\n        SET used_kb = para_used_kb + result_val\n        WHERE Pixels = para_Pixels;\n    ELSIF para_RAM_MiB < 30 THEN\n        result_val := para_RAM_MiB - 8;\n        DELETE FROM screen_mode\n        WHERE used_kb = para_used_kb;\n    ELSE\n        result_val := para_RAM_MiB / 2;\n        status_text := 'processed';\n    END IF;\n\n    UPDATE chip_model\n    SET WiFi = para_WiFi || status_text\n    WHERE RAM_MiB = para_RAM_MiB;\n\n    result_val := result_val + 3;\n\n    UPDATE screen_mode\n    SET Pixels = para_Pixels || '_updated'\n    WHERE used_kb = para_used_kb;\n\n    DELETE FROM chip_model\n    WHERE RAM_MiB > result_val;\n\n    status_text := 'active';\n\n    UPDATE screen_mode\n    SET used_kb = para_used_kb + 12\n    WHERE Pixels = para_Pixels;\n\n    UPDATE chip_model\n    SET RAM_MiB = result_val\n    WHERE WiFi = para_WiFi;\n\n    result_val := result_val - 7;\n\n    DELETE FROM screen_mode\n    WHERE Pixels = para_Pixels || '_old';\n\n    UPDATE chip_model\n    SET WiFi = para_WiFi || '_final'\n    WHERE RAM_MiB = para_RAM_MiB;\n\n    status_text := 'completed';\n\n    UPDATE screen_mode\n    SET used_kb = para_used_kb * 3\n    WHERE Pixels = para_Pixels;\n\n    DELETE FROM chip_model\n    WHERE WiFi = para_WiFi || status_text;\n\n    UPDATE screen_mode\n    SET used_kb = used_kb + result_val\n    WHERE Pixels = para_Pixels || '_updated';\n\n    UPDATE screen_mode\n    SET used_kb = used_kb + result_val\n    WHERE Graphics_mode = (SELECT MIN(Graphics_mode) FROM screen_mode WHERE Pixels = para_Pixels);\n\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE PROCEDURE sp(para_RAM_MiB real, para_WiFi text, para_used_kb real, para_Pixels text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    result_val integer := 0;\n    status_text text := 'pending';\nBEGIN\n    IF para_RAM_MiB < 0 THEN\n        result_val := para_RAM_MiB * -1;\n        UPDATE chip_model\n        SET RAM_MiB = result_val\n        WHERE WiFi = para_WiFi;\n    ELSIF para_RAM_MiB < 10 THEN\n        result_val := para_RAM_MiB + 5;\n        DELETE FROM chip_model\n        WHERE RAM_MiB = para_RAM_MiB;\n    ELSIF para_RAM_MiB < 20 THEN\n        result_val := para_RAM_MiB * 2;\n        UPDATE screen_mode\n        SET used_kb = para_used_kb + result_val\n        WHERE Pixels = para_Pixels;\n    ELSIF para_RAM_MiB < 30 THEN\n        result_val := para_RAM_MiB - 8;\n        DELETE FROM screen_mode\n        WHERE used_kb = para_used_kb;\n    ELSE\n        result_val := para_RAM_MiB / 2;\n        status_text := 'processed';\n    END IF;\n\n    UPDATE chip_model\n    SET WiFi = para_WiFi || status_text\n    WHERE RAM_MiB = para_RAM_MiB;\n\n    result_val := result_val + 3;\n\n    UPDATE screen_mode\n    SET Pixels = para_Pixels || '_updated'\n    WHERE used_kb = para_used_kb;\n\n    DELETE FROM chip_model\n    WHERE RAM_MiB > result_val;\n\n    status_text := 'active';\n\n    UPDATE screen_mode\n    SET used_kb = para_used_kb + 12\n    WHERE Pixels = para_Pixels;\n\n    UPDATE chip_model\n    SET RAM_MiB = result_val\n    WHERE WiFi = para_WiFi;\n\n    result_val := result_val - 7;\n\n    DELETE FROM screen_mode\n    WHERE Pixels = para_Pixels || '_old';\n\n    UPDATE chip_model\n    SET WiFi = para_WiFi || '_final'\n    WHERE RAM_MiB = para_RAM_MiB;\n\n    status_text := 'completed';\n\n    UPDATE screen_mode\n    SET used_kb = para_used_kb * 3\n    WHERE Pixels = para_Pixels;\n\n    DELETE FROM chip_model\n    WHERE WiFi = para_WiFi || status_text;\n\n    UPDATE screen_mode\n    SET used_kb = used_kb + result_val\n    WHERE Pixels = para_Pixels || '_updated';\n\n    UPDATE screen_mode\n    SET used_kb = used_kb + result_val\n    WHERE Graphics_mode = (SELECT MIN(Graphics_mode) FROM screen_mode WHERE Pixels = para_Pixels);\n\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(-5::real, '802.11b'::text, 16::real, '640 × 256'::text);"
+   },
+   "result": "error: [42703] column \"wifi\" does not exist"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT column_name FROM information_schema.columns WHERE table_name='chip_model' ORDER BY ordinal_position;"
+   },
+   "result": "column_name\nModel_name\nLaunch_year\nRAM_MiB\nROM_MiB\nSlots\nWiFi\nBluetooth"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT column_name FROM information_schema.columns WHERE table_name='screen_mode' ORDER BY ordinal_position;"
+   },
+   "result": "column_name\nGraphics_mode\nChar_cells\nPixels\nHardware_colours\nused_kb\nmap\nType"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE PROCEDURE sp(para_RAM_MiB real, para_WiFi text, para_used_kb real, para_Pixels text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    result_val integer := 0;\n    status_text text := 'pending';\nBEGIN\n    IF para_RAM_MiB < 0 THEN\n        result_val := para_RAM_MiB * -1;\n        UPDATE chip_model\n        SET \"RAM_MiB\" = result_val\n        WHERE \"WiFi\" = para_WiFi;\n    ELSIF para_RAM_MiB < 10 THEN\n        result_val := para_RAM_MiB + 5;\n        DELETE FROM chip_model\n        WHERE \"RAM_MiB\" = para_RAM_MiB;\n    ELSIF para_RAM_MiB < 20 THEN\n        result_val := para_RAM_MiB * 2;\n        UPDATE screen_mode\n        SET \"used_kb\" = para_used_kb + result_val\n        WHERE \"Pixels\" = para_Pixels;\n    ELSIF para_RAM_MiB < 30 THEN\n        result_val := para_RAM_MiB - 8;\n        DELETE FROM screen_mode\n        WHERE \"used_kb\" = para_used_kb;\n    ELSE\n        result_val := para_RAM_MiB / 2;\n        status_text := 'processed';\n    END IF;\n\n    UPDATE chip_model\n    SET \"WiFi\" = para_WiFi || status_text\n    WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n    result_val := result_val + 3;\n\n    UPDATE screen_mode\n    SET \"Pixels\" = para_Pixels || '_updated'\n    WHERE \"used_kb\" = para_used_kb;\n\n    DELETE FROM chip_model\n    WHERE \"RAM_MiB\" > result_val;\n\n    status_text := 'active';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = para_used_kb + 12\n    WHERE \"Pixels\" = para_Pixels;\n\n    UPDATE chip_model\n    SET \"RAM_MiB\" = result_val\n    WHERE \"WiFi\" = para_WiFi;\n\n    result_val := result_val - 7;\n\n    DELETE FROM screen_mode\n    WHERE \"Pixels\" = para_Pixels || '_old';\n\n    UPDATE chip_model\n    SET \"WiFi\" = para_WiFi || '_final'\n    WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n    status_text := 'completed';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = para_used_kb * 3\n    WHERE \"Pixels\" = para_Pixels;\n\n    DELETE FROM chip_model\n    WHERE \"WiFi\" = para_WiFi || status_text;\n\n    UPDATE screen_mode\n    SET \"used_kb\" = \"used_kb\" + result_val\n    WHERE \"Pixels\" = para_Pixels || '_updated';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = \"used_kb\" + result_val\n    WHERE \"Graphics_mode\" = (SELECT MIN(\"Graphics_mode\") FROM screen_mode WHERE \"Pixels\" = para_Pixels);\n\nEND;\n$$;"
+   },
+   "result": "compile error: [42723] function \"sp\" already exists with same argument types",
+   "compiled": false
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE PROCEDURE sp(para_RAM_MiB real, para_WiFi text, para_used_kb real, para_Pixels text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    result_val integer := 0;\n    status_text text := 'pending';\nBEGIN\n    IF para_RAM_MiB < 0 THEN\n        result_val := para_RAM_MiB * -1;\n        UPDATE chip_model\n        SET \"RAM_MiB\" = result_val\n        WHERE \"WiFi\" = para_WiFi;\n    ELSIF para_RAM_MiB < 10 THEN\n        result_val := para_RAM_MiB + 5;\n        DELETE FROM chip_model\n        WHERE \"RAM_MiB\" = para_RAM_MiB;\n    ELSIF para_RAM_MiB < 20 THEN\n        result_val := para_RAM_MiB * 2;\n        UPDATE screen_mode\n        SET \"used_kb\" = para_used_kb + result_val\n        WHERE \"Pixels\" = para_Pixels;\n    ELSIF para_RAM_MiB < 30 THEN\n        result_val := para_RAM_MiB - 8;\n        DELETE FROM screen_mode\n        WHERE \"used_kb\" = para_used_kb;\n    ELSE\n        result_val := para_RAM_MiB / 2;\n        status_text := 'processed';\n    END IF;\n\n    UPDATE chip_model\n    SET \"WiFi\" = para_WiFi || status_text\n    WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n    result_val := result_val + 3;\n\n    UPDATE screen_mode\n    SET \"Pixels\" = para_Pixels || '_updated'\n    WHERE \"used_kb\" = para_used_kb;\n\n    DELETE FROM chip_model\n    WHERE \"RAM_MiB\" > result_val;\n\n    status_text := 'active';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = para_used_kb + 12\n    WHERE \"Pixels\" = para_Pixels;\n\n    UPDATE chip_model\n    SET \"RAM_MiB\" = result_val\n    WHERE \"WiFi\" = para_WiFi;\n\n    result_val := result_val - 7;\n\n    DELETE FROM screen_mode\n    WHERE \"Pixels\" = para_Pixels || '_old';\n\n    UPDATE chip_model\n    SET \"WiFi\" = para_WiFi || '_final'\n    WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n    status_text := 'completed';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = para_used_kb * 3\n    WHERE \"Pixels\" = para_Pixels;\n\n    DELETE FROM chip_model\n    WHERE \"WiFi\" = para_WiFi || status_text;\n\n    UPDATE screen_mode\n    SET \"used_kb\" = \"used_kb\" + result_val\n    WHERE \"Pixels\" = para_Pixels || '_updated';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = \"used_kb\" + result_val\n    WHERE \"Graphics_mode\" = (SELECT MIN(\"Graphics_mode\") FROM screen_mode WHERE \"Pixels\" = para_Pixels);\n\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE PROCEDURE sp(para_RAM_MiB real, para_WiFi text, para_used_kb real, para_Pixels text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    result_val integer := 0;\n    status_text text := 'pending';\nBEGIN\n    IF para_RAM_MiB < 0 THEN\n        result_val := para_RAM_MiB * -1;\n        UPDATE chip_model\n        SET \"RAM_MiB\" = result_val\n        WHERE \"WiFi\" = para_WiFi;\n    ELSIF para_RAM_MiB < 10 THEN\n        result_val := para_RAM_MiB + 5;\n        DELETE FROM chip_model\n        WHERE \"RAM_MiB\" = para_RAM_MiB;\n    ELSIF para_RAM_MiB < 20 THEN\n        result_val := para_RAM_MiB * 2;\n        UPDATE screen_mode\n        SET \"used_kb\" = para_used_kb + result_val\n        WHERE \"Pixels\" = para_Pixels;\n    ELSIF para_RAM_MiB < 30 THEN\n        result_val := para_RAM_MiB - 8;\n        DELETE FROM screen_mode\n        WHERE \"used_kb\" = para_used_kb;\n    ELSE\n        result_val := para_RAM_MiB / 2;\n        status_text := 'processed';\n    END IF;\n\n    UPDATE chip_model\n    SET \"WiFi\" = para_WiFi || status_text\n    WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n    result_val := result_val + 3;\n\n    UPDATE screen_mode\n    SET \"Pixels\" = para_Pixels || '_updated'\n    WHERE \"used_kb\" = para_used_kb;\n\n    DELETE FROM chip_model\n    WHERE \"RAM_MiB\" > result_val;\n\n    status_text := 'active';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = para_used_kb + 12\n    WHERE \"Pixels\" = para_Pixels;\n\n    UPDATE chip_model\n    SET \"RAM_MiB\" = result_val\n    WHERE \"WiFi\" = para_WiFi;\n\n    result_val := result_val - 7;\n\n    DELETE FROM screen_mode\n    WHERE \"Pixels\" = para_Pixels || '_old';\n\n    UPDATE chip_model\n    SET \"WiFi\" = para_WiFi || '_final'\n    WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n    status_text := 'completed';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = para_used_kb * 3\n    WHERE \"Pixels\" = para_Pixels;\n\n    DELETE FROM chip_model\n    WHERE \"WiFi\" = para_WiFi || status_text;\n\n    UPDATE screen_mode\n    SET \"used_kb\" = \"used_kb\" + result_val\n    WHERE \"Pixels\" = para_Pixels || '_updated';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = \"used_kb\" + result_val\n    WHERE \"Graphics_mode\" = (SELECT MIN(\"Graphics_mode\") FROM screen_mode WHERE \"Pixels\" = para_Pixels);\n\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(-5::real, '802.11b'::text, 16::real, '640 × 256'::text);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE PROCEDURE sp(para_RAM_MiB real, para_WiFi text, para_used_kb real, para_Pixels text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    result_val integer := 0;\n    status_text text := 'pending';\nBEGIN\n    IF para_RAM_MiB < 0 THEN\n        result_val := para_RAM_MiB * -1;\n        UPDATE chip_model\n        SET \"RAM_MiB\" = result_val\n        WHERE \"WiFi\" = para_WiFi;\n    ELSIF para_RAM_MiB < 10 THEN\n        result_val := para_RAM_MiB + 5;\n        DELETE FROM chip_model\n        WHERE \"RAM_MiB\" = para_RAM_MiB;\n    ELSIF para_RAM_MiB < 20 THEN\n        result_val := para_RAM_MiB * 2;\n        UPDATE screen_mode\n        SET \"used_kb\" = para_used_kb + result_val\n        WHERE \"Pixels\" = para_Pixels;\n    ELSIF para_RAM_MiB < 30 THEN\n        result_val := para_RAM_MiB - 8;\n        DELETE FROM screen_mode\n        WHERE \"used_kb\" = para_used_kb;\n    ELSE\n        result_val := para_RAM_MiB / 2;\n        status_text := 'processed';\n    END IF;\n\n    UPDATE chip_model\n    SET \"WiFi\" = para_WiFi || status_text\n    WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n    result_val := result_val + 3;\n\n    UPDATE screen_mode\n    SET \"Pixels\" = para_Pixels || '_updated'\n    WHERE \"used_kb\" = para_used_kb;\n\n    DELETE FROM chip_model\n    WHERE \"RAM_MiB\" > result_val;\n\n    status_text := 'active';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = para_used_kb + 12\n    WHERE \"Pixels\" = para_Pixels;\n\n    UPDATE chip_model\n    SET \"RAM_MiB\" = result_val\n    WHERE \"WiFi\" = para_WiFi;\n\n    result_val := result_val - 7;\n\n    DELETE FROM screen_mode\n    WHERE \"Pixels\" = para_Pixels || '_old';\n\n    UPDATE chip_model\n    SET \"WiFi\" = para_WiFi || '_final'\n    WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n    status_text := 'completed';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = para_used_kb * 3\n    WHERE \"Pixels\" = para_Pixels;\n\n    DELETE FROM chip_model\n    WHERE \"WiFi\" = para_WiFi || status_text;\n\n    UPDATE screen_mode\n    SET \"used_kb\" = \"used_kb\" + result_val\n    WHERE \"Pixels\" = para_Pixels || '_updated';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = \"used_kb\" + result_val\n    WHERE \"Graphics_mode\" = (SELECT MIN(\"Graphics_mode\") FROM screen_mode WHERE \"Pixels\" = para_Pixels);\n\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(5::real, 'No'::text, 16::real, '640 × 256'::text);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(30::real, 'No'::text, 16::real, '640 × 256'::text);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT (31.0::real / 2)::integer AS a, (30.0::real / 2)::integer AS b, (29.0::real / 2)::integer AS c;"
+   },
+   "result": "a | b | c\n16 | 15 | 14"
+  },
+  {
+   "step": 19,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "CREATE PROCEDURE sp(para_RAM_MiB real, para_WiFi text, para_used_kb real, para_Pixels text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    result_val integer := 0;\n    status_text text := 'pending';\nBEGIN\n    IF para_RAM_MiB < 0 THEN\n        result_val := para_RAM_MiB * -1;\n        UPDATE chip_model\n        SET \"RAM_MiB\" = result_val\n        WHERE \"WiFi\" = para_WiFi;\n    ELSIF para_RAM_MiB < 10 THEN\n        result_val := para_RAM_MiB + 5;\n        DELETE FROM chip_model\n        WHERE \"RAM_MiB\" = para_RAM_MiB;\n    ELSIF para_RAM_MiB < 20 THEN\n        result_val := para_RAM_MiB * 2;\n        UPDATE screen_mode\n        SET \"used_kb\" = para_used_kb + result_val\n        WHERE \"Pixels\" = para_Pixels;\n    ELSIF para_RAM_MiB < 30 THEN\n        result_val := para_RAM_MiB - 8;\n        DELETE FROM screen_mode\n        WHERE \"used_kb\" = para_used_kb;\n    ELSE\n        result_val := para_RAM_MiB / 2;\n        status_text := 'processed';\n    END IF;\n\n    UPDATE chip_model\n    SET \"WiFi\" = para_WiFi || status_text\n    WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n    result_val := result_val + 3;\n\n    UPDATE screen_mode\n    SET \"Pixels\" = para_Pixels || '_updated'\n    WHERE \"used_kb\" = para_used_kb;\n\n    DELETE FROM chip_model\n    WHERE \"RAM_MiB\" > result_val;\n\n    status_text := 'active';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = para_used_kb + 12\n    WHERE \"Pixels\" = para_Pixels;\n\n    UPDATE chip_model\n    SET \"RAM_MiB\" = result_val\n    WHERE \"WiFi\" = para_WiFi;\n\n    result_val := result_val - 7;\n\n    DELETE FROM screen_mode\n    WHERE \"Pixels\" = para_Pixels || '_old';\n\n    UPDATE chip_model\n    SET \"WiFi\" = para_WiFi || '_final'\n    WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n    status_text := 'completed';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = para_used_kb * 3\n    WHERE \"Pixels\" = para_Pixels;\n\n    DELETE FROM chip_model\n    WHERE \"WiFi\" = para_WiFi || status_text;\n\n    UPDATE screen_mode\n    SET \"used_kb\" = \"used_kb\" + result_val\n    WHERE \"Pixels\" = para_Pixels || '_updated';\n\n    UPDATE screen_mode\n    SET \""
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE PROCEDURE sp(para_RAM_MiB real, para_WiFi text, para_used_kb real, para_Pixels text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    result_val integer := 0;\n    status_text text := 'pending';\nBEGIN\n    IF para_RAM_MiB < 0 THEN\n        result_val := para_RAM_MiB * -1;\n        UPDATE chip_model\n        SET \"RAM_MiB\" = result_val\n        WHERE \"WiFi\" = para_WiFi;\n    ELSIF para_RAM_MiB < 10 THEN\n        result_val := para_RAM_MiB + 5;\n        DELETE FROM chip_model\n        WHERE \"RAM_MiB\" = para_RAM_MiB;\n    ELSIF para_RAM_MiB < 20 THEN\n        result_val := para_RAM_MiB * 2;\n        UPDATE screen_mode\n        SET \"used_kb\" = para_used_kb + result_val\n        WHERE \"Pixels\" = para_Pixels;\n    ELSIF para_RAM_MiB < 30 THEN\n        result_val := para_RAM_MiB - 8;\n        DELETE FROM screen_mode\n        WHERE \"used_kb\" = para_used_kb;\n    ELSE\n        result_val := para_RAM_MiB / 2;\n        status_text := 'processed';\n    END IF;\n\n    UPDATE chip_model\n    SET \"WiFi\" = para_WiFi || status_text\n    WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n    result_val := result_val + 3;\n\n    UPDATE screen_mode\n    SET \"Pixels\" = para_Pixels || '_updated'\n    WHERE \"used_kb\" = para_used_kb;\n\n    DELETE FROM chip_model\n    WHERE \"RAM_MiB\" > result_val;\n\n    status_text := 'active';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = para_used_kb + 12\n    WHERE \"Pixels\" = para_Pixels;\n\n    UPDATE chip_model\n    SET \"RAM_MiB\" = result_val\n    WHERE \"WiFi\" = para_WiFi;\n\n    result_val := result_val - 7;\n\n    DELETE FROM screen_mode\n    WHERE \"Pixels\" = para_Pixels || '_old';\n\n    UPDATE chip_model\n    SET \"WiFi\" = para_WiFi || '_final'\n    WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n    status_text := 'completed';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = para_used_kb * 3\n    WHERE \"Pixels\" = para_Pixels;\n\n    DELETE FROM chip_model\n    WHERE \"WiFi\" = para_WiFi || status_text;\n\n    UPDATE screen_mode\n    SET \"used_kb\" = \"used_kb\" + result_val\n    WHERE \"Pixels\" = para_Pixels || '_updated';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = \"used_kb\" + result_val\n    WHERE \"Graphics_mode\" = (SELECT MIN(\"Graphics_mode\") FROM screen_mode WHERE \"Pixels\" = para_Pixels);\n\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE PROCEDURE sp(para_RAM_MiB real, para_WiFi text, para_used_kb real, para_Pixels text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    result_val integer := 0;\n    status_text text := 'pending';\nBEGIN\n    IF para_RAM_MiB < 0 THEN\n        result_val := para_RAM_MiB * -1;\n        UPDATE chip_model\n        SET \"RAM_MiB\" = result_val\n        WHERE \"WiFi\" = para_WiFi;\n    ELSIF para_RAM_MiB < 10 THEN\n        result_val := para_RAM_MiB + 5;\n        DELETE FROM chip_model\n        WHERE \"RAM_MiB\" = para_RAM_MiB;\n    ELSIF para_RAM_MiB < 20 THEN\n        result_val := para_RAM_MiB * 2;\n        UPDATE screen_mode\n        SET \"used_kb\" = para_used_kb + result_val\n        WHERE \"Pixels\" = para_Pixels;\n    ELSIF para_RAM_MiB < 30 THEN\n        result_val := para_RAM_MiB - 8;\n        DELETE FROM screen_mode\n        WHERE \"used_kb\" = para_used_kb;\n    ELSE\n        result_val := para_RAM_MiB / 2;\n        status_text := 'processed';\n    END IF;\n\n    UPDATE chip_model\n    SET \"WiFi\" = para_WiFi || status_text\n    WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n    result_val := result_val + 3;\n\n    UPDATE screen_mode\n    SET \"Pixels\" = para_Pixels || '_updated'\n    WHERE \"used_kb\" = para_used_kb;\n\n    DELETE FROM chip_model\n    WHERE \"RAM_MiB\" > result_val;\n\n    status_text := 'active';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = para_used_kb + 12\n    WHERE \"Pixels\" = para_Pixels;\n\n    UPDATE chip_model\n    SET \"RAM_MiB\" = result_val\n    WHERE \"WiFi\" = para_WiFi;\n\n    result_val := result_val - 7;\n\n    DELETE FROM screen_mode\n    WHERE \"Pixels\" = para_Pixels || '_old';\n\n    UPDATE chip_model\n    SET \"WiFi\" = para_WiFi || '_final'\n    WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n    status_text := 'completed';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = para_used_kb * 3\n    WHERE \"Pixels\" = para_Pixels;\n\n    DELETE FROM chip_model\n    WHERE \"WiFi\" = para_WiFi || status_text;\n\n    UPDATE screen_mode\n    SET \"used_kb\" = \"used_kb\" + result_val\n    WHERE \"Pixels\" = para_Pixels || '_updated';\n\n    UPDATE screen_mode\n    SET \"used_kb\" = \"used_kb\" + result_val\n    WHERE \"Graphics_mode\" = (SELECT MIN(\"Graphics_mode\") FROM screen_mode WHERE \"Pixels\" = para_Pixels);\n\nEND;\n$$;"
+ },
+ "pair": null
+}

@@ -1,0 +1,249 @@
+{
+ "id": "sp01-tools--postgres_b4_001",
+ "run": "sp01-tools",
+ "task_id": "postgres_b4_001",
+ "stage": "single",
+ "condition": "tools-only",
+ "tier": "single-turn",
+ "scenario": "b4",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 40,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": null,
+  "attribution": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 19,
+  "seconds": 148.8,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "compile_plsql": 2,
+   "sample_rows": 4,
+   "execute_scratch": 10,
+   "reset_scratch": 1,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "The attached incomplete procedure contains a TODO comment. Replace only that TODO comment with the PL/pgSQL block that completes the procedure, and return the complete stored procedure. Do not change anything outside that TODO comment.\n\nThe procedure signature is exactly:\nsp(para_Year_of_Founded real, para_Major_Record_Format text, para_Conductor_ID integer, para_Age integer, para_Attendance real, para_Show_ID integer)\n\nAfter the existing statements before the TODO have executed, perform the following.\n\nOpen the outer cursor and loop over its rows one at a time. For each outer row, open the inner cursor and loop over its rows one at a time, starting from the first remaining inner row each time. If there are no outer rows, the loops do not run. If there are no inner rows, no show or performance updates happen during the loops.\n\nFor each pairing of one outer row and one inner row, evaluate this condition:\n- the inner row's Conductor_ID is strictly greater than para_Attendance\n- the inner row's Age is strictly less than para_Age\nBoth comparisons must be true. If either comparison is false or unknown because a value is null, the condition is not true.\n\nIf the condition is true, update every row of the show table by setting Show_ID to Show_ID - para_Show_ID - 33. Do not update performance for that pairing.\n\nIf the condition is not true, update every row of the performance table whose Orchestra_ID equals the current outer row's Orchestra_ID by subtracting exactly 1 from Official_ratings_(millions). If no performance rows match that Orchestra_ID, do nothing for that pairing.\n\nContinue until every inner row has been processed for the current outer row. Then move to the next outer row and repeat the inner loop from the beginning over the same remaining inner rows. The inner body is evaluated once for every outer-row/inner-row pairing.\n\nAfter all loops are complete, if para_Age is not equal to -1000 and para_Age is not null, update every row of the orchestra table by setting Year_of_Founded to exactly para_Year_of_Founded. Do not add 76 in this final update. If para_Age is exactly -1000 or para_Age is null, skip this final update. Do not change Major_Record_Format in this final update.\n\nDo not include explicit error handling. If any statement raises an error, let it propagate to the caller.\n\nReturn the complete stored procedure and nothing else.",
+  "materials": [
+   {
+    "file": "incomplete_procedure.sql",
+    "kind": "incomplete procedure",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_Year_of_Founded real, para_Major_Record_Format text, para_Conductor_ID integer, para_Age integer, para_Attendance real, para_Show_ID integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"orchestra\"; ref_cursor2 CURSOR FOR SELECT * FROM \"conductor\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded + 76, \"Major_Record_Format\" = para_Major_Record_Format; DELETE FROM \"conductor\" WHERE \"Conductor_ID\" < para_Conductor_ID;-- TODO: loop over the orchestra and conductor cursors, apply the conditional show/performance updates based on conductor age and attendance, then do the final founding-year correction when the age parameter is not the sentinel\n END; $$;"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable conductor , columns = [ Conductor_ID ( integer | primary key | values : 11 , 5 ) , Name ( text | values : Paul Jorgensen , Paul Jorgensen ) , Age ( integer | values : 63 , 47 ) , Nationality ( text | values : USA , UK ) , Year_of_Work ( integer | values : 20 , 11 ) ]\ntable orchestra , columns = [ Orchestra_ID ( integer | primary key | values : 5 , 2 ) , Orchestra ( text | values : Royal Danish Orchestra , Royal Concertgebouw Orchestra ) , Conductor_ID ( integer | values : 9 , 7 ) , Record_Company ( text | values : Kultur , Kultur ) , Year_of_Founded ( real | values : 2008.0 , 2002.0 ) , Major_Record_Format ( text | values : CD , CD ) ]\ntable performance , columns = [ Performance_ID ( integer | primary key | values : 3 , 2 ) , Orchestra_ID ( integer | values : 2 , 9 ) , Type ( text | values : Live final results , Auditions 4 ) , integer ( text | values : 2007 , 17 June ) , Official_ratings_(millions) ( real | values : 7.51 , 9.28 ) , Weekly_rank ( text | values : 11 , 12 ) , Share ( text | values : 44.7% , 34% ) ]\ntable show , columns = [ Show_ID ( integer | primary key | values : 5 , 5 ) , Performance_ID ( integer | values : 5 , 4 ) , If_first_show ( text | values : Glebe Park , Hampden Park ) , Result ( text | values : T , F ) , Attendance ( real | values : 695.0 , 555.0 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Year_of_Founded real, para_Major_Record_Format text, para_Conductor_ID integer, para_Age integer, para_Attendance real, para_Show_ID integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"orchestra\"; ref_cursor2 CURSOR FOR SELECT * FROM \"conductor\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded + 76, \"Major_Record_Format\" = para_Major_Record_Format; DELETE FROM \"conductor\" WHERE \"Conductor_ID\" < para_Conductor_ID; OPEN ref_cursor; LOOP FETCH ref_cursor INTO rec; EXIT WHEN NOT FOUND; OPEN ref_cursor2; LOOP FETCH ref_cursor2 INTO rec2; EXIT WHEN NOT FOUND; IF rec2.\"Conductor_ID\" > para_Attendance AND rec2.\"Age\" < para_Age THEN UPDATE \"show\" SET \"Show_ID\" = \"Show_ID\" - para_Show_ID - 33; ELSE UPDATE \"performance\" SET \"Official_ratings_(millions)\" = \"Official_ratings_(millions)\" - 1 WHERE \"Orchestra_ID\" = rec.\"Orchestra_ID\"; END IF; END LOOP; CLOSE ref_cursor2; END LOOP; CLOSE ref_cursor; IF para_Age <> -1000 AND para_Age IS NOT NULL THEN UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded; END IF; END; $$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "show"
+   },
+   "result": "Show_ID | Performance_ID | If_first_show | Result | Attendance\n1 | 1 | Glebe Park | T | 1026.0\n2 | 2 | Fir Park | T | 695.0\n3 | 3 | St. Mirren Park | F | 555.0\n4 | 4 | St. Mirren Park | F | 1925.0\n5 | 5 | Hampden Park | T | 2431.0"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "orchestra"
+   },
+   "result": "Orchestra_ID | Orchestra | Conductor_ID | Record_Company | Year_of_Founded | Major_Record_Format\n1 | London Symphony Orchestra | 1 | Mercury Records | 2003.0 | CD\n2 | Columbia Symphony Orchestra | 2 | Columbia Masterworks | 2009.0 | CD / LP\n3 | Royal Concertgebouw Orchestra | 3 | Philips | 2008.0 | CD\n4 | Royal Danish Orchestra | 4 | Kultur | 2002.0 | DVD\n5 | Detroit Symphony Orchestra | 5 | Decca Records | 2002.0 | CD\n6 | Montreal Symphony Orchestra | 6 | Decca Records | 2004.0 | CD\n7 | Seattle Symphony Orchestra | 7 | Delos Records | 2002.0 | CD\n8 | Chicago Symphony Orchestra | 8 | Deutsche Grammophon | 2003.0 | CD\n9 | Kirov Orchestra | 9 | Philips Classics Records | 2008.0 | CD\n10 | Philharmonia Orchestra | 10 | Koch Records / Naxos Records | 2006.0 | CD\n11 | Orchestre de Paris | 11 | EMI | 2007.0 | CD\n12 | San Francisco Symphony Orchestra | 12 | RCA | 2008.0 | CD"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "conductor"
+   },
+   "result": "Conductor_ID | Name | Age | Nationality | Year_of_Work\n1 | Antal Doráti | 40 | USA | 10\n2 | Igor Stravinsky | 41 | UK | 11\n3 | Colin Davis | 42 | USA | 6\n4 | Paul Jorgensen | 43 | UK | 11\n5 | Antal Brown | 43 | USA | 20\n6 | Charles Dutoit | 43 | France | 12\n7 | Gerard Schwarz | 50 | USA | 20\n8 | Pierre Boulez | 49 | UK | 11\n9 | Valeri Gergiev | 47 | USA | 16\n10 | Robert Craft | 63 | UK | 21\n11 | Seiji Ozawa | 43 | USA | 10\n12 | Michael Tilson Thomas | 42 | France | 12"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "performance"
+   },
+   "result": "Performance_ID | Orchestra_ID | Type | integer | Official_ratings_(millions) | Weekly_rank | Share\n1 | 1 | Auditions 1 | 9 June | 5.2 | 12 | 22.7%\n2 | 2 | Auditions 2 | 10 June | 6.73 | 8 | 28.0%\n3 | 3 | Auditions 3 | 11 June | 7.28 | 15 | 29.4%\n4 | 4 | Auditions 4 | 12 June | 7.39 | 13 | 29.3%\n5 | 5 | Auditions 5 | 13 June | 7.51 | 11 | 29.2%\n6 | 6 | Semi-final 2 | 15 June | 9.28 | 8 | 38.1%\n7 | 7 | Semi-final 3 | 16 June | 9.29 | 7 | 40.9%\n8 | 8 | Live final | 17 June | 11.58 | 1 | 43.7%\n9 | 9 | Live final results | 17 June | 11.45 | 2 | 44.7%\n10 | 10 | Series average | 2007 | 8.38 | TBC | 34%\n11 | 11 | Semi-final 1 | 14 June | 8.36 | 9 | 34.0%"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_Year_of_Founded real, para_Major_Record_Format text, para_Conductor_ID integer, para_Age integer, para_Attendance real, para_Show_ID integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"orchestra\"; ref_cursor2 CURSOR FOR SELECT * FROM \"conductor\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded + 76, \"Major_Record_Format\" = para_Major_Record_Format; DELETE FROM \"conductor\" WHERE \"Conductor_ID\" < para_Conductor_ID; OPEN ref_cursor; LOOP FETCH ref_cursor INTO rec; EXIT WHEN NOT FOUND; OPEN ref_cursor2; LOOP FETCH ref_cursor2 INTO rec2; EXIT WHEN NOT FOUND; IF rec2.\"Conductor_ID\" > para_Attendance AND rec2.\"Age\" < para_Age THEN UPDATE \"show\" SET \"Show_ID\" = \"Show_ID\" - para_Show_ID - 33; ELSE UPDATE \"performance\" SET \"Official_ratings_(millions)\" = \"Official_ratings_(millions)\" - 1 WHERE \"Orchestra_ID\" = rec.\"Orchestra_ID\"; END IF; END LOOP; CLOSE ref_cursor2; END LOOP; CLOSE ref_cursor; IF para_Age <> -1000 AND para_Age IS NOT NULL THEN UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(5.0, 'CD', 1, 100, 0, 0);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"show\" ORDER BY \"Show_ID\";"
+   },
+   "result": "Show_ID | Performance_ID | If_first_show | Result | Attendance\n-4751 | 1 | Glebe Park | T | 1026.0\n-4750 | 2 | Fir Park | T | 695.0\n-4749 | 3 | St. Mirren Park | F | 555.0\n-4748 | 4 | St. Mirren Park | F | 1925.0\n-4747 | 5 | Hampden Park | T | 2431.0"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"performance\" ORDER BY \"Performance_ID\";"
+   },
+   "result": "Performance_ID | Orchestra_ID | Type | integer | Official_ratings_(millions) | Weekly_rank | Share\n1 | 1 | Auditions 1 | 9 June | 5.2 | 12 | 22.7%\n2 | 2 | Auditions 2 | 10 June | 6.73 | 8 | 28.0%\n3 | 3 | Auditions 3 | 11 June | 7.28 | 15 | 29.4%\n4 | 4 | Auditions 4 | 12 June | 7.39 | 13 | 29.3%\n5 | 5 | Auditions 5 | 13 June | 7.51 | 11 | 29.2%\n6 | 6 | Semi-final 2 | 15 June | 9.28 | 8 | 38.1%\n7 | 7 | Semi-final 3 | 16 June | 9.29 | 7 | 40.9%\n8 | 8 | Live final | 17 June | 11.58 | 1 | 43.7%\n9 | 9 | Live final results | 17 June | 11.45 | 2 | 44.7%\n10 | 10 | Series average | 2007 | 8.38 | TBC | 34%\n11 | 11 | Semi-final 1 | 14 June | 8.36 | 9 | 34.0%"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"orchestra\" ORDER BY \"Orchestra_ID\";"
+   },
+   "result": "Orchestra_ID | Orchestra | Conductor_ID | Record_Company | Year_of_Founded | Major_Record_Format\n1 | London Symphony Orchestra | 1 | Mercury Records | 5.0 | CD\n2 | Columbia Symphony Orchestra | 2 | Columbia Masterworks | 5.0 | CD\n3 | Royal Concertgebouw Orchestra | 3 | Philips | 5.0 | CD\n4 | Royal Danish Orchestra | 4 | Kultur | 5.0 | CD\n5 | Detroit Symphony Orchestra | 5 | Decca Records | 5.0 | CD\n6 | Montreal Symphony Orchestra | 6 | Decca Records | 5.0 | CD\n7 | Seattle Symphony Orchestra | 7 | Delos Records | 5.0 | CD\n8 | Chicago Symphony Orchestra | 8 | Deutsche Grammophon | 5.0 | CD\n9 | Kirov Orchestra | 9 | Philips Classics Records | 5.0 | CD\n10 | Philharmonia Orchestra | 10 | Koch Records / Naxos Records | 5.0 | CD\n11 | Orchestre de Paris | 11 | EMI | 5.0 | CD\n12 | San Francisco Symphony Orchestra | 12 | RCA | 5.0 | CD"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_Year_of_Founded real, para_Major_Record_Format text, para_Conductor_ID integer, para_Age integer, para_Attendance real, para_Show_ID integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"orchestra\"; ref_cursor2 CURSOR FOR SELECT * FROM \"conductor\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded + 76, \"Major_Record_Format\" = para_Major_Record_Format; DELETE FROM \"conductor\" WHERE \"Conductor_ID\" < para_Conductor_ID; OPEN ref_cursor; LOOP FETCH ref_cursor INTO rec; EXIT WHEN NOT FOUND; OPEN ref_cursor2; LOOP FETCH ref_cursor2 INTO rec2; EXIT WHEN NOT FOUND; IF rec2.\"Conductor_ID\" > para_Attendance AND rec2.\"Age\" < para_Age THEN UPDATE \"show\" SET \"Show_ID\" = \"Show_ID\" - para_Show_ID - 33; ELSE UPDATE \"performance\" SET \"Official_ratings_(millions)\" = \"Official_ratings_(millions)\" - 1 WHERE \"Orchestra_ID\" = rec.\"Orchestra_ID\"; END IF; END LOOP; CLOSE ref_cursor2; END LOOP; CLOSE ref_cursor; IF para_Age <> -1000 AND para_Age IS NOT NULL THEN UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded; END IF; END; $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(5.0, 'CD', 1, -1000, 1000, 0);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Orchestra_ID\", \"Year_of_Founded\" FROM \"orchestra\" ORDER BY \"Orchestra_ID\";"
+   },
+   "result": "Orchestra_ID | Year_of_Founded\n1 | 81.0\n2 | 81.0\n3 | 81.0\n4 | 81.0\n5 | 81.0\n6 | 81.0\n7 | 81.0\n8 | 81.0\n9 | 81.0\n10 | 81.0\n11 | 81.0\n12 | 81.0"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Performance_ID\", \"Orchestra_ID\", \"Official_ratings_(millions)\" FROM \"performance\" ORDER BY \"Performance_ID\";"
+   },
+   "result": "Performance_ID | Orchestra_ID | Official_ratings_(millions)\n1 | 1 | -6.8\n2 | 2 | -5.27\n3 | 3 | -4.72\n4 | 4 | -4.61\n5 | 5 | -4.49\n6 | 6 | -2.7200003\n7 | 7 | -2.71\n8 | 8 | -0.42000008\n9 | 9 | -0.5500002\n10 | 10 | -3.62\n11 | 11 | -3.6400003"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"show\" ORDER BY \"Show_ID\";"
+   },
+   "result": "Show_ID | Performance_ID | If_first_show | Result | Attendance\n1 | 1 | Glebe Park | T | 1026.0\n2 | 2 | Fir Park | T | 695.0\n3 | 3 | St. Mirren Park | F | 555.0\n4 | 4 | St. Mirren Park | F | 1925.0\n5 | 5 | Hampden Park | T | 2431.0"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Year_of_Founded real, para_Major_Record_Format text, para_Conductor_ID integer, para_Age integer, para_Attendance real, para_Show_ID integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"orchestra\"; ref_cursor2 CURSOR FOR SELECT * FROM \"conductor\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded + 76, \"Major_Record_Format\" = para_Major_Record_Format; DELETE FROM \"conductor\" WHERE \"Conductor_ID\" < para_Conductor_ID; OPEN ref_cursor;\nLOOP\n    FETCH ref_cursor INTO rec;\n    EXIT WHEN NOT FOUND;\n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        IF rec2.\"Conductor_ID\" > para_Attendance AND rec2.\"Age\" < para_Age THEN\n            UPDATE \"show\" SET \"Show_ID\" = \"Show_ID\" - para_Show_ID - 33;\n        ELSE\n            UPDATE \"performance\" SET \"Official_ratings_(millions)\" = \"Official_ratings_(millions)\" - 1\n            WHERE \"Orchestra_ID\" = rec.\"Orchestra_ID\";\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\nEND LOOP;\nCLOSE ref_cursor;\nIF para_Age <> -1000 AND para_Age IS NOT NULL THEN\n    UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded;\nEND IF;\n END; $$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_Year_of_Founded real, para_Major_Record_Format text, para_Conductor_ID integer, para_Age integer, para_Attendance real, para_Show_ID integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"orchestra\"; ref_cursor2 CURSOR FOR SELECT * FROM \"conductor\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded + 76, \"Major_Record_Format\" = para_Major_Record_Format; DELETE FROM \"conductor\" WHERE \"Conductor_ID\" < para_Conductor_ID; OPEN ref_cursor;\nLOOP\n    FETCH ref_cursor INTO rec;\n    EXIT WHEN NOT FOUND;\n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        IF rec2.\"Conductor_ID\" > para_Attendance AND rec2.\"Age\" < para_Age THEN\n            UPDATE \"show\" SET \"Show_ID\" = \"Show_ID\" - para_Show_ID - 33;\n        ELSE\n            UPDATE \"performance\" SET \"Official_ratings_(millions)\" = \"Official_ratings_(millions)\" - 1\n            WHERE \"Orchestra_ID\" = rec.\"Orchestra_ID\";\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\nEND LOOP;\nCLOSE ref_cursor;\nIF para_Age <> -1000 AND para_Age IS NOT NULL THEN\n    UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded;\nEND IF;\n END; $$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_Year_of_Founded real, para_Major_Record_Format text, para_Conductor_ID integer, para_Age integer, para_Attendance real, para_Show_ID integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"orchestra\"; ref_cursor2 CURSOR FOR SELECT * FROM \"conductor\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded + 76, \"Major_Record_Format\" = para_Major_Record_Format; DELETE FROM \"conductor\" WHERE \"Conductor_ID\" < para_Conductor_ID; OPEN ref_cursor;\nLOOP\n    FETCH ref_cursor INTO rec;\n    EXIT WHEN NOT FOUND;\n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        IF rec2.\"Conductor_ID\" > para_Attendance AND rec2.\"Age\" < para_Age THEN\n            UPDATE \"show\" SET \"Show_ID\" = \"Show_ID\" - para_Show_ID - 33;\n        ELSE\n            UPDATE \"performance\" SET \"Official_ratings_(millions)\" = \"Official_ratings_(millions)\" - 1\n            WHERE \"Orchestra_ID\" = rec.\"Orchestra_ID\";\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\nEND LOOP;\nCLOSE ref_cursor;\nIF para_Age <> -1000 AND para_Age IS NOT NULL THEN\n    UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded;\nEND IF;\n END; $$;"
+ },
+ "pair": null
+}

@@ -1,0 +1,89 @@
+{
+ "id": "sp01-noTools--postgres_a4_000",
+ "run": "sp01-noTools",
+ "task_id": "postgres_a4_000",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "a4",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 6,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": null,
+  "attribution": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 14.1,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Implement the PostgreSQL stored procedure named sp with the exact signature:\nsp(para_production_type_code text, para_parent_product_id integer, para_town_city text, para_login_name text)\n\nThe procedure updates matching rows in the relevant tables according to the supplied parameter values. It raises an exception when matching rows are absent where required.\n\nUse the attached template.sql and the attached slot dictionary slots.md. Fill in every {SLOT_n} placeholder in template.sql exactly as specified by its corresponding entry in slots.md. The slot dictionary defines every slot; use it as the only source for what each slot must contain.\n\nDo not add, remove, or reorder any statement. Leave all code outside the slots exactly as it is.\n\nReturn the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "template.sql",
+    "kind": "template",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_production_type_code text, para_parent_product_id integer, para_town_city text, para_login_name text) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Products\";\n    rec RECORD;\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Customers\";\n    rec2 RECORD;\n    matched_products integer := 0;\n    matched_customers integer := 0;\nBEGIN\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        IF {SLOT_1} THEN\n            UPDATE \"Products\" SET \"parent_product_id\" = {SLOT_2} WHERE CURRENT OF ref_cursor;\n            matched_products := {SLOT_3};\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor;\n\n    IF {SLOT_4} THEN\n        RAISE EXCEPTION 'No Products rows match production_type_code %', para_production_type_code;\n    END IF;\n\n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        IF {SLOT_5} THEN\n            UPDATE \"Customers\" SET \"login_name\" = {SLOT_6} WHERE CURRENT OF ref_cursor2;\n            matched_customers := {SLOT_7};\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\n\n    IF {SLOT_8} THEN\n        RAISE EXCEPTION 'No Customers rows match town_city %', para_town_city;\n    END IF;\nEND;\n$$;"
+   },
+   {
+    "file": "slots.md",
+    "kind": "slot dictionary",
+    "text": "## Slots\n\n### {SLOT_1}\n\n**Kind**: condition\n\n**What must go there**: a condition that checks whether the current `Products` row's column named `production_type_code` (accessed through the record variable `rec`) is exactly equal to the procedure parameter `para_production_type_code`. Use the equality operator `=`. The comparison must be an exact equality; if either the column value or the parameter is null, the condition must not count as a match.\n\n### {SLOT_2}\n\n**Kind**: value\n\n**What must go there**: the procedure parameter `para_parent_product_id`, used as the replacement value assigned to the `parent_product_id` column of the current `Products` row in the update.\n\n### {SLOT_3}\n\n**Kind**: assignment\n\n**What must go there**: the current value of the product match counter variable `matched_products` increased by exactly one. This assigns the incremented product match count back to `matched_products`.\n\n### {SLOT_4}\n\n**Kind**: condition\n\n**What must go there**: a condition that checks whether the product match counter variable `matched_products` is exactly equal to the integer literal zero. Use the equality operator `=`.\n\n### {SLOT_5}\n\n**Kind**: condition\n\n**What must go there**: a condition that checks whether the current `Customers` row's column named `town_city` (accessed through the record variable `rec2`) is exactly equal to the procedure parameter `para_town_city`. Use the equality operator `=`. The comparison must be an exact equality; if either the column value or the parameter is null, the condition must not count as a match.\n\n### {SLOT_6}\n\n**Kind**: value\n\n**What must go there**: the procedure parameter `para_login_name`, used as the replacement value assigned to the `login_name` column of the current `Customers` row in the update.\n\n### {SLOT_7}\n\n**Kind**: assignment\n\n**What must go there**: the current value of the customer match counter variable `matched_customers` increased by exactly one. This assigns the incremented customer match count back to `matched_customers`.\n\n### {SLOT_8}\n\n**Kind**: condition\n\n**What must go there**: a condition that checks whether the customer match counter variable `matched_customers` is exactly equal to the integer literal zero. Use the equality operator `=`."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_production_type_code text, para_parent_product_id integer, para_town_city text, para_login_name text) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Products\";\n    rec RECORD;\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Customers\";\n    rec2 RECORD;\n    matched_products integer := 0;\n    matched_customers integer := 0;\nBEGIN\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        IF rec.production_type_code = para_production_type_code THEN\n            UPDATE \"Products\" SET \"parent_product_id\" = para_parent_product_id WHERE CURRENT OF ref_cursor;\n            matched_products := matched_products + 1;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor;\n\n    IF matched_products = 0 THEN\n        RAISE EXCEPTION 'No Products rows match production_type_code %', para_production_type_code;\n    END IF;\n\n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        IF rec2.town_city = para_town_city THEN\n            UPDATE \"Customers\" SET \"login_name\" = para_login_name WHERE CURRENT OF ref_cursor2;\n            matched_customers := matched_customers + 1;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\n\n    IF matched_customers = 0 THEN\n        RAISE EXCEPTION 'No Customers rows match town_city %', para_town_city;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_production_type_code text, para_parent_product_id integer, para_town_city text, para_login_name text) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Products\";\n    rec RECORD;\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Customers\";\n    rec2 RECORD;\n    matched_products integer := 0;\n    matched_customers integer := 0;\nBEGIN\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        IF rec.production_type_code = para_production_type_code THEN\n            UPDATE \"Products\" SET \"parent_product_id\" = para_parent_product_id WHERE CURRENT OF ref_cursor;\n            matched_products := matched_products + 1;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor;\n\n    IF matched_products = 0 THEN\n        RAISE EXCEPTION 'No Products rows match production_type_code %', para_production_type_code;\n    END IF;\n\n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        IF rec2.town_city = para_town_city THEN\n            UPDATE \"Customers\" SET \"login_name\" = para_login_name WHERE CURRENT OF ref_cursor2;\n            matched_customers := matched_customers + 1;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\n\n    IF matched_customers = 0 THEN\n        RAISE EXCEPTION 'No Customers rows match town_city %', para_town_city;\n    END IF;\nEND;\n$$;"
+ },
+ "pair": null
+}

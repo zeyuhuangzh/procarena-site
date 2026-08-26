@@ -1,0 +1,501 @@
+{
+ "id": "ep01--postgres_a3_000",
+ "run": "ep01",
+ "task_id": "postgres_a3_000",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "full",
+ "scenario": "a3",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 40,
+ "simulator": {
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "database state differs after call 1",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": null,
+  "attribution": "spec",
+  "recovered": 1,
+  "oracle_size": 3
+ },
+ "summary": {
+  "steps": 39,
+  "seconds": 631.8,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 2,
+   "off_oracle": 1
+  },
+  "recovered": 1,
+  "oracle_size": 3,
+  "entries_per_question": 0.33,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 5,
+   "execute_scratch": 23,
+   "ask_user": 1,
+   "ask_selector": 2,
+   "compile_plsql": 3,
+   "reset_scratch": 3,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Write a PostgreSQL PL/pgSQL stored procedure with the exact signature:\n\n`sp(para_ResID integer, para_ResName text, para_Address text, para_StuID integer, para_LName text, para_ResTypeID integer)`\n\nThe procedure returns no result set and must not contain any exception handlers.\n\nMatching those examples is the entire required behavior. Do not add behavior beyond what they require.\n\nReturn the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "examples.md",
+    "kind": "worked examples",
+    "text": "# Behaviour of the procedure, by example\n\nEach example is one call, run against the database in the state shown below. The examples are independent: every one starts from that same state.\n\n## Starting state\n\nEvery example below starts from this database. The tables the procedure touches:\n\n### Restaurant (2 rows)\n| ResID | ResName | Address | Rating |\n|---|---|---|---|\n| 1 | Subway | 3233 St Paul St, Baltimore, MD 21218 | 3 |\n| 2 | Honeygrow | 3212 St Paul St, Baltimore, MD 21218 | 4 |\n\n### Student (34 rows)\n| StuID | LName | Fname | Age | Sex | Major | Advisor | city_code |\n|---|---|---|---|---|---|---|---|\n| 1001 | Smith | Linda | 18 | F | 600 | 1121 | BAL |\n| 1002 | Kim | Tracy | 19 | F | 600 | 7712 | HKG |\n| 1003 | Jones | Shiela | 21 | F | 600 | 7792 | WAS |\n| 1004 | Kumar | Dinesh | 20 | M | 600 | 8423 | CHI |\n| 1012 | Gompers | Paul | 26 | M | 600 | 1121 | YYZ |\n| 1006 | Schultz | Andy | 18 | M | 600 | 1148 | BAL |\n| 1007 | Apap | Lisa | 18 | F | 600 | 8918 | PIT |\n| 1008 | Nelson | Jandy | 20 | F | 600 | 9172 | BAL |\n| ... 26 more rows | | | | | | | \n\n### Restaurant_Type (2 rows)\n| ResTypeID | ResTypeName | ResTypeDescription |\n|---|---|---|\n| 1 | Sandwich | Simplest there is. |\n| 2 | Stir-fry | Classic Chinese cooking. |\n\n## Example 2\n\n```sql\nCALL sp(4, 'PROCESSED', 'IRRELEVANT', 1000, 'Gompers', 20);\n```\n\n**Student**\n- 1 row(s) changed:\n  StuID=1005, LName='Gompers', Fname='Paul', Age=26, Sex='M', Major=600, Advisor=1 | Age: 26 -> 27\n\nUnchanged: Restaurant, Restaurant_Type\n\n## Example 3\n\n```sql\nCALL sp(5, 'PROCESSED', 'IRRELEVANT', 1010, 'Norris', 20);\n```\n\n**Student**\n- 25 row(s) changed:\n  StuID=1010, LName='Lee', Fname='Derek', Age=17, Sex='M', Major=600, Advisor=2192 | LName: 'Lee' -> 'BULK_PROCESSED'\n  StuID=1011, LName='Adams', Fname='David', Age=22, Sex='M', Major=600, Advisor=11 | LName: 'Adams' -> 'BULK_PROCESSED'\n  StuID=1012, LName='Davis', Fname='Steven', Age=20, Sex='M', Major=600, Advisor=7 | LName: 'Davis' -> 'BULK_PROCESSED'\n  StuID=1015, LName='Lee', Fname='Susan', Age=16, Sex='F', Major=600, Advisor=8721 | LName: 'Lee' -> 'BULK_PROCESSED'\n  StuID=1016, LName='Schwartz', Fname='Mark', Age=17, Sex='M', Major=600, Advisor= | LName: 'Schwartz' -> 'BULK_PROCESSED'\n  StuID=1017, LName='Wilson', Fname='Bruce', Age=27, Sex='M', Major=600, Advisor=1 | LName: 'Wilson' -> 'BULK_PROCESSED'\n  StuID=1018, LName='Leighton', Fname='Michael', Age=20, Sex='M', Major=600, Advis | LName: 'Leighton' -> 'BULK_PROCESSED'\n  StuID=1019, LName='Pang', Fname='Arthur', Age=18, Sex='M', Major=600, Advisor=21 | LName: 'Pang' -> 'BULK_PROCESSED'\n    ... 17 more row(s) changed the same way\n\nUnchanged: Restaurant, Restaurant_Type\n\n## Example 4\n\n```sql\nCALL sp(12, 'X', 'IRRELEVANT', 1014, 'Norris', 0);\n```\n\n**Restaurant_Type**\n- 2 row(s) added:\n  ResTypeID=11, ResTypeName='Sandwich', ResTypeDescription='Simplest there is.'\n  ResTypeID=12, ResTypeName='Stir-fry', ResTypeDescription='Classic Chinese cooking.'\n- 2 row(s) removed:\n  ResTypeID=1, ResTypeName='Sandwich', ResTypeDescription='Simplest there is.'\n  ResTypeID=2, ResTypeName='Stir-fry', ResTypeDescription='Classic Chinese cooking.'\n\nUnchanged: Restaurant, Student\n\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 15,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "is there an example of the behaviour that example 1 showed, and what does the procedure do for that call?",
+   "answer": "## Example 1\n\n```sql\nCALL sp(0, '%', 'RENAMED', 1010, 'Gompers', 20);\n```\n\n**Restaurant**\n- 2 row(s) changed:\n  ResID=1, ResName='Subway', Address='3233 St Paul St, Baltimore, MD 21218', Ratin | ResName: 'Subway' -> 'RENAMED'\n  ResID=2, ResName='Honeygrow', Address='3212 St Paul St, Baltimore, MD 21218', Ra | ResName: 'Honeygrow' -> 'RENAMED'\n\nUnchanged: Student, Restaurant_Type"
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "is there an example of the behaviour that example 5 showed, and what does the procedure do for that call?",
+   "answer": "## Example 5\n\n```sql\nCALL sp(13, 'X', 'IRRELEVANT', 1014, 'Norris', 21);\n```\n\n**Restaurant_Type**\n- 1 row(s) added:\n  ResTypeID=12, ResTypeName='Stir-fry', ResTypeDescription='Classic Chinese cooking.'\n- 1 row(s) removed:\n  ResTypeID=2, ResTypeName='Stir-fry', ResTypeDescription='Classic Chinese cooking.'\n\nUnchanged: Restaurant, Student"
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "the starting state shows '1012' where example 2 shows '1005' changing -- which is the real starting value?",
+   "answer": "The example is right: the starting value of StuID is '1005'. The starting-state excerpt is a stale snapshot."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Restaurant , columns = [ ResID ( integer | primary key | values : 1 , 1 ) , ResName ( text | values : PROCESSED , PROCESSED ) , Address ( text | values : 3233 St Paul St, Baltimore, MD 21218 , 3212 St Paul St, Baltimore, MD 21218 ) , Rating ( integer | values : 13 , 13 ) ]\ntable Restaurant_Type , columns = [ ResTypeID ( integer | primary key | values : 1 , 1 ) , ResTypeName ( text | values : Stir-fry , Stir-fry ) , ResTypeDescription ( text | values : Classic Chinese cooking. , Classic Chinese cooking. ) ]\ntable Student , columns = [ StuID ( integer | primary key | values : 1010 , 1019 ) , LName ( text | values : Gompers , Norris ) , Fname ( text | values : Arthur , Dinesh ) , Age ( integer | values : 22 , 18 ) , Sex ( text | values : F , M ) , Major ( integer | values : 600 , 600 ) , Advisor ( integer | values : 8722 , 1148 ) , city_code ( text | values : WAS , BAL ) ]\ntable Type_Of_Restaurant , columns = [ ResID ( integer | primary key | values : 1 , 2 ) , ResTypeID ( integer | values : 1 , 2 ) ]\ntable Visits_Restaurant , columns = [ StuID ( integer | primary key | values : 1001 , 1032 ) , ResID ( integer | values : 1 , 1 ) , Time ( timestamp without time zone | values : 2017-10-09T18:15:00 , 2017-10-08T13:00:30 ) , Spent ( real | values : 6.53 , 6.53 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Restaurant"
+   },
+   "result": "ResID | ResName | Address | Rating\n1 | Subway | 3233 St Paul St, Baltimore, MD 21218 | 3\n2 | Honeygrow | 3212 St Paul St, Baltimore, MD 21218 | 4"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Restaurant_Type"
+   },
+   "result": "ResTypeID | ResTypeName | ResTypeDescription\n1 | Sandwich | Simplest there is.\n2 | Stir-fry | Classic Chinese cooking."
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Student"
+   },
+   "result": "StuID | LName | Fname | Age | Sex | Major | Advisor | city_code\n1001 | Smith | Linda | 18 | F | 600 | 1121 | BAL\n1002 | Kim | Tracy | 19 | F | 600 | 7712 | HKG\n1003 | Jones | Shiela | 21 | F | 600 | 7792 | WAS\n1004 | Kumar | Dinesh | 20 | M | 600 | 8423 | CHI\n1005 | Gompers | Paul | 26 | M | 600 | 1121 | YYZ\n1006 | Schultz | Andy | 18 | M | 600 | 1148 | BAL\n1007 | Apap | Lisa | 18 | F | 600 | 8918 | PIT\n1008 | Nelson | Jandy | 20 | F | 600 | 9172 | BAL\n1009 | Tai | Eric | 19 | M | 600 | 2192 | YYZ\n1010 | Lee | Derek | 17 | M | 600 | 2192 | HOU\n1011 | Adams | David | 22 | M | 600 | 1148 | PHL\n1012 | Davis | Steven | 20 | M | 600 | 7723 | PIT\n1014 | Norris | Charles | 18 | M | 600 | 8741 | DAL\n1015 | Lee | Susan | 16 | F | 600 | 8721 | HKG\n1016 | Schwartz | Mark | 17 | M | 600 | 2192 | DET\n1017 | Wilson | Bruce | 27 | M | 600 | 1148 | LON\n1018 | Leighton | Michael | 20 | M | 600 | 1121 | PIT\n1019 | Pang | Arthur | 18 | M | 600 | 2192 | WAS\n1020 | Thornton | Ian | 22 | M | 520 | 7271 | NYC\n1021 | Andreou | George | 19 | M | 520 | 8722 | NYC"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Type_Of_Restaurant"
+   },
+   "result": "ResID | ResTypeID\n1 | 1\n2 | 2"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Visits_Restaurant"
+   },
+   "result": "StuID | ResID | Time | Spent\n1001 | 1 | 2017-10-09 18:15:00 | 6.53\n1032 | 2 | 2017-10-08 13:00:30 | 13.2"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM Student ORDER BY StuID;"
+   },
+   "result": "error: [42P01] relation \"student\" does not exist"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Student\" ORDER BY \"StuID\";"
+   },
+   "result": "StuID | LName | Fname | Age | Sex | Major | Advisor | city_code\n1001 | Smith | Linda | 18 | F | 600 | 1121 | BAL\n1002 | Kim | Tracy | 19 | F | 600 | 7712 | HKG\n1003 | Jones | Shiela | 21 | F | 600 | 7792 | WAS\n1004 | Kumar | Dinesh | 20 | M | 600 | 8423 | CHI\n1005 | Gompers | Paul | 26 | M | 600 | 1121 | YYZ\n1006 | Schultz | Andy | 18 | M | 600 | 1148 | BAL\n1007 | Apap | Lisa | 18 | F | 600 | 8918 | PIT\n1008 | Nelson | Jandy | 20 | F | 600 | 9172 | BAL\n1009 | Tai | Eric | 19 | M | 600 | 2192 | YYZ\n1010 | Lee | Derek | 17 | M | 600 | 2192 | HOU\n1011 | Adams | David | 22 | M | 600 | 1148 | PHL\n1012 | Davis | Steven | 20 | M | 600 | 7723 | PIT\n1014 | Norris | Charles | 18 | M | 600 | 8741 | DAL\n1015 | Lee | Susan | 16 | F | 600 | 8721 | HKG\n1016 | Schwartz | Mark | 17 | M | 600 | 2192 | DET\n1017 | Wilson | Bruce | 27 | M | 600 | 1148 | LON\n1018 | Leighton | Michael | 20 | M | 600 | 1121 | PIT\n1019 | Pang | Arthur | 18 | M | 600 | 2192 | WAS\n1020 | Thornton | Ian | 22 | M | 520 | 7271 | NYC\n1021 | Andreou | George | 19 | M | 520 | 8722 | NYC\n1022 | Woods | Michael | 17 | M | 540 | 8722 | PHL\n1023 | Shieber | David | 20 | M | 520 | 8722 | NYC\n1024 | Prater | Stacy | 18 | F | 540 | 7271 | BAL\n1025 | Goldman | Mark | 18 | M | 520 | 7134 | PIT\n1026 | Pang | Eric | 19 | M | 520 | 7134 | HKG\n1027 | Brody | Paul | 18 | M | 520 | 8723 | LOS\n1028 | Rugh | Eric | 20 | M | 550 | 2311 | ROC\n1029 | Han | Jun | 17 | M | 100 | 2311 | PEK\n1030 | Cheng | Lisa | 21 | F | 550 | 2311 | SFO\n1031 | Smith | Sarah | 20 | F | 550 | 8772 | PHL\n1032 | Brown | Eric | 20 | M | 550 | 8772 | ATL\n1033 | Simms | William | 18 | M | 550 | 8772 | NAR\n1034 | Epp | Eric | 18 | M | 50 | 5718 | BOS\n1035 | Schmidt | Sarah | 26 | F | 50 | 5718 | WAS"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) FROM \"Student\";"
+   },
+   "result": "count\n34"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"StuID\", \"LName\" FROM \"Student\" ORDER BY \"StuID\";"
+   },
+   "result": "StuID | LName\n1001 | Smith\n1002 | Kim\n1003 | Jones\n1004 | Kumar\n1005 | Gompers\n1006 | Schultz\n1007 | Apap\n1008 | Nelson\n1009 | Tai\n1010 | Lee\n1011 | Adams\n1012 | Davis\n1014 | Norris\n1015 | Lee\n1016 | Schwartz\n1017 | Wilson\n1018 | Leighton\n1019 | Pang\n1020 | Thornton\n1021 | Andreou\n1022 | Woods\n1023 | Shieber\n1024 | Prater\n1025 | Goldman\n1026 | Pang\n1027 | Brody\n1028 | Rugh\n1029 | Han\n1030 | Cheng\n1031 | Smith\n1032 | Brown\n1033 | Simms\n1034 | Epp\n1035 | Schmidt"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Type_Of_Restaurant\"; SELECT * FROM \"Visits_Restaurant\";"
+   },
+   "result": "ResID | ResTypeID\n1 | 1\n2 | 2"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Type_Of_Restaurant\";"
+   },
+   "result": "ResID | ResTypeID\n1 | 1\n2 | 2"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Visits_Restaurant\";"
+   },
+   "result": "StuID | ResID | Time | Spent\n1001 | 1 | 2017-10-09 18:15:00 | 6.53\n1032 | 2 | 2017-10-08 13:00:30 | 13.2"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT proname, prokind FROM pg_proc WHERE proname = 'sp';"
+   },
+   "result": "(proname | prokind)\n(no rows)"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "The examples file starts at Example 2; Example 1 is missing. Can you provide the CALL statement and expected changes for Example 1, or at least describe what the procedure should do when para_ResID matches an existing row in Restaurant?"
+   },
+   "result": "## Example 1\n\n```sql\nCALL sp(0, '%', 'RENAMED', 1010, 'Gompers', 20);\n```\n\n**Restaurant**\n- 2 row(s) changed:\n  ResID=1, ResName='Subway', Address='3233 St Paul St, Baltimore, MD 21218', Ratin | ResName: 'Subway' -> 'RENAMED'\n  ResID=2, ResName='Honeygrow', Address='3212 St Paul St, Baltimore, MD 21218', Ra | ResName: 'Honeygrow' -> 'RENAMED'\n\nUnchanged: Student, Restaurant_Type",
+   "revealed": [
+    "M1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "In Example 1, CALL sp(0, '%', 'RENAMED', ...) renames both restaurants to 'RENAMED'. Which statement describes the intended rule?",
+    "options": [
+     "When para_ResID = 0, update every Restaurant row's ResName to para_Address.",
+     "When para_ResID = 0, update Restaurant rows whose ResName LIKE para_ResName, setting ResName to para_Address.",
+     "When para_ResName = '%', update every Restaurant row's ResName to para_Address.",
+     "When no Restaurant has ResID = para_ResID, update every Restaurant row's ResName to para_Address."
+    ]
+   },
+   "result": "2",
+   "index": 2,
+   "options": [
+    "None of the following are correct.",
+    "When para_ResID = 0, update every Restaurant row's ResName to para_Address.",
+    "When para_ResID = 0, update Restaurant rows whose ResName LIKE para_ResName, setting ResName to para_Address.",
+    "When para_ResName = '%', update every Restaurant row's ResName to para_Address.",
+    "When no Restaurant has ResID = para_ResID, update every Restaurant row's ResName to para_Address."
+   ],
+   "entry": "M1",
+   "status": "revealed",
+   "conflict_noted": false
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "In Example 4, CALL sp(12, 'X', 'IRRELEVANT', 1014, 'Norris', 0) changes Restaurant_Type IDs from 1,2 to 11,12. Which statement describes the intended rule?",
+    "options": [
+     "New ResTypeID = old ResTypeID + 10 (a fixed offset).",
+     "New ResTypeID = old ResTypeID + (para_ResID - the current maximum ResTypeID), so the largest new ID equals para_ResID.",
+     "New ResTypeID = old ResTypeID + para_ResID - 2 (so with the current two rows they become 11 and 12).",
+     "New ResTypeID = para_ResID - 1 for the first row and para_ResID for the second row."
+    ]
+   },
+   "result": "2",
+   "index": 2,
+   "options": [
+    "None of the following are correct.",
+    "New ResTypeID = old ResTypeID + 10 (a fixed offset).",
+    "New ResTypeID = old ResTypeID + (para_ResID - the current maximum ResTypeID), so the largest new ID equals para_ResID.",
+    "New ResTypeID = old ResTypeID + para_ResID - 2 (so with the current two rows they become 11 and 12).",
+    "New ResTypeID = para_ResID - 1 for the first row and para_ResID for the second row."
+   ],
+   "entry": null,
+   "status": "off_oracle",
+   "conflict_noted": false
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_ResID integer, para_ResName text, para_Address text, para_StuID integer, para_LName text, para_ResTypeID integer)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_ResID = 0 THEN\n        UPDATE \"Restaurant\"\n        SET \"ResName\" = para_Address\n        WHERE \"ResName\" LIKE para_ResName;\n    ELSIF para_ResTypeID = 0 THEN\n        UPDATE \"Restaurant_Type\"\n        SET \"ResTypeID\" = \"ResTypeID\" + (para_ResID - (SELECT max(\"ResTypeID\") FROM \"Restaurant_Type\"));\n    ELSIF para_ResName = 'PROCESSED' THEN\n        IF EXISTS (SELECT 1 FROM \"Student\" WHERE \"StuID\" = para_StuID) THEN\n            UPDATE \"Student\"\n            SET \"LName\" = 'BULK_PROCESSED'\n            WHERE \"StuID\" >= para_StuID;\n        ELSE\n            UPDATE \"Student\"\n            SET \"Age\" = \"Age\" + 1\n            WHERE \"LName\" = para_LName;\n        END IF;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_ResID integer, para_ResName text, para_Address text, para_StuID integer, para_LName text, para_ResTypeID integer)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_ResID = 0 THEN\n        UPDATE \"Restaurant\"\n        SET \"ResName\" = para_Address\n        WHERE \"ResName\" LIKE para_ResName;\n    ELSIF para_ResTypeID = 0 THEN\n        UPDATE \"Restaurant_Type\"\n        SET \"ResTypeID\" = \"ResTypeID\" + (para_ResID - (SELECT max(\"ResTypeID\") FROM \"Restaurant_Type\"));\n    ELSIF para_ResName = 'PROCESSED' THEN\n        IF EXISTS (SELECT 1 FROM \"Student\" WHERE \"StuID\" = para_StuID) THEN\n            UPDATE \"Student\"\n            SET \"LName\" = 'BULK_PROCESSED'\n            WHERE \"StuID\" >= para_StuID;\n        ELSE\n            UPDATE \"Student\"\n            SET \"Age\" = \"Age\" + 1\n            WHERE \"LName\" = para_LName;\n        END IF;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(0, '%', 'RENAMED', 1010, 'Gompers', 20);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Restaurant\" ORDER BY \"ResID\";"
+   },
+   "result": "ResID | ResName | Address | Rating\n1 | RENAMED | 3233 St Paul St, Baltimore, MD 21218 | 3\n2 | RENAMED | 3212 St Paul St, Baltimore, MD 21218 | 4"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_ResID integer, para_ResName text, para_Address text, para_StuID integer, para_LName text, para_ResTypeID integer)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_ResID = 0 THEN\n        UPDATE \"Restaurant\"\n        SET \"ResName\" = para_Address\n        WHERE \"ResName\" LIKE para_ResName;\n    ELSIF para_ResTypeID = 0 THEN\n        UPDATE \"Restaurant_Type\"\n        SET \"ResTypeID\" = \"ResTypeID\" + (para_ResID - (SELECT max(\"ResTypeID\") FROM \"Restaurant_Type\"));\n    ELSIF para_ResName = 'PROCESSED' THEN\n        IF EXISTS (SELECT 1 FROM \"Student\" WHERE \"StuID\" = para_StuID) THEN\n            UPDATE \"Student\"\n            SET \"LName\" = 'BULK_PROCESSED'\n            WHERE \"StuID\" >= para_StuID;\n        ELSE\n            UPDATE \"Student\"\n            SET \"Age\" = \"Age\" + 1\n            WHERE \"LName\" = para_LName;\n        END IF;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(4, 'PROCESSED', 'IRRELEVANT', 1000, 'Gompers', 20);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"StuID\", \"LName\", \"Age\" FROM \"Student\" WHERE \"LName\" = 'Gompers' ORDER BY \"StuID\";"
+   },
+   "result": "StuID | LName | Age\n1005 | Gompers | 27"
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_ResID integer, para_ResName text, para_Address text, para_StuID integer, para_LName text, para_ResTypeID integer)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_ResID = 0 THEN\n        UPDATE \"Restaurant\"\n        SET \"ResName\" = para_Address\n        WHERE \"ResName\" LIKE para_ResName;\n    ELSIF para_ResTypeID = 0 THEN\n        UPDATE \"Restaurant_Type\"\n        SET \"ResTypeID\" = \"ResTypeID\" + (para_ResID - (SELECT max(\"ResTypeID\") FROM \"Restaurant_Type\"));\n    ELSIF para_ResName = 'PROCESSED' THEN\n        IF EXISTS (SELECT 1 FROM \"Student\" WHERE \"StuID\" = para_StuID) THEN\n            UPDATE \"Student\"\n            SET \"LName\" = 'BULK_PROCESSED'\n            WHERE \"StuID\" >= para_StuID;\n        ELSE\n            UPDATE \"Student\"\n            SET \"Age\" = \"Age\" + 1\n            WHERE \"LName\" = para_LName;\n        END IF;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 28,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(5, 'PROCESSED', 'IRRELEVANT', 1010, 'Norris', 20);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 29,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) AS bulk_count, min(\"StuID\") AS min_id, max(\"StuID\") AS max_id FROM \"Student\" WHERE \"LName\" = 'BULK_PROCESSED';"
+   },
+   "result": "bulk_count | min_id | max_id\n25 | 1010 | 1035"
+  },
+  {
+   "step": 30,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 31,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_ResID integer, para_ResName text, para_Address text, para_StuID integer, para_LName text, para_ResTypeID integer)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_ResID = 0 THEN\n        UPDATE \"Restaurant\"\n        SET \"ResName\" = para_Address\n        WHERE \"ResName\" LIKE para_ResName;\n    ELSIF para_ResTypeID = 0 THEN\n        UPDATE \"Restaurant_Type\"\n        SET \"ResTypeID\" = \"ResTypeID\" + (para_ResID - (SELECT max(\"ResTypeID\") FROM \"Restaurant_Type\"));\n    ELSIF para_ResName = 'PROCESSED' THEN\n        IF EXISTS (SELECT 1 FROM \"Student\" WHERE \"StuID\" = para_StuID) THEN\n            UPDATE \"Student\"\n            SET \"LName\" = 'BULK_PROCESSED'\n            WHERE \"StuID\" >= para_StuID;\n        ELSE\n            UPDATE \"Student\"\n            SET \"Age\" = \"Age\" + 1\n            WHERE \"LName\" = para_LName;\n        END IF;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 32,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(12, 'X', 'IRRELEVANT', 1014, 'Norris', 0);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 33,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Restaurant_Type\" ORDER BY \"ResTypeID\";"
+   },
+   "result": "ResTypeID | ResTypeName | ResTypeDescription\n11 | Sandwich | Simplest there is.\n12 | Stir-fry | Classic Chinese cooking."
+  },
+  {
+   "step": 34,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_ResID integer, para_ResName text, para_Address text, para_StuID integer, para_LName text, para_ResTypeID integer)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_ResID = 0 THEN\n        UPDATE \"Restaurant\"\n        SET \"ResName\" = para_Address\n        WHERE \"ResName\" LIKE para_ResName;\n    ELSIF para_ResName = 'PROCESSED' THEN\n        IF EXISTS (SELECT 1 FROM \"Student\" WHERE \"StuID\" = para_StuID) THEN\n            UPDATE \"Student\"\n            SET \"LName\" = 'BULK_PROCESSED'\n            WHERE \"StuID\" >= para_StuID;\n        ELSE\n            UPDATE \"Student\"\n            SET \"Age\" = \"Age\" + 1\n            WHERE \"LName\" = para_LName;\n        END IF;\n    ELSIF para_ResTypeID = 0 THEN\n        UPDATE \"Restaurant_Type\"\n        SET \"ResTypeID\" = \"ResTypeID\" + (para_ResID - (SELECT max(\"ResTypeID\") FROM \"Restaurant_Type\"));\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 35,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_ResID integer, para_ResName text, para_Address text, para_StuID integer, para_LName text, para_ResTypeID integer)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_ResID = 0 THEN\n        UPDATE \"Restaurant\"\n        SET \"ResName\" = para_Address\n        WHERE \"ResName\" LIKE para_ResName;\n    ELSIF para_ResName = 'PROCESSED' THEN\n        IF EXISTS (SELECT 1 FROM \"Student\" WHERE \"StuID\" = para_StuID) THEN\n            UPDATE \"Student\"\n            SET \"LName\" = 'BULK_PROCESSED'\n            WHERE \"StuID\" >= para_StuID;\n        ELSE\n            UPDATE \"Student\"\n            SET \"Age\" = \"Age\" + 1\n            WHERE \"LName\" = para_LName;\n        END IF;\n    ELSIF para_ResTypeID = 0 THEN\n        UPDATE \"Restaurant_Type\"\n        SET \"ResTypeID\" = \"ResTypeID\" + (para_ResID - (SELECT max(\"ResTypeID\") FROM \"Restaurant_Type\"));\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 36,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(12, 'X', 'IRRELEVANT', 1014, 'Norris', 0);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 37,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Restaurant_Type\" ORDER BY \"ResTypeID\";"
+   },
+   "result": "ResTypeID | ResTypeName | ResTypeDescription\n11 | Sandwich | Simplest there is.\n12 | Stir-fry | Classic Chinese cooking."
+  },
+  {
+   "step": 38,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_ResID integer, para_ResName text, para_Address text, para_StuID integer, para_LName text, para_ResTypeID integer)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_ResID = 0 THEN\n        UPDATE \"Restaurant\"\n        SET \"ResName\" = para_Address\n        WHERE \"ResName\" LIKE para_ResName;\n    ELSIF para_ResName = 'PROCESSED' THEN\n        IF EXISTS (SELECT 1 FROM \"Student\" WHERE \"StuID\" = para_StuID) THEN\n            UPDATE \"Student\"\n            SET \"LName\" = 'BULK_PROCESSED'\n            WHERE \"StuID\" >= para_StuID;\n        ELSE\n            UPDATE \"Student\"\n            SET \"Age\" = \"Age\" + 1\n            WHERE \"LName\" = para_LName;\n        END IF;\n    ELSIF para_ResTypeID = 0 THEN\n        UPDATE \"Restaurant_Type\"\n        SET \"ResTypeID\" = \"ResTypeID\" + (para_ResID - (SELECT max(\"ResTypeID\") FROM \"Restaurant_Type\"));\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 39,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_ResID integer, para_ResName text, para_Address text, para_StuID integer, para_LName text, para_ResTypeID integer)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_ResID = 0 THEN\n        UPDATE \"Restaurant\"\n        SET \"ResName\" = para_Address\n        WHERE \"ResName\" LIKE para_ResName;\n    ELSIF para_ResName = 'PROCESSED' THEN\n        IF EXISTS (SELECT 1 FROM \"Student\" WHERE \"StuID\" = para_StuID) THEN\n            UPDATE \"Student\"\n            SET \"LName\" = 'BULK_PROCESSED'\n            WHERE \"StuID\" >= para_StuID;\n        ELSE\n            UPDATE \"Student\"\n            SET \"Age\" = \"Age\" + 1\n            WHERE \"LName\" = para_LName;\n        END IF;\n    ELSIF para_ResTypeID = 0 THEN\n        UPDATE \"Restaurant_Type\"\n        SET \"ResTypeID\" = \"ResTypeID\" + (para_ResID - (SELECT max(\"ResTypeID\") FROM \"Restaurant_Type\"));\n    END IF;\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_ResID integer, para_ResName text, para_Address text, para_StuID integer, para_LName text, para_ResTypeID integer)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_ResID = 0 THEN\n        UPDATE \"Restaurant\"\n        SET \"ResName\" = para_Address\n        WHERE \"ResName\" LIKE para_ResName;\n    ELSIF para_ResName = 'PROCESSED' THEN\n        IF EXISTS (SELECT 1 FROM \"Student\" WHERE \"StuID\" = para_StuID) THEN\n            UPDATE \"Student\"\n            SET \"LName\" = 'BULK_PROCESSED'\n            WHERE \"StuID\" >= para_StuID;\n        ELSE\n            UPDATE \"Student\"\n            SET \"Age\" = \"Age\" + 1\n            WHERE \"LName\" = para_LName;\n        END IF;\n    ELSIF para_ResTypeID = 0 THEN\n        UPDATE \"Restaurant_Type\"\n        SET \"ResTypeID\" = \"ResTypeID\" + (para_ResID - (SELECT max(\"ResTypeID\") FROM \"Restaurant_Type\"));\n    END IF;\nEND;\n$$;"
+ },
+ "pair": {
+  "single_run": "st04",
+  "single_task": "postgres_a3_000"
+ }
+}

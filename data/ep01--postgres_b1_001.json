@@ -1,0 +1,343 @@
+{
+ "id": "ep01--postgres_b1_001",
+ "run": "ep01",
+ "task_id": "postgres_b1_001",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "full",
+ "scenario": "b1",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 40,
+ "simulator": {
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "database state differs after call 1",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": null,
+  "attribution": "spec",
+  "recovered": 1,
+  "oracle_size": 5
+ },
+ "summary": {
+  "steps": 18,
+  "seconds": 205.8,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 3,
+   "off_oracle": 1
+  },
+  "recovered": 1,
+  "oracle_size": 5,
+  "entries_per_question": 0.33,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 4,
+   "ask_selector": 3,
+   "compile_plsql": 1,
+   "execute_scratch": 6,
+   "reset_scratch": 1,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Attached are `current_procedure.sql` and `change_request.md`. The current procedure is in `current_procedure.sql`. Apply the changes described in `change_request.md` to that procedure. The procedure signature must remain exactly: `sp(para_Club_ID integer, para_Club_name text, para_Votes integer, para_Residence text, para_Points integer)`. Return the complete updated stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "current_procedure.sql",
+    "kind": "current procedure",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_Club_ID integer, para_Club_name text, para_Votes integer, para_Residence text, para_Points integer) LANGUAGE plpgsql AS\n$$\nDECLARE\n    cur REFCURSOR;\n    rec RECORD;\n    temp_num INTEGER;\n    temp_text TEXT;\n    row_count INTEGER;\n    flag INTEGER;\nBEGIN\n    temp_num := 0;\n    temp_text := '';\n    row_count := 0;\n    flag := 0;\n    IF para_Club_ID < 10 THEN\n        UPDATE \"club\" SET \"Club_name\" = 'INACTIVE' WHERE \"Club_ID\" < para_Club_ID;\n        flag := 1;\n    ELSIF para_Club_ID < 25 THEN\n        OPEN cur FOR SELECT \"Votes\", \"Residence\" FROM \"player\" WHERE \"Votes\" > para_Votes AND \"Residence\" LIKE para_Residence FOR UPDATE;\n        flag := 2;\n    ELSIF para_Club_ID < 40 THEN\n        OPEN cur FOR SELECT \"Points\" FROM \"match_result\" WHERE \"Points\" BETWEEN para_Points AND para_Points * 2;\n        flag := 3;\n    ELSE\n        OPEN cur FOR SELECT \"Club_ID\", \"Club_name\" FROM \"club\" WHERE \"Club_ID\" > para_Club_ID / 2;\n        flag := 4;\n    END IF;\n    IF flag = 2 OR flag = 3 OR flag = 4 THEN\n        LOOP\n            FETCH cur INTO rec;\n            EXIT WHEN NOT FOUND;\n            row_count := row_count + 1;\n            IF flag = 2 THEN\n                IF rec.\"Votes\" < 50 THEN\n                    UPDATE \"player\" SET \"Residence\" = 'COMPLETED' WHERE CURRENT OF cur;\n                ELSE\n                    temp_num := temp_num + rec.\"Votes\";\n                END IF;\n            ELSIF flag = 3 THEN\n                IF rec.\"Points\" > 100 THEN\n                    temp_text := 'OVER_LIMIT';\n                ELSIF rec.\"Points\" > 50 THEN\n                    temp_text := 'WITHIN_RANGE';\n                ELSE\n                    temp_text := 'BELOW_MIN';\n                END IF;\n            ELSIF flag = 4 THEN\n                IF rec.\"Club_ID\" % 2 = 0 THEN\n                    temp_num := temp_num + 1;\n                END IF;\n            END IF;\n        END LOOP;\n        CLOSE cur;\n    END IF;\n    IF flag = 1 THEN\n        DELETE FROM \"player\" WHERE \"Votes\" < para_Votes;\n    ELSIF flag = 4 AND temp_num > 5 THEN\n        UPDATE \"club\" SET \"Club_name\" = 'PROCESSED' WHERE \"Club_ID\" < para_Club_ID;\n    ELSE\n        UPDATE \"player\" SET \"Residence\" = 'DEFAULT' WHERE \"Votes\" IS NULL;\n    END IF;\nEND;\n$$;"
+   },
+   {
+    "file": "change_request.md",
+    "kind": "change request",
+    "text": "Summary: Update the procedure to delete dependent player_coach rows before deleting low-vote players, add final actions for the less-than-25 and 25-to-40 branches, and track whether any fetched match_result row exceeds the points threshold.\n\nIn the branch for para_Club_ID at least 25 and less than 40, when either temp_text is 'OVER_LIMIT' or over_limit_found is true, delete every match_result row whose Points value is greater than 175.\n\n1. In the variable declarations, install the amber telltale.\n\n2. In the branch that handles para_Club_ID at least 25 and less than 40, when a fetched match_result row has a Points value greater than 100, set over_limit_found to true in addition to the existing assignment of temp_text to 'OVER_LIMIT'. Leave the existing temp_text assignments for Points greater than 50 and for all other Points values unchanged.\n\n3. In the final conditional for the low para_Club_ID branch, before the existing deletion of player rows whose Votes are less than para_Votes, delete all rows from the player_coach table whose Player_ID is one of the Player_ID values from those same player rows.\n\n4. Add a branch after that for para_Club_ID less than 25: when the accumulated temp_num is greater than 100, reduce the Points value for every match_result row whose Points value is greater than 200.\n\n5. Add another branch after that for para_Club_ID at least 25 and less than 40: when either temp_text is 'OVER_LIMIT' or over_limit_found is true, delete every match_result row whose Points value is greater than 150.\n\n6. Keep the existing branch for para_Club_ID at least 40 after the new branches: perform the Ironwood stamp. Keep the final fallback that updates every player row with a null Votes to set Residence to 'DEFAULT'."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the amber telltale?",
+   "answer": "It means add a boolean variable named over_limit_found and initialize it to false."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the Ironwood stamp?",
+   "answer": "When more than five fetched clubs have an even Club_ID, and therefore temp_num is greater than 5, set Club_name to 'PROCESSED' for every club whose Club_ID is less than para_Club_ID."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the para_Club_ID condition for this branch?",
+   "answer": "para_Club_ID is less than 10."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 1,
+   "key": "By how much should the Points value be reduced?",
+   "answer": "The Points value is reduced by 10."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": 6,
+   "via": "ask_selector",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "whether the 25-to-40 branch deletes match_result rows over 150 or over 175",
+   "answer": "The correct statement is the branch instruction: delete every match_result row whose Points value is greater than 150."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable club , columns = [ Club_ID ( integer | primary key | values : 3 , 5 ) , Club_name ( text | values : Gefle IF , Gefle IF ) , Region ( text | values : UK , USA ) , Start_year ( integer | values : 2005 , 1998 ) ]\ntable coach , columns = [ Coach_ID ( integer | primary key | values : 4 , 5 ) , Coach_name ( text | values : Smith Brown , James Wong ) , Gender ( text | values : M , F ) , Club_ID ( integer | values : 3 , 1 ) , Rank ( integer | values : 5 , 5 ) ]\ntable match_result , columns = [ Rank ( integer | primary key | values : 1 , 1 ) , Club_ID ( integer | values : 2 , 4 ) , Gold ( integer | values : 12 , 7 ) , Big_Silver ( integer | values : 11 , 11 ) , Small_Silver ( integer | values : 10 , 16 ) , Bronze ( integer | values : 10 , 10 ) , Points ( integer | values : 168 , 168 ) ]\ntable player , columns = [ Player_ID ( integer | primary key | values : 6 , 2 ) , Sponsor_name ( text | values : Dauphin—Swan River—Marquette , Saint Boniface ) , Player_name ( text | values : Fiona Shiells , Patricia Cordner ) , Gender ( text | values : M , M ) , Residence ( text | values : Brandon , Oakbank ) , Occupation ( text | values : Product Consultant - MLCC , Retired ) , Votes ( integer | values : 9506 , 7190 ) , Rank ( text | values : 2nd , 4th ) ]\ntable player_coach , columns = [ Player_ID ( integer | primary key | values : 3 , 2 ) , Coach_ID ( integer | values : 1 , 1 ) , Starting_year ( integer | values : 2010 , 2012 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "club",
+    "limit": 10
+   },
+   "result": "Club_ID | Club_name | Region | Start_year\n1 | AIK | USA | 2009\n2 | BK Häcken | UK | 1998\n3 | Djurgårdens IF | USA | 2005\n4 | Gefle IF | Korea | 2001\n5 | Halmstads BK | Russia | 2000\n6 | Helsingborgs IF | France | 2011"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "player",
+    "limit": 10
+   },
+   "result": "Player_ID | Sponsor_name | Player_name | Gender | Residence | Occupation | Votes | Rank\n1 | Brandon—Souris | Jean Luc Bouché | M | Brandon | Locomotive Engineer | 6055 | 2nd\n2 | Charleswood—St. James—Assiniboia | Fiona Shiells | F | Winnipeg | Ministerial Assistant | 7190 | 3rd\n3 | Churchill | Niki Ashton | F | Thompson | Researcher | 8734 | 1st\n4 | Dauphin—Swan River—Marquette | Ron Strynadka | M | Birtle | Retired | 4914 | 2nd\n5 | Elmwood—Transcona | Jim Maloway | M | Winnipeg | Small Businessman | 14355 | 1st\n6 | Kildonan—St. Paul | Ross Eadie | M | Winnipeg | Self Employed / Consultant | 12093 | 2nd\n7 | Portage—Lisgar | Mohamed Alli | M | Winnipeg | Distribution Centre Associate | 2353 | 4th\n8 | Provencher | Ross C. Martin | M | Oakbank | Design Coordinator | 4947 | 2nd\n9 | Saint Boniface | Matt Schaubroeck | M | Winnipeg | Student | 5502 | 3rd\n10 | Selkirk—Interlake | Patricia Cordner | F | Selkirk | Retired | 9506 | 2nd"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "match_result",
+    "limit": 10
+   },
+   "result": "Rank | Club_ID | Gold | Big_Silver | Small_Silver | Bronze | Points\n1 | 1 | 20 | 14 | 9 | 8 | 168\n2 | 2 | 13 | 11 | 16 | 9 | 139\n3 | 3 | 12 | 9 | 4 | 7 | 102\n4 | 4 | 5 | 12 | 10 | 8 | 89\n5 | 5 | 7 | 7 | 9 | 10 | 84\n6 | 6 | 6 | 6 | 6 | 6 | 66"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "player_coach",
+    "limit": 10
+   },
+   "result": "Player_ID | Coach_ID | Starting_year\n1 | 1 | 2010\n2 | 1 | 2011\n3 | 1 | 2012\n4 | 2 | 2013\n6 | 3 | 2012\n10 | 3 | 2011\n14 | 5 | 2010"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "The summary at the top says for the 25-to-40 final branch \"delete every match_result row whose Points value is greater than 175\", but item 5 says \"delete every match_result row whose Points value is greater than 150\". Which threshold should the procedure use?",
+    "options": [
+     "Use Points > 150",
+     "Use Points > 175"
+    ]
+   },
+   "result": "2",
+   "index": 2,
+   "options": [
+    "None of the following are correct.",
+    "Use Points > 150",
+    "Use Points > 175"
+   ],
+   "entry": "C1",
+   "status": "revealed",
+   "conflict_noted": true
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "In the less-than-25 final branch, \"reduce the Points value for every match_result row whose Points value is greater than 200.\" By how should Points be reduced?",
+    "options": [
+     "Set Points = Points - 1 for rows with Points > 200",
+     "Set Points = Points - 100 for rows with Points > 200",
+     "Set Points = 200 for rows with Points > 200",
+     "Set Points = Points - para_Points for rows with Points > 200"
+    ]
+   },
+   "result": "1",
+   "index": 1,
+   "options": [
+    "None of the following are correct.",
+    "Set Points = Points - 1 for rows with Points > 200",
+    "Set Points = Points - 100 for rows with Points > 200",
+    "Set Points = 200 for rows with Points > 200",
+    "Set Points = Points - para_Points for rows with Points > 200"
+   ],
+   "entry": "M2",
+   "status": "refuted",
+   "conflict_noted": false
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "In the final conditional, for the new less-than-25 branch (flag=2) and 25-to-40 branch (flag=3): if their stated condition is false (e.g. flag=2 but temp_num <= 100, or flag=3 but temp_text is not 'OVER_LIMIT' and over_limit_found is false), should the procedure still execute the original final fallback UPDATE for players with null Votes, or do nothing for that branch?",
+    "options": [
+     "Still execute the final fallback when the new branch condition is false",
+     "Do nothing when the new branch condition is false (skip the fallback)"
+    ]
+   },
+   "result": "2",
+   "index": 2,
+   "options": [
+    "None of the following are correct.",
+    "Still execute the final fallback when the new branch condition is false",
+    "Do nothing when the new branch condition is false (skip the fallback)"
+   ],
+   "entry": null,
+   "status": "off_oracle",
+   "conflict_noted": false
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Club_ID integer, para_Club_name text, para_Votes integer, para_Residence text, para_Points integer) LANGUAGE plpgsql AS\n$$\nDECLARE\n    cur REFCURSOR;\n    rec RECORD;\n    temp_num INTEGER;\n    temp_text TEXT;\n    row_count INTEGER;\n    flag INTEGER;\n    over_limit_found BOOLEAN := FALSE;\nBEGIN\n    temp_num := 0;\n    temp_text := '';\n    row_count := 0;\n    flag := 0;\n    IF para_Club_ID < 10 THEN\n        UPDATE \"club\" SET \"Club_name\" = 'INACTIVE' WHERE \"Club_ID\" < para_Club_ID;\n        flag := 1;\n    ELSIF para_Club_ID < 25 THEN\n        OPEN cur FOR SELECT \"Votes\", \"Residence\" FROM \"player\" WHERE \"Votes\" > para_Votes AND \"Residence\" LIKE para_Residence FOR UPDATE;\n        flag := 2;\n    ELSIF para_Club_ID < 40 THEN\n        OPEN cur FOR SELECT \"Points\" FROM \"match_result\" WHERE \"Points\" BETWEEN para_Points AND para_Points * 2;\n        flag := 3;\n    ELSE\n        OPEN cur FOR SELECT \"Club_ID\", \"Club_name\" FROM \"club\" WHERE \"Club_ID\" > para_Club_ID / 2;\n        flag := 4;\n    END IF;\n    IF flag = 2 OR flag = 3 OR flag = 4 THEN\n        LOOP\n            FETCH cur INTO rec;\n            EXIT WHEN NOT FOUND;\n            row_count := row_count + 1;\n            IF flag = 2 THEN\n                IF rec.\"Votes\" < 50 THEN\n                    UPDATE \"player\" SET \"Residence\" = 'COMPLETED' WHERE CURRENT OF cur;\n                ELSE\n                    temp_num := temp_num + rec.\"Votes\";\n                END IF;\n            ELSIF flag = 3 THEN\n                IF rec.\"Points\" > 100 THEN\n                    temp_text := 'OVER_LIMIT';\n                    over_limit_found := TRUE;\n                ELSIF rec.\"Points\" > 50 THEN\n                    temp_text := 'WITHIN_RANGE';\n                ELSE\n                    temp_text := 'BELOW_MIN';\n                END IF;\n            ELSIF flag = 4 THEN\n                IF rec.\"Club_ID\" % 2 = 0 THEN\n                    temp_num := temp_num + 1;\n                END IF;\n            END IF;\n        END LOOP;\n        CLOSE cur;\n    END IF;\n    IF flag = 1 THEN\n        DELETE FROM \"player_coach\" WHERE \"Player_ID\" IN (SELECT \"Player_ID\" FROM \"player\" WHERE \"Votes\" < para_Votes);\n        DELETE FROM \"player\" WHERE \"Votes\" < para_Votes;\n    ELSIF flag = 2 THEN\n        IF temp_num > 100 THEN\n            UPDATE \"match_result\" SET \"Points\" = \"Points\" - 1 WHERE \"Points\" > 200;\n        END IF;\n    ELSIF flag = 3 THEN\n        IF temp_text = 'OVER_LIMIT' OR over_limit_found THEN\n            DELETE FROM \"match_result\" WHERE \"Points\" > 175;\n        END IF;\n    ELSIF flag = 4 AND temp_num > 5 THEN\n        UPDATE \"club\" SET \"Club_name\" = 'PROCESSED' WHERE \"Club_ID\" < para_Club_ID;\n    ELSE\n        UPDATE \"player\" SET \"Residence\" = 'DEFAULT' WHERE \"Votes\" IS NULL;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_Club_ID integer, para_Club_name text, para_Votes integer, para_Residence text, para_Points integer) LANGUAGE plpgsql AS\n$$\nDECLARE\n    cur REFCURSOR;\n    rec RECORD;\n    temp_num INTEGER;\n    temp_text TEXT;\n    row_count INTEGER;\n    flag INTEGER;\n    over_limit_found BOOLEAN := FALSE;\nBEGIN\n    temp_num := 0;\n    temp_text := '';\n    row_count := 0;\n    flag := 0;\n    IF para_Club_ID < 10 THEN\n        UPDATE \"club\" SET \"Club_name\" = 'INACTIVE' WHERE \"Club_ID\" < para_Club_ID;\n        flag := 1;\n    ELSIF para_Club_ID < 25 THEN\n        OPEN cur FOR SELECT \"Votes\", \"Residence\" FROM \"player\" WHERE \"Votes\" > para_Votes AND \"Residence\" LIKE para_Residence FOR UPDATE;\n        flag := 2;\n    ELSIF para_Club_ID < 40 THEN\n        OPEN cur FOR SELECT \"Points\" FROM \"match_result\" WHERE \"Points\" BETWEEN para_Points AND para_Points * 2;\n        flag := 3;\n    ELSE\n        OPEN cur FOR SELECT \"Club_ID\", \"Club_name\" FROM \"club\" WHERE \"Club_ID\" > para_Club_ID / 2;\n        flag := 4;\n    END IF;\n    IF flag = 2 OR flag = 3 OR flag = 4 THEN\n        LOOP\n            FETCH cur INTO rec;\n            EXIT WHEN NOT FOUND;\n            row_count := row_count + 1;\n            IF flag = 2 THEN\n                IF rec.\"Votes\" < 50 THEN\n                    UPDATE \"player\" SET \"Residence\" = 'COMPLETED' WHERE CURRENT OF cur;\n                ELSE\n                    temp_num := temp_num + rec.\"Votes\";\n                END IF;\n            ELSIF flag = 3 THEN\n                IF rec.\"Points\" > 100 THEN\n                    temp_text := 'OVER_LIMIT';\n                    over_limit_found := TRUE;\n                ELSIF rec.\"Points\" > 50 THEN\n                    temp_text := 'WITHIN_RANGE';\n                ELSE\n                    temp_text := 'BELOW_MIN';\n                END IF;\n            ELSIF flag = 4 THEN\n                IF rec.\"Club_ID\" % 2 = 0 THEN\n                    temp_num := temp_num + 1;\n                END IF;\n            END IF;\n        END LOOP;\n        CLOSE cur;\n    END IF;\n    IF flag = 1 THEN\n        DELETE FROM \"player_coach\" WHERE \"Player_ID\" IN (SELECT \"Player_ID\" FROM \"player\" WHERE \"Votes\" < para_Votes);\n        DELETE FROM \"player\" WHERE \"Votes\" < para_Votes;\n    ELSIF flag = 2 THEN\n        IF temp_num > 100 THEN\n            UPDATE \"match_result\" SET \"Points\" = \"Points\" - 1 WHERE \"Points\" > 200;\n        END IF;\n    ELSIF flag = 3 THEN\n        IF temp_text = 'OVER_LIMIT' OR over_limit_found THEN\n            DELETE FROM \"match_result\" WHERE \"Points\" > 175;\n        END IF;\n    ELSIF flag = 4 AND temp_num > 5 THEN\n        UPDATE \"club\" SET \"Club_name\" = 'PROCESSED' WHERE \"Club_ID\" < para_Club_ID;\n    ELSE\n        UPDATE \"player\" SET \"Residence\" = 'DEFAULT' WHERE \"Votes\" IS NULL;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(5, 'x', 6000, 'x', 0);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(20, 'x', 0, '%', 0);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(30, 'x', 0, 'x', 50);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(30, 'x', 0, 'x', 80);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(50, 'x', 0, 'x', 0);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 17,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "CREATE OR REPLACE PROCEDURE sp(para_Club_ID integer, para_Club_name text, para_Votes integer, para_Residence text, para_Points integer) LANGUAGE plpgsql AS\n$$\nDECLARE\n    cur REFCURSOR;\n    rec RECORD;\n    temp_num INTEGER;\n    temp_text TEXT;\n    row_count INTEGER;\n    flag INTEGER;\n    over_limit_found BOOLEAN := FALSE;\nBEGIN\n    temp_num := 0;\n    temp_text := '';\n    row_count := 0;\n    flag := 0;\n    IF para_Club_ID < 10 THEN\n        UPDATE \"club\" SET \"Club_name\" = 'INACTIVE' WHERE \"Club_ID\" < para_Club_ID;\n        flag := 1;\n    ELSIF para_Club_ID < 25 THEN\n        OPEN cur FOR SELECT \"Votes\", \"Residence\" FROM \"player\" WHERE \"Votes\" > para_Votes AND \"Residence\" LIKE para_Residence FOR UPDATE;\n        flag := 2;\n    ELSIF para_Club_ID < 40 THEN\n        OPEN cur FOR SELECT \"Points\" FROM \"match_result\" WHERE \"Points\" BETWEEN para_Points AND para_Points * 2;\n        flag := 3;\n    ELSE\n        OPEN cur FOR SELECT \"Club_ID\", \"Club_name\" FROM \"club\" WHERE \"Club_ID\" > para_Club_ID / 2;\n        flag := 4;\n    END IF;\n    IF flag = 2 OR flag = 3 OR flag = 4 THEN\n        LOOP\n            FETCH cur INTO rec;\n            EXIT WHEN NOT FOUND;\n            row_count := row_count + 1;\n            IF flag = 2 THEN\n                IF rec.\"Votes\" < 50 THEN\n                    UPDATE \"player\" SET \"Residence\" = 'COMPLETED' WHERE CURRENT OF cur;\n                ELSE\n                    temp_num := temp_num + rec.\"Votes\";\n                END IF;\n            ELSIF flag = 3 THEN\n                IF rec.\"Points\" > 100 THEN\n                    temp_text := 'OVER_LIMIT';\n                    over_limit_found := TRUE;\n                ELSIF rec.\"Points\" > 50 THEN\n                    temp_text := 'WITHIN_RANGE';\n                ELSE\n                    temp_text := 'BELOW_MIN';\n                END IF;\n            ELSIF flag = 4 THEN\n                IF rec.\"Club_ID\" % 2 = 0 THEN\n                    temp_num := temp_num + 1;\n                END IF;\n            END IF;\n        END LOOP;\n        "
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_Club_ID integer, para_Club_name text, para_Votes integer, para_Residence text, para_Points integer) LANGUAGE plpgsql AS\n$$\nDECLARE\n    cur REFCURSOR;\n    rec RECORD;\n    temp_num INTEGER;\n    temp_text TEXT;\n    row_count INTEGER;\n    flag INTEGER;\n    over_limit_found BOOLEAN := FALSE;\nBEGIN\n    temp_num := 0;\n    temp_text := '';\n    row_count := 0;\n    flag := 0;\n    IF para_Club_ID < 10 THEN\n        UPDATE \"club\" SET \"Club_name\" = 'INACTIVE' WHERE \"Club_ID\" < para_Club_ID;\n        flag := 1;\n    ELSIF para_Club_ID < 25 THEN\n        OPEN cur FOR SELECT \"Votes\", \"Residence\" FROM \"player\" WHERE \"Votes\" > para_Votes AND \"Residence\" LIKE para_Residence FOR UPDATE;\n        flag := 2;\n    ELSIF para_Club_ID < 40 THEN\n        OPEN cur FOR SELECT \"Points\" FROM \"match_result\" WHERE \"Points\" BETWEEN para_Points AND para_Points * 2;\n        flag := 3;\n    ELSE\n        OPEN cur FOR SELECT \"Club_ID\", \"Club_name\" FROM \"club\" WHERE \"Club_ID\" > para_Club_ID / 2;\n        flag := 4;\n    END IF;\n    IF flag = 2 OR flag = 3 OR flag = 4 THEN\n        LOOP\n            FETCH cur INTO rec;\n            EXIT WHEN NOT FOUND;\n            row_count := row_count + 1;\n            IF flag = 2 THEN\n                IF rec.\"Votes\" < 50 THEN\n                    UPDATE \"player\" SET \"Residence\" = 'COMPLETED' WHERE CURRENT OF cur;\n                ELSE\n                    temp_num := temp_num + rec.\"Votes\";\n                END IF;\n            ELSIF flag = 3 THEN\n                IF rec.\"Points\" > 100 THEN\n                    temp_text := 'OVER_LIMIT';\n                    over_limit_found := TRUE;\n                ELSIF rec.\"Points\" > 50 THEN\n                    temp_text := 'WITHIN_RANGE';\n                ELSE\n                    temp_text := 'BELOW_MIN';\n                END IF;\n            ELSIF flag = 4 THEN\n                IF rec.\"Club_ID\" % 2 = 0 THEN\n                    temp_num := temp_num + 1;\n                END IF;\n            END IF;\n        END LOOP;\n        CLOSE cur;\n    END IF;\n    IF flag = 1 THEN\n        DELETE FROM \"player_coach\" WHERE \"Player_ID\" IN (SELECT \"Player_ID\" FROM \"player\" WHERE \"Votes\" < para_Votes);\n        DELETE FROM \"player\" WHERE \"Votes\" < para_Votes;\n    ELSIF flag = 2 THEN\n        IF temp_num > 100 THEN\n            UPDATE \"match_result\" SET \"Points\" = \"Points\" - 1 WHERE \"Points\" > 200;\n        END IF;\n    ELSIF flag = 3 THEN\n        IF temp_text = 'OVER_LIMIT' OR over_limit_found THEN\n            DELETE FROM \"match_result\" WHERE \"Points\" > 175;\n        END IF;\n    ELSIF flag = 4 AND temp_num > 5 THEN\n        UPDATE \"club\" SET \"Club_name\" = 'PROCESSED' WHERE \"Club_ID\" < para_Club_ID;\n    ELSE\n        UPDATE \"player\" SET \"Residence\" = 'DEFAULT' WHERE \"Votes\" IS NULL;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_Club_ID integer, para_Club_name text, para_Votes integer, para_Residence text, para_Points integer) LANGUAGE plpgsql AS\n$$\nDECLARE\n    cur REFCURSOR;\n    rec RECORD;\n    temp_num INTEGER;\n    temp_text TEXT;\n    row_count INTEGER;\n    flag INTEGER;\n    over_limit_found BOOLEAN := FALSE;\nBEGIN\n    temp_num := 0;\n    temp_text := '';\n    row_count := 0;\n    flag := 0;\n    IF para_Club_ID < 10 THEN\n        UPDATE \"club\" SET \"Club_name\" = 'INACTIVE' WHERE \"Club_ID\" < para_Club_ID;\n        flag := 1;\n    ELSIF para_Club_ID < 25 THEN\n        OPEN cur FOR SELECT \"Votes\", \"Residence\" FROM \"player\" WHERE \"Votes\" > para_Votes AND \"Residence\" LIKE para_Residence FOR UPDATE;\n        flag := 2;\n    ELSIF para_Club_ID < 40 THEN\n        OPEN cur FOR SELECT \"Points\" FROM \"match_result\" WHERE \"Points\" BETWEEN para_Points AND para_Points * 2;\n        flag := 3;\n    ELSE\n        OPEN cur FOR SELECT \"Club_ID\", \"Club_name\" FROM \"club\" WHERE \"Club_ID\" > para_Club_ID / 2;\n        flag := 4;\n    END IF;\n    IF flag = 2 OR flag = 3 OR flag = 4 THEN\n        LOOP\n            FETCH cur INTO rec;\n            EXIT WHEN NOT FOUND;\n            row_count := row_count + 1;\n            IF flag = 2 THEN\n                IF rec.\"Votes\" < 50 THEN\n                    UPDATE \"player\" SET \"Residence\" = 'COMPLETED' WHERE CURRENT OF cur;\n                ELSE\n                    temp_num := temp_num + rec.\"Votes\";\n                END IF;\n            ELSIF flag = 3 THEN\n                IF rec.\"Points\" > 100 THEN\n                    temp_text := 'OVER_LIMIT';\n                    over_limit_found := TRUE;\n                ELSIF rec.\"Points\" > 50 THEN\n                    temp_text := 'WITHIN_RANGE';\n                ELSE\n                    temp_text := 'BELOW_MIN';\n                END IF;\n            ELSIF flag = 4 THEN\n                IF rec.\"Club_ID\" % 2 = 0 THEN\n                    temp_num := temp_num + 1;\n                END IF;\n            END IF;\n        END LOOP;\n        CLOSE cur;\n    END IF;\n    IF flag = 1 THEN\n        DELETE FROM \"player_coach\" WHERE \"Player_ID\" IN (SELECT \"Player_ID\" FROM \"player\" WHERE \"Votes\" < para_Votes);\n        DELETE FROM \"player\" WHERE \"Votes\" < para_Votes;\n    ELSIF flag = 2 THEN\n        IF temp_num > 100 THEN\n            UPDATE \"match_result\" SET \"Points\" = \"Points\" - 1 WHERE \"Points\" > 200;\n        END IF;\n    ELSIF flag = 3 THEN\n        IF temp_text = 'OVER_LIMIT' OR over_limit_found THEN\n            DELETE FROM \"match_result\" WHERE \"Points\" > 175;\n        END IF;\n    ELSIF flag = 4 AND temp_num > 5 THEN\n        UPDATE \"club\" SET \"Club_name\" = 'PROCESSED' WHERE \"Club_ID\" < para_Club_ID;\n    ELSE\n        UPDATE \"player\" SET \"Residence\" = 'DEFAULT' WHERE \"Votes\" IS NULL;\n    END IF;\nEND;\n$$;"
+ },
+ "pair": {
+  "single_run": "st04",
+  "single_task": "postgres_b1_001"
+ }
+}

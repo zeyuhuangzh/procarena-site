@@ -1,0 +1,108 @@
+{
+ "id": "sp01-tools--postgres_a4_002",
+ "run": "sp01-tools",
+ "task_id": "postgres_a4_002",
+ "stage": "single",
+ "condition": "tools-only",
+ "tier": "single-turn",
+ "scenario": "a4",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 40,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": null,
+  "attribution": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 3,
+  "seconds": 12.8,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "compile_plsql": 1,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Implement the stored procedure described by the attached template.sql and the attached slots.md. The procedure updates activity names, promotes faculty based on participation for a given activity, deletes related participation rows, and overwrites all students' last and first names. Use the exact procedure signature: sp(para_activity_name text, para_actid integer, para_LName text, para_Fname text). Fill in every {SLOT_n} placeholder in the attached template.sql according to the attached slots.md. Do not alter the template's structure: no statement may be added, removed, or reordered, and the code outside the placeholders must remain exactly as it is. Return the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "template.sql",
+    "kind": "template",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_activity_name text, para_actid integer, para_LName text, para_Fname text) LANGUAGE plpgsql AS $$ DECLARE\n  ref_cursor1 CURSOR FOR SELECT * FROM \"Participates_in\" WHERE \"actid\" = para_actid FOR UPDATE;\n  ref_cursor2 CURSOR FOR SELECT * FROM \"Student\" FOR UPDATE;\n  rec1 RECORD;\n  rec2 RECORD;\nBEGIN\n  UPDATE \"Activity\" SET \"activity_name\" = {SLOT_1};\n  UPDATE \"Faculty\"\n    SET \"Rank\" = {SLOT_2}\n    WHERE {SLOT_3};\n  DELETE FROM \"Faculty_Participates_in\" WHERE {SLOT_4};\n  OPEN ref_cursor1;\n  LOOP\n    FETCH ref_cursor1 INTO rec1;\n    EXIT WHEN NOT FOUND;\n    DELETE FROM \"Participates_in\" WHERE CURRENT OF ref_cursor1;\n  END LOOP;\n  CLOSE ref_cursor1;\n  OPEN ref_cursor2;\n  LOOP\n    FETCH ref_cursor2 INTO rec2;\n    EXIT WHEN NOT FOUND;\n    UPDATE \"Student\" SET \"LName\" = {SLOT_5}, \"Fname\" = {SLOT_6} WHERE CURRENT OF ref_cursor2;\n  END LOOP;\n  CLOSE ref_cursor2;\nEND; $$;"
+   },
+   {
+    "file": "slots.md",
+    "kind": "slot dictionary",
+    "text": "## Slots\n\n### {SLOT_1}\n- Kind: value\n- What must go there: the procedure input parameter named `para_activity_name`. It is a text value and is assigned to the `Activity.activity_name` column for every row. No transformation or filtering is involved in this slot; it supplies the new value only.\n\n### {SLOT_2}\n- Kind: value\n- What must go there: the literal text string `Professor` with exactly that spelling and capitalization. It is a text literal assigned to `Faculty.Rank`, not a column or parameter reference.\n\n### {SLOT_3}\n- Kind: predicate\n- What must go there: a membership predicate for the `Faculty` update. A `Faculty` row qualifies when its `FacID` column is exactly one of the `FacID` values found in the `Faculty_Participates_in` table among rows whose `actid` column is exactly equal to the procedure parameter `para_actid`. The comparison between `Faculty_Participates_in.actid` and `para_actid` uses exact equality, not any other comparison. The membership test applies to `Faculty.FacID` against that set of `Faculty_Participates_in.FacID` values.\n\n### {SLOT_4}\n- Kind: predicate\n- What must go there: the deletion condition for `Faculty_Participates_in`. A row qualifies when its `actid` column is exactly equal to the procedure parameter `para_actid`. Use exact equality and no other row-selection condition.\n\n### {SLOT_5}\n- Kind: value\n- What must go there: the procedure input parameter named `para_LName`. It is a text value and is assigned unchanged to the `Student.LName` column for each row reached in the locked `Student` traversal.\n\n### {SLOT_6}\n- Kind: value\n- What must go there: the procedure input parameter named `para_Fname`. It is a text value and is assigned unchanged to the `Student.Fname` column for each row reached in the locked `Student` traversal."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Activity , columns = [ actid ( integer | primary key | values : 771 , 782 ) , activity_name ( text | values : Crossword Puzzles , Square Dancing ) ]\ntable Faculty , columns = [ FacID ( integer | primary key | values : 4432 , 1172 ) , Lname ( text | values : Runolfsson , Naiman ) , Fname ( text | values : Thordur , Frederic ) , Rank ( text | values : Professor , AsstProf ) , Sex ( text | values : M , M ) , Phone ( integer | values : 6073 , 3550 ) , Room ( text | values : 119 , 288 ) , Building ( text | values : Barton , Krieger ) ]\ntable Faculty_Participates_in , columns = [ FacID ( integer | primary key | values : 7723 , 1193 ) , actid ( integer | values : 778 , 790 ) ]\ntable Participates_in , columns = [ stuid ( integer | primary key | values : 1009 , 1002 ) , actid ( integer | values : 773 , 770 ) ]\ntable Student , columns = [ StuID ( integer | primary key | values : 1007 , 1010 ) , LName ( text | values : Schwartz , Norris ) , Fname ( text | values : Derek , Jandy ) , Age ( integer | values : 22 , 19 ) , Sex ( text | values : M , M ) , Major ( integer | values : 600 , 600 ) , Advisor ( integer | values : 7792 , 9172 ) , city_code ( text | values : DAL , YYZ ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_activity_name text, para_actid integer, para_LName text, para_Fname text) LANGUAGE plpgsql AS $$ DECLARE\n  ref_cursor1 CURSOR FOR SELECT * FROM \"Participates_in\" WHERE \"actid\" = para_actid FOR UPDATE;\n  ref_cursor2 CURSOR FOR SELECT * FROM \"Student\" FOR UPDATE;\n  rec1 RECORD;\n  rec2 RECORD;\nBEGIN\n  UPDATE \"Activity\" SET \"activity_name\" = para_activity_name;\n  UPDATE \"Faculty\"\n    SET \"Rank\" = 'Professor'\n    WHERE \"FacID\" IN (SELECT \"FacID\" FROM \"Faculty_Participates_in\" WHERE \"actid\" = para_actid);\n  DELETE FROM \"Faculty_Participates_in\" WHERE \"actid\" = para_actid;\n  OPEN ref_cursor1;\n  LOOP\n    FETCH ref_cursor1 INTO rec1;\n    EXIT WHEN NOT FOUND;\n    DELETE FROM \"Participates_in\" WHERE CURRENT OF ref_cursor1;\n  END LOOP;\n  CLOSE ref_cursor1;\n  OPEN ref_cursor2;\n  LOOP\n    FETCH ref_cursor2 INTO rec2;\n    EXIT WHEN NOT FOUND;\n    UPDATE \"Student\" SET \"LName\" = para_LName, \"Fname\" = para_Fname WHERE CURRENT OF ref_cursor2;\n  END LOOP;\n  CLOSE ref_cursor2;\nEND; $$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_activity_name text, para_actid integer, para_LName text, para_Fname text) LANGUAGE plpgsql AS $$ DECLARE\n  ref_cursor1 CURSOR FOR SELECT * FROM \"Participates_in\" WHERE \"actid\" = para_actid FOR UPDATE;\n  ref_cursor2 CURSOR FOR SELECT * FROM \"Student\" FOR UPDATE;\n  rec1 RECORD;\n  rec2 RECORD;\nBEGIN\n  UPDATE \"Activity\" SET \"activity_name\" = para_activity_name;\n  UPDATE \"Faculty\"\n    SET \"Rank\" = 'Professor'\n    WHERE \"FacID\" IN (SELECT \"FacID\" FROM \"Faculty_Participates_in\" WHERE \"actid\" = para_actid);\n  DELETE FROM \"Faculty_Participates_in\" WHERE \"actid\" = para_actid;\n  OPEN ref_cursor1;\n  LOOP\n    FETCH ref_cursor1 INTO rec1;\n    EXIT WHEN NOT FOUND;\n    DELETE FROM \"Participates_in\" WHERE CURRENT OF ref_cursor1;\n  END LOOP;\n  CLOSE ref_cursor1;\n  OPEN ref_cursor2;\n  LOOP\n    FETCH ref_cursor2 INTO rec2;\n    EXIT WHEN NOT FOUND;\n    UPDATE \"Student\" SET \"LName\" = para_LName, \"Fname\" = para_Fname WHERE CURRENT OF ref_cursor2;\n  END LOOP;\n  CLOSE ref_cursor2;\nEND; $$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_activity_name text, para_actid integer, para_LName text, para_Fname text) LANGUAGE plpgsql AS $$ DECLARE\n  ref_cursor1 CURSOR FOR SELECT * FROM \"Participates_in\" WHERE \"actid\" = para_actid FOR UPDATE;\n  ref_cursor2 CURSOR FOR SELECT * FROM \"Student\" FOR UPDATE;\n  rec1 RECORD;\n  rec2 RECORD;\nBEGIN\n  UPDATE \"Activity\" SET \"activity_name\" = para_activity_name;\n  UPDATE \"Faculty\"\n    SET \"Rank\" = 'Professor'\n    WHERE \"FacID\" IN (SELECT \"FacID\" FROM \"Faculty_Participates_in\" WHERE \"actid\" = para_actid);\n  DELETE FROM \"Faculty_Participates_in\" WHERE \"actid\" = para_actid;\n  OPEN ref_cursor1;\n  LOOP\n    FETCH ref_cursor1 INTO rec1;\n    EXIT WHEN NOT FOUND;\n    DELETE FROM \"Participates_in\" WHERE CURRENT OF ref_cursor1;\n  END LOOP;\n  CLOSE ref_cursor1;\n  OPEN ref_cursor2;\n  LOOP\n    FETCH ref_cursor2 INTO rec2;\n    EXIT WHEN NOT FOUND;\n    UPDATE \"Student\" SET \"LName\" = para_LName, \"Fname\" = para_Fname WHERE CURRENT OF ref_cursor2;\n  END LOOP;\n  CLOSE ref_cursor2;\nEND; $$;"
+ },
+ "pair": null
+}

@@ -1,0 +1,453 @@
+{
+ "id": "sp-ora-a1b2-tools--oracle_a1_002",
+ "run": "sp-ora-a1b2-tools",
+ "task_id": "oracle_a1_002",
+ "stage": "single",
+ "condition": "tools-only",
+ "tier": "single-turn",
+ "scenario": "a1",
+ "dialect": "oracle",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "candidate did not create: line 27:32 PL/SQL: ORA-00942: table or view does not exist; line 27:18 PL/SQL: SQL Statement ignored; line 27:10 PLS-00341: declaration of cursor 'C_AC' is incomplete or malformed; line 0:0 PL/SQL: Compilation unit analysis terminated",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "impl",
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 44,
+  "seconds": 946.7,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 5,
+   "execute_scratch": 28,
+   "compile_plsql": 6,
+   "describe_table": 1,
+   "reset_scratch": 1,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Implement an Oracle PL/SQL procedure named `sp` with three parameters in this exact order: `para_flow_degradation_threshold NUMBER`, `para_eer_degradation_ratio NUMBER`, and `para_outdoor_heat_threshold NUMBER`. The procedure has no explicit exception handling; if any SQL operation fails, execution stops and the Oracle error is raised to the caller. It does not explicitly commit or roll back.\n\nTables and columns involved:\n- `air_conditioner_info`: the procedure processes each row, reads all columns because it reads the whole row, and may write `energy_efficiency_ratio` and `power_consumption_watts`. The behavior depends on `ac_id`, `cooling_capacity_btu`, `heating_capacity_btu`, `energy_efficiency_ratio`, `power_consumption_watts`, and `refrigerant_type`.\n- `energy_consumption`: reads `energy_id`, `ac_id`, `power_consumption_watts`, `outdoor_temperature_celsius`, and `energy_consumption_kwh`; deletes rows based on those columns.\n- `usage_records`: reads `ac_id`, `usage_duration_hours`, `mode`, `indoor_temperature_celsius`, and `outdoor_temperature_celsius`.\n- `refrigerant_properties`: reads `refrigerant_type`, `phase_change_heat_kj_per_kg`, and `refrigerant_flow_rate_kg_per_s`.\n- `carbon_emissions`: reads `id` and `emission_factor`; inserts rows with values for `id`, `emission_factor`, and `annual_emissions_tonnes`.\n\nAll literal values are: 3412.0 for converting BTU to kilowatts; 1000.0 for converting kilowatts to watts and for annual emissions; 1.15 as the rated power multiplier; 273.15 added to Celsius in the Carnot calculation; 200 as both the fallback phase-change heat value and the divisor for fallback refrigerant flow; 24.0 and 30.0 as default average indoor and outdoor Celsius temperatures; 0.5 as fallback emission factor; 0 as fallback sum or starting point; and the exact string `'Cooling'` for mode matching.\n\nBefore processing any air conditioner, determine the next carbon emissions id as one greater than the largest existing `carbon_emissions.id`, or 1 if there are no carbon emission rows. Each inserted carbon emission row uses the next integer in this same sequence, so ids increase by 1 for every carbon insert in the order inserts occur.\n\nProcess every air conditioner row in ascending `ac_id` order, locking each row for update while it is processed.\n\nFor each air conditioner row:\n1. Convert `cooling_capacity_btu` to kilowatts by dividing by 3412.0. Convert `heating_capacity_btu` to kilowatts by dividing by 3412.0.\n2. Compute the pre-delete total energy use as the sum of `energy_consumption.energy_consumption_kwh` for the unit. If no rows exist, use 0. Store this pre-delete total for use in the per-unit carbon emission calculation later.\n3. Compute total usage hours as the sum of `usage_records.usage_duration_hours` for the unit. If no rows exist, use 0.\n4. Compute average indoor temperature and average outdoor temperature from `usage_records.indoor_temperature_celsius` and `usage_records.outdoor_temperature_celsius` for the unit. Ignore null values when averaging. If no rows or no non-null values exist, use 24.0 for indoor and 30.0 for outdoor. These averages are not recomputed later.\n5. Compute total estimated output in kilowatt-hours. For each usage record for the unit, if `mode` is exactly `'Cooling'`, add cooling capacity in kilowatts multiplied by `usage_duration_hours`; otherwise add heating capacity in kilowatts multiplied by `usage_duration_hours`. If no usage records exist, output is 0. This output total is not recomputed later.\n6. Compute initial seasonal efficiency. If pre-delete total energy use is greater than 0, seasonal efficiency equals total estimated output divided by pre-delete total energy use. Otherwise seasonal efficiency equals the unit's rated `energy_efficiency_ratio`.\n7. Compute initial average power draw in kilowatts. If pre-delete total energy use is greater than 0 and total usage hours is greater than 0, average power draw equals pre-delete total energy use divided by total usage hours. Otherwise average power draw equals the unit's rated `power_consumption_watts` divided by 1000.0.\n8. Apply the initial Carnot cap. If average outdoor temperature minus average indoor temperature is greater than 0, compute a Carnot coefficient as average indoor temperature plus 273.15, divided by average outdoor temperature minus average indoor temperature. If seasonal efficiency is greater than this Carnot coefficient, reduce seasonal efficiency to the Carnot coefficient. If the temperature difference is not greater than 0, no cap is applied.\n9. For the unit's `refrigerant_type`, read `phase_change_heat_kj_per_kg` and `refrigerant_flow_rate_kg_per_s` from `refrigerant_properties`. Use the largest non-null `phase_change_heat_kj_per_kg` for that refrigerant type, or 200 if missing or null. Use the average non-null `refrigerant_flow_rate_kg_per_s` for that refrigerant type, or cooling capacity in kilowatts divided by 200 if missing or null.\n10. If the resulting phase-change heat value is not greater than 0, do nothing further for this air conditioner. It receives no deletion, no update, and no carbon emission rows.\n11. Otherwise compute required flow rate as cooling capacity in kilowatts divided by the phase-change heat value. If actual flow rate is less than required flow rate multiplied by `para_flow_degradation_threshold`, the unit is affected. If actual flow rate is not less than that value, do nothing further for this unit.\n12. For an affected unit, first select the emission factor to use for all carbon inserts for this unit. The emission factor is the largest non-null `carbon_emissions.emission_factor` at that moment, or 0.5 if there are no carbon emission rows or no non-null emission factor values. This selection may see carbon rows inserted earlier by the procedure for previous affected units.\n13. Identify every `energy_consumption` row for the affected unit where `power_consumption_watts` is strictly greater than the unit's `power_consumption_watts` multiplied by 1.15, and `outdoor_temperature_celsius` is strictly greater than `para_outdoor_heat_threshold`. Order those rows by ascending `energy_id`. Store their `energy_id` and `energy_consumption_kwh` values. If no rows match, no energy rows are deleted.\n14. Delete all identified `energy_consumption` rows in ascending `energy_id` order.\n15. After the deletions, recompute total energy use as the sum of remaining `energy_consumption.energy_consumption_kwh` for the affected unit. If no remaining rows exist, use 0.\n16. Recompute seasonal efficiency from this post-deletion total energy use. If post-deletion total energy use is greater than 0, seasonal efficiency equals the original total estimated output divided by post-deletion total energy use. Otherwise seasonal efficiency equals the unit's rated `energy_efficiency_ratio`.\n17. Recompute average power draw in kilowatts from this post-deletion total energy use. If post-deletion total energy use is greater than 0 and the original total usage hours is greater than 0, average power draw equals post-deletion total energy use divided by original total usage hours. Otherwise average power draw equals the unit's rated `power_consumption_watts` divided by 1000.0.\n18. Reapply the Carnot cap using the original average indoor and outdoor temperatures. If average outdoor temperature minus average indoor temperature is greater than 0, compute the Carnot coefficient as average indoor temperature plus 273.15, divided by average outdoor temperature minus average indoor temperature. If the recomputed seasonal efficiency is greater than this coefficient, reduce it to the coefficient. If the temperature difference is not greater than 0, no cap is applied.\n19. Check whether the recomputed and capped seasonal efficiency is strictly less than the unit's rated `energy_efficiency_ratio` multiplied by `para_eer_degradation_ratio`. If it is, update the current air conditioner row by setting `energy_efficiency_ratio` to the recomputed and capped seasonal efficiency, and setting `power_consumption_watts` to the recomputed average power draw in kilowatts multiplied by 1000.0. If it is not strictly less, do not update the air conditioner row.\n20. Insert exactly one carbon emission row for the affected unit, regardless of whether the air conditioner update happened. Give it the next carbon emission id. Set its `emission_factor` to the emission factor selected for this unit. Set its `annual_emissions_tonnes` to the stored pre-delete total energy use multiplied by that emission factor and divided by 1000.0. Use the pre-delete total, not the post-deletion total.\n21. After that per-unit carbon row, for every identified deleted energy row in ascending `energy_id` order, insert one additional carbon emission row. Give each row the next carbon emission id in the same sequence. Set its `emission_factor` to the same selected emission factor. Set its `annual_emissions_tonnes` to the deleted row's `energy_consumption_kwh`, or 0 if that value is null, multiplied by the selected emission factor and divided by 1000.0. If no energy rows were deleted, only the per-unit carbon row is inserted.\n\nContinue this process for the next air conditioner in ascending `ac_id` order. A unit that is not affected receives no deletions, no update, and no carbon inserts. An affected unit always receives a per-unit carbon emission row, and may also receive one carbon emission row per deleted energy row.\n\nImplement this as an Oracle (PL/SQL) stored procedure named `sp` with the parameter list exactly `sp(para_flow_degradation_threshold NUMBER, para_eer_degradation_ratio NUMBER, para_outdoor_heat_threshold NUMBER)`. Return the complete stored procedure, and nothing else.\n",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable air_conditioner_info , columns = [ ac_id ( number | primary key | values : 1 , 2 , 3 ) , manufacturer ( varchar2 | values : Daikin , Mitsubishi , LG ) , model ( varchar2 | values : FTXS35LVMA , MSZ-FH09NA , LP1419IVSM ) , production_year ( number | values : 2022 , 2021 , 2023 ) , cooling_capacity_btu ( number | values : 12000 , 9000 , 14000 ) , heating_capacity_btu ( number | values : 13000 , 10000 , 15000 ) , energy_efficiency_ratio ( number | values : 3.5 , 4.0 , 3.8 ) , power_consumption_watts ( number | values : 1100.0 , 900.0 , 1200.0 ) , refrigerant_type ( varchar2 | values : R410A , R32 , R410A ) , noise_level_db ( number | values : 19.0 , 20.0 , 21.0 ) , weight_kg ( number | values : 32.5 , 28.0 , 34.0 ) , dimensions ( varchar2 | values : 800x300x200 , 780x290x210 , 820x310x220 ) , warranty_period_months ( number | values : 60 , 72 , 60 ) ]\ntable carbon_emissions , columns = [ id ( number | primary key ) , emission_factor ( number ) , annual_emissions_tonnes ( number ) ]\ntable energy_consumption , columns = [ energy_id ( number | primary key | values : 1 , 2 , 3 ) , ac_id ( number | values : 1 , 2 , 3 ) , record_date ( varchar2 | values : 2023-10-01 , 2023-10-02 , 2023-10-03 ) , energy_consumption_kwh ( number | values : 5.5 , 8.0 , 6.0 ) , power_consumption_watts ( number | values : 1100.0 , 900.0 , 1200.0 ) , temperature_setting_celsius ( number | values : 22.0 , 24.0 , 26.0 ) , mode ( varchar2 | values : Cooling , Heating , Cooling ) , fan_speed ( varchar2 | values : High , Medium , Low ) , indoor_temperature_celsius ( number | values : 25.0 , 20.0 , 28.0 ) , outdoor_temperature_celsius ( number | values : 35.0 , 10.0 , 38.0 ) , humidity_percent ( number | values : 60.0 , 50.0 , 65.0 ) ]\ntable refrigerant_properties , columns = [ refrigerant_type ( varchar2 | primary key ) , phase_change_heat_kj_per_kg ( binary_double ) , refrigerant_flow_rate_kg_per_s ( binary_double ) ]\ntable usage_records , columns = [ usage_id ( number | primary key | values : 1 , 2 , 3 ) , ac_id ( number | values : 1 , 2 , 3 ) , usage_date ( varchar2 | values : 2023-10-01 , 2023-10-02 , 2023-10-03 ) , usage_duration_hours ( number | values : 5.5 , 8.0 , 6.0 ) , temperature_setting_celsius ( number | values : 22.0 , 24.0 , 26.0 ) , fan_speed ( varchar2 | values : High , Medium , Low ) , mode ( varchar2 | values : Cooling , Heating , Cooling ) , power_consumption_watts ( number | values : 1100.0 , 900.0 , 1200.0 ) , indoor_temperature_celsius ( number | values : 25.0 , 20.0 , 28.0 ) , outdoor_temperature_celsius ( number | values : 35.0 , 10.0 , 38.0 ) , humidity_percent ( number | values : 60.0 , 50.0 , 65.0 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "refrigerant_properties"
+   },
+   "result": "(refrigerant_type | phase_change_heat_kj_per_kg | refrigerant_flow_rate_kg_per_s)\n(no rows)"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "energy_consumption"
+   },
+   "result": "energy_id | ac_id | record_date | energy_consumption_kwh | power_consumption_watts | temperature_setting_celsius | mode | fan_speed | indoor_temperature_celsius | outdoor_temperature_celsius | humidity_percent\n1 | 1 | 2023-10-01 | 5.5 | 1100.0 | 22.0 | Cooling | High | 25.0 | 35.0 | 60.0\n2 | 2 | 2023-10-02 | 8.0 | 900.0 | 24.0 | Heating | Medium | 20.0 | 10.0 | 50.0\n3 | 3 | 2023-10-03 | 6.0 | 1200.0 | 26.0 | Cooling | Low | 28.0 | 38.0 | 65.0\n4 | 4 | 2023-10-04 | 7.5 | 1000.0 | 23.0 | Dehumidify | High | 26.0 | 36.0 | 70.0\n5 | 5 | 2023-10-05 | 4.0 | 950.0 | 25.0 | Fan | Medium | 27.0 | 37.0 | 55.0\n32 | 5681 | 2025-11-26 | NULL | 1100.0 | 24.0 | Cooling | High | 32.0 | 44.0 | 60.0\n33 | 5678 | 2025-11-26 | 2.86 | 1100.0 | 24.0 | Cooling | High | 32.0 | 44.0 | 60.0\n34 | 5678 | 2025-11-26 | 2.86 | 1100.0 | 24.0 | Cooling | High | 32.0 | 44.0 | 60.0\n35 | 5678 | 2025-11-26 | 3.5 | 1200.0 | 20.0 | Heating | High | -10.0 | -15.0 | 50.0\n36 | 5678 | 2025-11-26 | 2.86 | 1200.0 | 25.0 | Cooling | High | 32.0 | 40.0 | 60.0\n37 | 5678 | 2025-11-26 | 3.5 | 1200.0 | 20.0 | Heating | High | -10.0 | -15.0 | 50.0\n38 | 3001 | 2025-11-26 | 1.2 | NULL | NULL | dehumidification | High | NULL | NULL | NULL\n39 | 3002 | 2025-11-26 | 1.5 | NULL | NULL | dehumidification | Medium | NULL | NULL | NULL\n40 | 3003 | 2025-11-26 | 2.0 | NULL | NULL | dehumidification | Low | NULL | NULL | NULL\n41 | 4001 | 2025-11-26 | 1.2 | NULL | NULL | cooling | High | NULL | NULL | NULL\n42 | 4002 | 2025-11-26 | 1.5 | NULL | NULL | cooling | Medium | NULL | NULL | NULL\n43 | 4003 | 2025-11-26 | 2.0 | NULL | NULL | cooling | Low | NULL | NULL | NULL\n44 | 5001 | 2025-11-26 | 1.5 | NULL | NULL | cooling | High | NULL | NULL | NULL\n45 | 5002 | 2025-11-26 | 1.8 | NULL | NULL | cooling | Medium | NULL | NULL | NULL\n46 | 5003 | 2025-11-26 | 2.0 | NULL | NULL | cooling | Low | NULL | NULL | NULL"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "usage_records"
+   },
+   "result": "usage_id | ac_id | usage_date | usage_duration_hours | temperature_setting_celsius | fan_speed | mode | power_consumption_watts | indoor_temperature_celsius | outdoor_temperature_celsius | humidity_percent\n1 | 1 | 2023-10-01 | 5.5 | 22.0 | High | Cooling | 1100.0 | 25.0 | 35.0 | 60.0\n2 | 2 | 2023-10-02 | 8.0 | 24.0 | Medium | Heating | 900.0 | 20.0 | 10.0 | 50.0\n3 | 3 | 2023-10-03 | 6.0 | 26.0 | Low | Cooling | 1200.0 | 28.0 | 38.0 | 65.0\n4 | 4 | 2023-10-04 | 7.5 | 23.0 | High | Dehumidify | 1000.0 | 26.0 | 36.0 | 70.0\n5 | 5 | 2023-10-05 | 4.0 | 25.0 | Medium | Fan | 950.0 | 27.0 | 37.0 | 55.0\n6 | 6 | 2025-01-01 | 3.0 | 25.0 | Medium | cooling | 1200.0 | 30.0 | 35.0 | 55.0\n7 | 5678 | 2025-11-26 | 2.0 | 20.0 | High | Heating | 1500.0 | 10.0 | 0.0 | 50.0\n8 | 5678 | 2025-11-26 | 3.0 | 24.0 | Medium | Cooling | 1000.0 | 26.0 | 35.0 | 45.0\n9 | 5678 | 2025-11-27 | 2.5 | 25.0 | High | Heating | 1200.0 | 20.0 | 10.0 | 50.0\n10 | 5678 | 2025-11-28 | 4.0 | 23.0 | Low | Cooling | 950.0 | 27.0 | 36.0 | 42.0\n11 | 5678 | 2025-11-29 | 1.5 | 22.0 | Medium | Heating | 1100.0 | 19.0 | 12.0 | 48.0\n12 | 5678 | 2025-11-30 | 3.5 | 24.5 | High | Cooling | 1050.0 | 25.0 | 34.0 | 40.0\n13 | 5678 | 2025-11-26 | 5.0 | 24.0 | High | Heating | 1500.0 | 40.0 | -30.0 | 50.0\n14 | 5678 | 2025-11-26 | 5.0 | 24.0 | High | Cooling | 1500.0 | 25.0 | 35.0 | 0.0\n15 | 5678 | 2025-11-26 | 10.0 | 24.0 | High | Heating | 1500.0 | 20.0 | -5.0 | 50.0\n16 | 5678 | 2025-11-27 | 8.5 | 25.0 | Medium | Fan | 1200.0 | 22.0 | 0.0 | 55.0\n17 | 5678 | 2025-11-28 | 9.0 | 23.0 | High | Heating | 1500.0 | 21.0 | -3.0 | 52.0\n18 | 5678 | 2025-11-29 | 7.5 | 24.5 | Medium | Fan | 1200.0 | 23.0 | 2.0 | 54.0\n19 | 5678 | 2025-11-30 | 11.0 | 24.0 | High | Heating | 1500.0 | 20.0 | -2.0 | 51.0\n20 | 5678 | 2025-11-26 | 8.0 | 22.0 | High | Cooling | 1200.0 | 10.0 | 60.0 | 50.0"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "carbon_emissions"
+   },
+   "result": "(id | emission_factor | annual_emissions_tonnes)\n(no rows)"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "air_conditioner_info"
+   },
+   "result": "ac_id | manufacturer | model | production_year | cooling_capacity_btu | heating_capacity_btu | energy_efficiency_ratio | power_consumption_watts | refrigerant_type | noise_level_db | weight_kg | dimensions | warranty_period_months\n1 | Daikin | FTXS35LVMA | 2022 | 12000 | 13000 | 3.5 | 1100.0 | R410A | 19.0 | 32.5 | 800x300x200 | 60\n2 | Mitsubishi | MSZ-FH09NA | 2021 | 9000 | 10000 | 4.0 | 900.0 | R32 | 20.0 | 28.0 | 780x290x210 | 72\n3 | LG | LP1419IVSM | 2023 | 14000 | 15000 | 3.8 | 1200.0 | R410A | 21.0 | 34.0 | 820x310x220 | 60\n4 | Samsung | AR12TXHQAWKN | 2022 | 11000 | 12000 | 3.7 | 1000.0 | R32 | 18.5 | 30.0 | 790x295x205 | 60\n5 | Panasonic | CS-XE9PKEW | 2023 | 10000 | 11000 | 4.2 | 950.0 | R410A | 20.5 | 29.5 | 800x300x200 | 72\n6 | GenericBrand | AC-1234 | 2024 | 15000 | 16000 | 3.8 | 1200.0 | R32 | 19.5 | 30.0 | 800x300x200 | 60\n7 | FrostTech | FT-2000 | 2022 | 10000 | 12000 | 3.2 | 950.0 | R410A | 24.0 | 30.0 | 750x280x190 | 18\n111 | TestBrand | AC-Dehumid1 | NULL | 18000 | NULL | NULL | 850.0 | NULL | NULL | NULL | NULL | NULL\n112 | TestBrand | AC-AirSupply1 | NULL | 18000 | NULL | NULL | 800.0 | NULL | NULL | NULL | NULL | NULL\n113 | TestBrand | AC-ExtremeDehumid1 | NULL | 18000 | NULL | NULL | 6000.0 | NULL | NULL | NULL | NULL | NULL\n114 | TestBrand | AC-Usage1 | NULL | 18000 | NULL | NULL | 800.0 | NULL | NULL | NULL | NULL | NULL\n115 | TestBrand | AC-Heating1 | NULL | 18000 | NULL | NULL | 900.0 | NULL | NULL | NULL | NULL | NULL\n116 | TestBrand | AC-Blow1 | NULL | 18000 | NULL | NULL | 900.0 | NULL | NULL | NULL | NULL | NULL\n117 | TestBrand | AC-ExtremeHeat | NULL | 25000 | NULL | NULL | 12000.0 | NULL | NULL | NULL | NULL | NULL\n221 | TestBrand | AC-LowTemp1 | NULL | 18000 | NULL | NULL | 800.0 | NULL | NULL | 55.0 | NULL | NULL\n222 | ExtremeBrand | AC-Extreme1 | NULL | 1000000 | NULL | 100.0 | 10000.0 | NULL | NULL | NULL | NULL | NULL\n223 | ThermoBrand | SpecificModel | NULL | 20000 | NULL | NULL | 800.0 | NULL | NULL | NULL | NULL | NULL\n225 | TestBrand | AC-Extreme | NULL | 18000 | NULL | NULL | 1000.0 | NULL | NULL | NULL | NULL | NULL\n226 | TestBrand | Model-X | NULL | 20000 | NULL | NULL | 900.0 | NULL | NULL | NULL | NULL | NULL\n227 | HeatMaster | AC-Extreme1 | NULL | 25000 | NULL | NULL | 950.0 | NULL | NULL | NULL | NULL | NULL"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": "{\"sql\": \"CREATE OR REPLACE PROCEDURE sp(\\n  para_flow_degradation_threshold NUMBER,\\n  para_eer_degradation_ratio NUMBER,\\n  para_outdoor_heat_threshold NUMBER\\n) AS\\n  TYPE num_tab IS TABLE OF NUMBER;\\n  v_next_id NUMBER;\\n  v_cooling_kw NUMBER;\\n  v_heating_kw NUMBER;\\n  v_pre_total NUMBER;\\n  v_total_hours NUMBER;\\n  v_avg_indoor NUMBER;\\n  v_avg_outdoor NUMBER;\\n  v_output NUMBER;\\n  v_seasonal_eff NUMBER;\\n  v_avg_power_kw NUMBER;\\n  v_carnot_coef NUMBER;\\n  v_phase_change NUMBER;\\n  v_actual_flow NUMBER;\\n  v_required_flow NUMBER;\\n  v_emission_factor NUMBER;\\n  v_del_ids num_tab;\\n  v_del_kwh num_tab;\\n  v_post_total NUMBER;\\n  v_post_eff NUMBER;\\n  v_post_avg_power_kw NUMBER;\\n  CURSOR c_ac IS SELECT * FROM air_conditioner_info ORDER BY ac_id FOR UPDATE;\\n  r_ac c_ac%ROWTYPE;\\nBEGIN\\n  SELECT NVL(MAX(id),0)+1 INTO v_next_id FROM carbon_emissions;\\n\\n  OPEN c_ac;\\n  LOOP\\n    FETCH c_ac INTO r_ac;\\n    EXIT WHEN c_ac%NOTFOUND;\\n\\n    v_cooling_kw := r_ac.cooling_capacity_btu / 3412.0;\\n    v_heating_kw := r_ac.heating_capacity_btu / 3412.0;\\n\\n    SELECT NVL(SUM(energy_consumption_kwh),0)\\n      INTO v_pre_total\\n    FROM energy_consumption\\n    WHERE ac_id = r_ac.ac_id;\\n\\n    SELECT NVL(SUM(usage_duration_hours),0)\\n      INTO v_total_hours\\n    FROM usage_records\\n    WHERE ac_id = r_ac.ac_id;\\n\\n    SELECT AVG(indoor_temperature_celsius), AVG(outdoor_temperature_celsius)\\n      INTO v_avg_indoor, v_avg_outdoor\\n    FROM usage_records\\n    WHERE ac_id = r_ac.ac_id;\\n    v_avg_indoor := NVL(v_avg_indoor, 24.0);\\n    v_avg_outdoor := NVL(v_avg_outdoor, 30.0);\\n\\n    SELECT NVL(SUM(CASE WHEN mode = 'Cooling'\\n                        THEN v_cooling_kw * usage_duration_hours\\n                        ELSE v_heating_kw * usage_duration_hours\\n                   END),0)\\n      INTO v_output\\n    FROM usage_records\\n    WHERE ac_id = r_ac.ac_id;\\n\\n    IF v_pre_total > 0 THEN\\n      v_seasonal_eff := v_output / v_pre_total;\\n    ELSE\\n      v_seasonal_eff := r_ac.energy_efficiency_ratio;\\n    END IF;\\n\\n    IF v_pre_total > 0 AND v_total_hours > 0 THEN\\n      v_avg_power_kw := v_pre_total / v_total_hours;\\n    ELSE\\n      v_avg_power_kw := r_ac.power_consumption_watts / 1000.0;\\n    END IF;\\n\\n    IF v_avg_outdoor - v_avg_indoor > 0 THEN\\n      v_carnot_coef := (v_avg_indoor + 273.15) / (v_avg_outdoor - v_avg_indoor);\\n      IF v_seasonal_eff > v_carnot_coef THEN\\n        v_seasonal_eff := v_carnot_coef;\\n      END IF;\\n    END IF;\\n\\n    SELECT MAX(phase_change_heat_kj_per_kg), AVG(refrigerant_flow_rate_kg_per_s)\\n      INTO v_phase_change, v_actual_flow\\n    FROM refrigerant_properties\\n    WHERE refrigerant_type = r_ac.refrigerant_type;\\n\\n    v_phase_change := NVL(v_phase_change, 200);\\n    v_actual_flow := NVL(v_actual_flow, v_cooling_kw / 200);\\n\\n    IF v_phase_change > 0 THEN\\n      v_required_flow := v_cooling_kw / v_phase_change;\\n      IF v_actual_flow < v_required_flow * para_flow_degradation_threshold THEN\\n\\n        SELECT NVL(MAX(emission_factor),0.5)\\n          INTO v_emission_factor\\n        FROM carbon_emissions;\\n\\n        v_del_ids := num_tab();\\n        v_del_kwh := num_tab();\\n        SELECT energy_id, energy_consumption_kwh\\n          BULK COLLECT INTO v_del_ids, v_del_kwh\\n        FROM energy_consumption\\n        WHERE ac_id = r_ac.ac_id\\n          AND power_consumption_watts > r_ac.power_consumption_watts * 1.15\\n          AND outdoor_temperature_celsius > para_outdoor_heat_threshold\\n        ORDER BY energy_id;\\n\\n        IF v_del_ids.COUNT > 0 THEN\\n          FOR i IN 1..v_del_ids.COUNT LOOP\\n            DELETE FROM energy_consumption WHERE energy_id = v_del_ids(i);\\n          END LOOP;\\n        END IF;\\n\\n        SELECT NVL(SUM(energy_consumption_kwh),0)\\n          INTO v_post_total\\n        FROM energy_consumption\\n        WHERE ac_id = r_ac.ac_id;\\n\\n        IF v_post_total > 0 THEN\\n          v_post_eff := v_output / v_post_total;\\n        ELSE\\n          v_post_eff := r_ac.energy_efficiency_rat... (+1457)",
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT COUNT(*) FROM air_conditioner_info"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT 1 FROM dual"
+   },
+   "result": "1\n1"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables"
+   },
+   "result": "TABLE_NAME\nLOGMNR_SESSION_EVOLVE$\nLOGMNR_GLOBAL$\nLOGMNR_PDB_INFO$\nLOGMNR_DID$\nLOGMNR_UID$\nLOGMNRGGC_GTLO\nLOGMNRGGC_GTCS\nLOGMNRC_DBNAME_UID_MAP\nLOGMNR_LOG$\nLOGMNR_PROCESSED_LOG$\nLOGMNR_SPILL$\nLOGMNR_AGE_SPILL$\nLOGMNR_RESTART_CKPT_TXINFO$\nLOGMNR_ERROR$\nLOGMNR_RESTART_CKPT$\nLOGMNR_FILTER$\nLOGMNR_SESSION_ACTIONS$\nLOGMNR_PARAMETER$\nLOGMNR_SESSION$\nLOGMNR_PROFILE_TABLE_STATS$\nLOGMNR_PROFILE_PLSQL_STATS$\nREDO_DB\nREDO_LOG\nROLLING$CONNECTIONS\nROLLING$DATABASES\nROLLING$DIRECTIVES\nROLLING$EVENTS\nROLLING$PARAMETERS\nROLLING$PLAN\nROLLING$STATISTICS\nROLLING$STATUS\nMVIEW$_ADV_WORKLOAD\nMVIEW$_ADV_BASETABLE\nMVIEW$_ADV_SQLDEPEND\nMVIEW$_ADV_PRETTY\nMVIEW$_ADV_TEMP\nMVIEW$_ADV_FILTER\nMVIEW$_ADV_LOG\nMVIEW$_ADV_FILTERINSTANCE\nMVIEW$_ADV_LEVEL\nMVIEW$_ADV_ROLLUP\nMVIEW$_ADV_AJG\nMVIEW$_ADV_FJG\nMVIEW$_ADV_GC\nMVIEW$_ADV_CLIQUE\nMVIEW$_ADV_ELIGIBLE\nMVIEW$_ADV_OUTPUT\nMVIEW$_ADV_EXCEPTIONS\nMVIEW$_ADV_PARAMETERS\nMVIEW$_ADV_INFO\n... (more rows not shown)"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT object_name, object_type, status FROM user_objects WHERE object_name='SP'"
+   },
+   "result": "(OBJECT_NAME | OBJECT_TYPE | STATUS)\n(no rows)"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT COUNT(*) FROM carbon_emissions"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": "{\"code\": \"CREATE OR REPLACE PROCEDURE sp(\\n  para_flow_degradation_threshold NUMBER,\\n  para_eer_degradation_ratio NUMBER,\\n  para_outdoor_heat_threshold NUMBER\\n) AS\\n  TYPE num_tab IS TABLE OF NUMBER;\\n  v_next_id NUMBER;\\n  v_cooling_kw NUMBER;\\n  v_heating_kw NUMBER;\\n  v_pre_total NUMBER;\\n  v_total_hours NUMBER;\\n  v_avg_indoor NUMBER;\\n  v_avg_outdoor NUMBER;\\n  v_output NUMBER;\\n  v_seasonal_eff NUMBER;\\n  v_avg_power_kw NUMBER;\\n  v_carnot_coef NUMBER;\\n  v_phase_change NUMBER;\\n  v_actual_flow NUMBER;\\n  v_required_flow NUMBER;\\n  v_emission_factor NUMBER;\\n  v_del_ids num_tab;\\n  v_del_kwh num_tab;\\n  v_post_total NUMBER;\\n  v_post_eff NUMBER;\\n  v_post_avg_power_kw NUMBER;\\n  CURSOR c_ac IS SELECT * FROM air_conditioner_info ORDER BY ac_id FOR UPDATE;\\n  r_ac c_ac%ROWTYPE;\\nBEGIN\\n  SELECT NVL(MAX(id),0)+1 INTO v_next_id FROM carbon_emissions;\\n\\n  OPEN c_ac;\\n  LOOP\\n    FETCH c_ac INTO r_ac;\\n    EXIT WHEN c_ac%NOTFOUND;\\n\\n    v_cooling_kw := r_ac.cooling_capacity_btu / 3412.0;\\n    v_heating_kw := r_ac.heating_capacity_btu / 3412.0;\\n\\n    SELECT NVL(SUM(energy_consumption_kwh),0)\\n      INTO v_pre_total\\n    FROM energy_consumption\\n    WHERE ac_id = r_ac.ac_id;\\n\\n    SELECT NVL(SUM(usage_duration_hours),0)\\n      INTO v_total_hours\\n    FROM usage_records\\n    WHERE ac_id = r_ac.ac_id;\\n\\n    SELECT AVG(indoor_temperature_celsius), AVG(outdoor_temperature_celsius)\\n      INTO v_avg_indoor, v_avg_outdoor\\n    FROM usage_records\\n    WHERE ac_id = r_ac.ac_id;\\n    v_avg_indoor := NVL(v_avg_indoor, 24.0);\\n    v_avg_outdoor := NVL(v_avg_outdoor, 30.0);\\n\\n    SELECT NVL(SUM(CASE WHEN mode = 'Cooling'\\n                        THEN v_cooling_kw * usage_duration_hours\\n                        ELSE v_heating_kw * usage_duration_hours\\n                   END),0)\\n      INTO v_output\\n    FROM usage_records\\n    WHERE ac_id = r_ac.ac_id;\\n\\n    IF v_pre_total > 0 THEN\\n      v_seasonal_eff := v_output / v_pre_total;\\n    ELSE\\n      v_seasonal_eff := r_ac.energy_efficiency_ratio;\\n    END IF;\\n\\n    IF v_pre_total > 0 AND v_total_hours > 0 THEN\\n      v_avg_power_kw := v_pre_total / v_total_hours;\\n    ELSE\\n      v_avg_power_kw := r_ac.power_consumption_watts / 1000.0;\\n    END IF;\\n\\n    IF v_avg_outdoor - v_avg_indoor > 0 THEN\\n      v_carnot_coef := (v_avg_indoor + 273.15) / (v_avg_outdoor - v_avg_indoor);\\n      IF v_seasonal_eff > v_carnot_coef THEN\\n        v_seasonal_eff := v_carnot_coef;\\n      END IF;\\n    END IF;\\n\\n    SELECT MAX(phase_change_heat_kj_per_kg), AVG(refrigerant_flow_rate_kg_per_s)\\n      INTO v_phase_change, v_actual_flow\\n    FROM refrigerant_properties\\n    WHERE refrigerant_type = r_ac.refrigerant_type;\\n\\n    v_phase_change := NVL(v_phase_change, 200);\\n    v_actual_flow := NVL(v_actual_flow, v_cooling_kw / 200);\\n\\n    IF v_phase_change > 0 THEN\\n      v_required_flow := v_cooling_kw / v_phase_change;\\n      IF v_actual_flow < v_required_flow * para_flow_degradation_threshold THEN\\n\\n        SELECT NVL(MAX(emission_factor),0.5)\\n          INTO v_emission_factor\\n        FROM carbon_emissions;\\n\\n        v_del_ids := num_tab();\\n        v_del_kwh := num_tab();\\n        SELECT energy_id, energy_consumption_kwh\\n          BULK COLLECT INTO v_del_ids, v_del_kwh\\n        FROM energy_consumption\\n        WHERE ac_id = r_ac.ac_id\\n          AND power_consumption_watts > r_ac.power_consumption_watts * 1.15\\n          AND outdoor_temperature_celsius > para_outdoor_heat_threshold\\n        ORDER BY energy_id;\\n\\n        IF v_del_ids.COUNT > 0 THEN\\n          FOR i IN 1..v_del_ids.COUNT LOOP\\n            DELETE FROM energy_consumption WHERE energy_id = v_del_ids(i);\\n          END LOOP;\\n        END IF;\\n\\n        SELECT NVL(SUM(energy_consumption_kwh),0)\\n          INTO v_post_total\\n        FROM energy_consumption\\n        WHERE ac_id = r_ac.ac_id;\\n\\n        IF v_post_total > 0 THEN\\n          v_post_eff := v_output / v_post_total;\\n        ELSE\\n          v_post_eff := r_ac.energy_efficiency_ra... (+1458)",
+   "result": "compile error: line 57:30 PL/SQL: ORA-00936: missing expression; line 57:5 PL/SQL: SQL Statement ignored",
+   "compiled": false
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE t1 AS\n  v_x NUMBER := 2;\n  v_y NUMBER;\nBEGIN\n  SELECT SUM(v_x * usage_duration_hours) INTO v_y FROM usage_records;\nEND;"
+   },
+   "result": "compile error: line 5:56 PL/SQL: ORA-00942: table or view does not exist; line 5:3 PL/SQL: SQL Statement ignored",
+   "compiled": false
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE t2 AS\n  v_x NUMBER := 2;\n  v_y NUMBER;\nBEGIN\n  SELECT SUM(v_x * 1) INTO v_y FROM dual;\nEND;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE t3 AS\n  v_x NUMBER := 2;\n  v_y NUMBER;\nBEGIN\n  SELECT NVL(SUM(CASE WHEN 1=1 THEN v_x * 1 ELSE v_x * 2 END),0) INTO v_y FROM dual;\nEND;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TABLE test_mode (mode VARCHAR2(10), val NUMBER)"
+   },
+   "result": "error: DatabaseError: ORA-00904: : invalid identifier\nHelp: https://docs.oracle.com/error-help/db/ora-00904/"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TABLE test_mode (\"mode\" VARCHAR2(10), val NUMBER)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": "{\"code\": \"CREATE OR REPLACE PROCEDURE sp(\\n  para_flow_degradation_threshold NUMBER,\\n  para_eer_degradation_ratio NUMBER,\\n  para_outdoor_heat_threshold NUMBER\\n) AS\\n  TYPE num_tab IS TABLE OF NUMBER;\\n  v_next_id NUMBER;\\n  v_cooling_kw NUMBER;\\n  v_heating_kw NUMBER;\\n  v_pre_total NUMBER;\\n  v_total_hours NUMBER;\\n  v_avg_indoor NUMBER;\\n  v_avg_outdoor NUMBER;\\n  v_output NUMBER;\\n  v_seasonal_eff NUMBER;\\n  v_avg_power_kw NUMBER;\\n  v_carnot_coef NUMBER;\\n  v_phase_change NUMBER;\\n  v_actual_flow NUMBER;\\n  v_required_flow NUMBER;\\n  v_emission_factor NUMBER;\\n  v_del_ids num_tab;\\n  v_del_kwh num_tab;\\n  v_post_total NUMBER;\\n  v_post_eff NUMBER;\\n  v_post_avg_power_kw NUMBER;\\n  CURSOR c_ac IS SELECT * FROM air_conditioner_info ORDER BY ac_id FOR UPDATE;\\n  r_ac c_ac%ROWTYPE;\\nBEGIN\\n  SELECT NVL(MAX(id),0)+1 INTO v_next_id FROM carbon_emissions;\\n\\n  OPEN c_ac;\\n  LOOP\\n    FETCH c_ac INTO r_ac;\\n    EXIT WHEN c_ac%NOTFOUND;\\n\\n    v_cooling_kw := r_ac.cooling_capacity_btu / 3412.0;\\n    v_heating_kw := r_ac.heating_capacity_btu / 3412.0;\\n\\n    SELECT NVL(SUM(energy_consumption_kwh),0)\\n      INTO v_pre_total\\n    FROM energy_consumption\\n    WHERE ac_id = r_ac.ac_id;\\n\\n    SELECT NVL(SUM(usage_duration_hours),0)\\n      INTO v_total_hours\\n    FROM usage_records\\n    WHERE ac_id = r_ac.ac_id;\\n\\n    SELECT AVG(indoor_temperature_celsius), AVG(outdoor_temperature_celsius)\\n      INTO v_avg_indoor, v_avg_outdoor\\n    FROM usage_records\\n    WHERE ac_id = r_ac.ac_id;\\n    v_avg_indoor := NVL(v_avg_indoor, 24.0);\\n    v_avg_outdoor := NVL(v_avg_outdoor, 30.0);\\n\\n    SELECT NVL(SUM(CASE WHEN \\\"mode\\\" = 'Cooling'\\n                        THEN v_cooling_kw * usage_duration_hours\\n                        ELSE v_heating_kw * usage_duration_hours\\n                   END),0)\\n      INTO v_output\\n    FROM usage_records\\n    WHERE ac_id = r_ac.ac_id;\\n\\n    IF v_pre_total > 0 THEN\\n      v_seasonal_eff := v_output / v_pre_total;\\n    ELSE\\n      v_seasonal_eff := r_ac.energy_efficiency_ratio;\\n    END IF;\\n\\n    IF v_pre_total > 0 AND v_total_hours > 0 THEN\\n      v_avg_power_kw := v_pre_total / v_total_hours;\\n    ELSE\\n      v_avg_power_kw := r_ac.power_consumption_watts / 1000.0;\\n    END IF;\\n\\n    IF v_avg_outdoor - v_avg_indoor > 0 THEN\\n      v_carnot_coef := (v_avg_indoor + 273.15) / (v_avg_outdoor - v_avg_indoor);\\n      IF v_seasonal_eff > v_carnot_coef THEN\\n        v_seasonal_eff := v_carnot_coef;\\n      END IF;\\n    END IF;\\n\\n    SELECT MAX(phase_change_heat_kj_per_kg), AVG(refrigerant_flow_rate_kg_per_s)\\n      INTO v_phase_change, v_actual_flow\\n    FROM refrigerant_properties\\n    WHERE refrigerant_type = r_ac.refrigerant_type;\\n\\n    v_phase_change := NVL(v_phase_change, 200);\\n    v_actual_flow := NVL(v_actual_flow, v_cooling_kw / 200);\\n\\n    IF v_phase_change > 0 THEN\\n      v_required_flow := v_cooling_kw / v_phase_change;\\n      IF v_actual_flow < v_required_flow * para_flow_degradation_threshold THEN\\n\\n        SELECT NVL(MAX(emission_factor),0.5)\\n          INTO v_emission_factor\\n        FROM carbon_emissions;\\n\\n        v_del_ids := num_tab();\\n        v_del_kwh := num_tab();\\n        SELECT energy_id, energy_consumption_kwh\\n          BULK COLLECT INTO v_del_ids, v_del_kwh\\n        FROM energy_consumption\\n        WHERE ac_id = r_ac.ac_id\\n          AND power_consumption_watts > r_ac.power_consumption_watts * 1.15\\n          AND outdoor_temperature_celsius > para_outdoor_heat_threshold\\n        ORDER BY energy_id;\\n\\n        IF v_del_ids.COUNT > 0 THEN\\n          FOR i IN 1..v_del_ids.COUNT LOOP\\n            DELETE FROM energy_consumption WHERE energy_id = v_del_ids(i);\\n          END LOOP;\\n        END IF;\\n\\n        SELECT NVL(SUM(energy_consumption_kwh),0)\\n          INTO v_post_total\\n        FROM energy_consumption\\n        WHERE ac_id = r_ac.ac_id;\\n\\n        IF v_post_total > 0 THEN\\n          v_post_eff := v_output / v_post_total;\\n        ELSE\\n          v_post_eff := r_ac.energy_efficienc... (+1462)",
+   "result": "compile error: line 27:32 PL/SQL: ORA-00942: table or view does not exist; line 27:18 PL/SQL: SQL Statement ignored; line 27:10 PLS-00341: declaration of cursor 'C_AC' is incomplete or malformed; line 0:0 PL/SQL: Compilation unit analysis terminated",
+   "compiled": false
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE test_no_table AS\n  v NUMBER;\nBEGIN\n  SELECT COUNT(*) INTO v FROM no_such_table;\nEND;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT object_name, object_type, status FROM user_objects WHERE object_name='TEST_NO_TABLE'"
+   },
+   "result": "(OBJECT_NAME | OBJECT_TYPE | STATUS)\n(no rows)"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables WHERE table_name='TEST_MODE'"
+   },
+   "result": "(TABLE_NAME)\n(no rows)"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM (SELECT 1 AS ac_id, 'a' AS b FROM dual) ORDER BY ac_id FOR UPDATE"
+   },
+   "result": "AC_ID | B\n1 | a"
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TABLE test_mode2 (mode VARCHAR2(10))"
+   },
+   "result": "error: DatabaseError: ORA-00904: : invalid identifier\nHelp: https://docs.oracle.com/error-help/db/ora-00904/"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TABLE test_mode3 (mod VARCHAR2(10))"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "usage_records"
+   },
+   "result": "table usage_records , columns = [ usage_id ( number | primary key | values : 1 , 2 , 3 ) , ac_id ( number | values : 1 , 2 , 3 ) , usage_date ( varchar2 | values : 2023-10-01 , 2023-10-02 , 2023-10-03 ) , usage_duration_hours ( number | values : 5.5 , 8.0 , 6.0 ) , temperature_setting_celsius ( number | values : 22.0 , 24.0 , 26.0 ) , fan_speed ( varchar2 | values : High , Medium , Low ) , mode ( varchar2 | values : Cooling , Heating , Cooling ) , power_consumption_watts ( number | values : 1100.0 , 900.0 , 1200.0 ) , indoor_temperature_celsius ( number | values : 25.0 , 20.0 , 28.0 ) , outdoor_temperature_celsius ( number | values : 35.0 , 10.0 , 38.0 ) , humidity_percent ( number | values : 60.0 , 50.0 , 65.0 ) ]"
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name FROM all_tables WHERE table_name IN ('USAGE_RECORDS','AIR_CONDITIONER_INFO','ENERGY_CONSUMPTION','CARBON_EMISSIONS','REFRIGERANT_PROPERTIES')"
+   },
+   "result": "(OWNER | TABLE_NAME)\n(no rows)"
+  },
+  {
+   "step": 28,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": "{\"sql\": \"BEGIN\\n  EXECUTE IMMEDIATE 'CREATE TABLE air_conditioner_info (ac_id NUMBER PRIMARY KEY, cooling_capacity_btu NUMBER, heating_capacity_btu NUMBER, energy_efficiency_ratio NUMBER, power_consumption_watts NUMBER, refrigerant_type VARCHAR2(20))';\\n  EXECUTE IMMEDIATE 'CREATE TABLE carbon_emissions (id NUMBER PRIMARY KEY, emission_factor NUMBER, annual_emissions_tonnes NUMBER)';\\n  EXECUTE IMMEDIATE 'CREATE TABLE energy_consumption (energy_id NUMBER PRIMARY KEY, ac_id NUMBER, energy_consumption_kwh NUMBER, power_consumption_watts NUMBER, outdoor_temperature_celsius NUMBER)';\\n  EXECUTE IMMEDIATE 'CREATE TABLE usage_records (usage_id NUMBER PRIMARY KEY, ac_id NUMBER, usage_duration_hours NUMBER, \\\"mode\\\" VARCHAR2(20), indoor_temperature_celsius NUMBER, outdoor_temperature_celsius NUMBER)';\\n  EXECUTE IMMEDIATE 'CREATE TABLE refrigerant_properties (refrigerant_type VARCHAR2(20) PRIMARY KEY, phase_change_heat_kj_per_kg NUMBER, refrigerant_flow_rate_kg_per_s NUMBER)';\\n  INSERT INTO air_conditioner_info VALUES (1, 12000, 13000, 3.5, 1100.0, 'R410A');\\n  INSERT INTO energy_consumption VALUES (1, 1, 10, 1100, 35);\\n  INSERT INTO usage_records VALUES (1, 1, 5, 'Cooling', 25, 35);\\n  INSERT INTO refrigerant_properties VALUES ('R410A', 200, 0.05);\\n  EXECUTE IMMEDIATE q'![CREATE OR REPLACE PROCEDURE sp(\\n  para_flow_degradation_threshold NUMBER,\\n  para_eer_degradation_ratio NUMBER,\\n  para_outdoor_heat_threshold NUMBER\\n) AS\\n  TYPE num_tab IS TABLE OF NUMBER;\\n  v_next_id NUMBER;\\n  v_cooling_kw NUMBER;\\n  v_heating_kw NUMBER;\\n  v_pre_total NUMBER;\\n  v_total_hours NUMBER;\\n  v_avg_indoor NUMBER;\\n  v_avg_outdoor NUMBER;\\n  v_output NUMBER;\\n  v_seasonal_eff NUMBER;\\n  v_avg_power_kw NUMBER;\\n  v_carnot_coef NUMBER;\\n  v_phase_change NUMBER;\\n  v_actual_flow NUMBER;\\n  v_required_flow NUMBER;\\n  v_emission_factor NUMBER;\\n  v_del_ids num_tab;\\n  v_del_kwh num_tab;\\n  v_post_total NUMBER;\\n  v_post_eff NUMBER;\\n  v_post_avg_power_kw NUMBER;\\n  CURSOR c_ac IS SELECT * FROM air_conditioner_info ORDER BY ac_id FOR UPDATE;\\n  r_ac c_ac%ROWTYPE;\\nBEGIN\\n  SELECT NVL(MAX(id),0)+1 INTO v_next_id FROM carbon_emissions;\\n  OPEN c_ac;\\n  LOOP\\n    FETCH c_ac INTO r_ac;\\n    EXIT WHEN c_ac%NOTFOUND;\\n    v_cooling_kw := r_ac.cooling_capacity_btu / 3412.0;\\n    v_heating_kw := r_ac.heating_capacity_btu / 3412.0;\\n    SELECT NVL(SUM(energy_consumption_kwh),0) INTO v_pre_total FROM energy_consumption WHERE ac_id = r_ac.ac_id;\\n    SELECT NVL(SUM(usage_duration_hours),0) INTO v_total_hours FROM usage_records WHERE ac_id = r_ac.ac_id;\\n    SELECT AVG(indoor_temperature_celsius), AVG(outdoor_temperature_celsius) INTO v_avg_indoor, v_avg_outdoor FROM usage_records WHERE ac_id = r_ac.ac_id;\\n    v_avg_indoor := NVL(v_avg_indoor, 24.0);\\n    v_avg_outdoor := NVL(v_avg_outdoor, 30.0);\\n    SELECT NVL(SUM(CASE WHEN \\\"mode\\\" = 'Cooling' THEN v_cooling_kw * usage_duration_hours ELSE v_heating_kw * usage_duration_hours END),0) INTO v_output FROM usage_records WHERE ac_id = r_ac.ac_id;\\n    IF v_pre_total > 0 THEN v_seasonal_eff := v_output / v_pre_total; ELSE v_seasonal_eff := r_ac.energy_efficiency_ratio; END IF;\\n    IF v_pre_total > 0 AND v_total_hours > 0 THEN v_avg_power_kw := v_pre_total / v_total_hours; ELSE v_avg_power_kw := r_ac.power_consumption_watts / 1000.0; END IF;\\n    IF v_avg_outdoor - v_avg_indoor > 0 THEN\\n      v_carnot_coef := (v_avg_indoor + 273.15) / (v_avg_outdoor - v_avg_indoor);\\n      IF v_seasonal_eff > v_carnot_coef THEN v_seasonal_eff := v_carnot_coef; END IF;\\n    END IF;\\n    SELECT MAX(phase_change_heat_kj_per_kg), AVG(refrigerant_flow_rate_kg_per_s) INTO v_phase_change, v_actual_flow FROM refrigerant_properties WHERE refrigerant_type = r_ac.refrigerant_type;\\n    v_phase_change := NVL(v_phase_change, 200);\\n    v_actual_flow := NVL(v_actual_flow, v_cooling_kw / 200);\\n    IF v_phase_change > 0 THEN\\n      v_required_flow := v_cooling_kw / v_phase_change;\\n      IF v_actual_flow < v_required_flow * para_flow_degradation_... (+2226)",
+   "result": "error: DatabaseError: ORA-06550: line 7, column 15:\nPL/SQL: ORA-00942: table or view does not exist\nORA-06550: line 7, column 3:\nPL/SQL: SQL Statement ignored\nORA-06550: line 8, column 15:\nPL/SQL: ORA-00942: table or view does not exist\nORA-06550: line 8, column 3:\nPL/SQL: SQL Statement ignored\nORA-06550: line 9, column 15:\nPL/SQL: ORA-00942: table or view does not exist\nORA-06550: line 9, column 3:\nPL/SQL: SQL Statement ignored\nORA-06550: line 10, column 15:\nPL/SQL: ORA-00942: table or view does not exist\nORA-06550: line 10, column 3:\nPL/SQL: SQL Statement ignored\nORA-06550: line 97, column 3:\nPLS-00905: object LC_AIR_CONDITIONER_EP3BFFEC00.SP is invalid\nORA-06550: line 97, column 3:\nPL/SQL: Statement ignored\nHelp: https://docs.oracle.com/error-help/db/ora-06550/"
+  },
+  {
+   "step": 29,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": "{\"sql\": \"BEGIN\\n  EXECUTE IMMEDIATE 'CREATE TABLE air_conditioner_info (ac_id NUMBER PRIMARY KEY, cooling_capacity_btu NUMBER, heating_capacity_btu NUMBER, energy_efficiency_ratio NUMBER, power_consumption_watts NUMBER, refrigerant_type VARCHAR2(20))';\\n  EXECUTE IMMEDIATE 'CREATE TABLE carbon_emissions (id NUMBER PRIMARY KEY, emission_factor NUMBER, annual_emissions_tonnes NUMBER)';\\n  EXECUTE IMMEDIATE 'CREATE TABLE energy_consumption (energy_id NUMBER PRIMARY KEY, ac_id NUMBER, energy_consumption_kwh NUMBER, power_consumption_watts NUMBER, outdoor_temperature_celsius NUMBER)';\\n  EXECUTE IMMEDIATE 'CREATE TABLE usage_records (usage_id NUMBER PRIMARY KEY, ac_id NUMBER, usage_duration_hours NUMBER, \\\"mode\\\" VARCHAR2(20), indoor_temperature_celsius NUMBER, outdoor_temperature_celsius NUMBER)';\\n  EXECUTE IMMEDIATE 'CREATE TABLE refrigerant_properties (refrigerant_type VARCHAR2(20) PRIMARY KEY, phase_change_heat_kj_per_kg NUMBER, refrigerant_flow_rate_kg_per_s NUMBER)';\\n  EXECUTE IMMEDIATE 'INSERT INTO air_conditioner_info VALUES (1, 12000, 13000, 3.5, 1100.0, ''R410A'')';\\n  EXECUTE IMMEDIATE 'INSERT INTO energy_consumption VALUES (1, 1, 10, 1100, 35)';\\n  EXECUTE IMMEDIATE 'INSERT INTO usage_records VALUES (1, 1, 5, ''Cooling'', 25, 35)';\\n  EXECUTE IMMEDIATE 'INSERT INTO refrigerant_properties VALUES (''R410A'', 200, 0.05)';\\n  EXECUTE IMMEDIATE q'![CREATE OR REPLACE PROCEDURE sp(\\n  para_flow_degradation_threshold NUMBER,\\n  para_eer_degradation_ratio NUMBER,\\n  para_outdoor_heat_threshold NUMBER\\n) AS\\n  TYPE num_tab IS TABLE OF NUMBER;\\n  v_next_id NUMBER;\\n  v_cooling_kw NUMBER;\\n  v_heating_kw NUMBER;\\n  v_pre_total NUMBER;\\n  v_total_hours NUMBER;\\n  v_avg_indoor NUMBER;\\n  v_avg_outdoor NUMBER;\\n  v_output NUMBER;\\n  v_seasonal_eff NUMBER;\\n  v_avg_power_kw NUMBER;\\n  v_carnot_coef NUMBER;\\n  v_phase_change NUMBER;\\n  v_actual_flow NUMBER;\\n  v_required_flow NUMBER;\\n  v_emission_factor NUMBER;\\n  v_del_ids num_tab;\\n  v_del_kwh num_tab;\\n  v_post_total NUMBER;\\n  v_post_eff NUMBER;\\n  v_post_avg_power_kw NUMBER;\\n  CURSOR c_ac IS SELECT * FROM air_conditioner_info ORDER BY ac_id FOR UPDATE;\\n  r_ac c_ac%ROWTYPE;\\nBEGIN\\n  SELECT NVL(MAX(id),0)+1 INTO v_next_id FROM carbon_emissions;\\n  OPEN c_ac;\\n  LOOP\\n    FETCH c_ac INTO r_ac;\\n    EXIT WHEN c_ac%NOTFOUND;\\n    v_cooling_kw := r_ac.cooling_capacity_btu / 3412.0;\\n    v_heating_kw := r_ac.heating_capacity_btu / 3412.0;\\n    SELECT NVL(SUM(energy_consumption_kwh),0) INTO v_pre_total FROM energy_consumption WHERE ac_id = r_ac.ac_id;\\n    SELECT NVL(SUM(usage_duration_hours),0) INTO v_total_hours FROM usage_records WHERE ac_id = r_ac.ac_id;\\n    SELECT AVG(indoor_temperature_celsius), AVG(outdoor_temperature_celsius) INTO v_avg_indoor, v_avg_outdoor FROM usage_records WHERE ac_id = r_ac.ac_id;\\n    v_avg_indoor := NVL(v_avg_indoor, 24.0);\\n    v_avg_outdoor := NVL(v_avg_outdoor, 30.0);\\n    SELECT NVL(SUM(CASE WHEN \\\"mode\\\" = 'Cooling' THEN v_cooling_kw * usage_duration_hours ELSE v_heating_kw * usage_duration_hours END),0) INTO v_output FROM usage_records WHERE ac_id = r_ac.ac_id;\\n    IF v_pre_total > 0 THEN v_seasonal_eff := v_output / v_pre_total; ELSE v_seasonal_eff := r_ac.energy_efficiency_ratio; END IF;\\n    IF v_pre_total > 0 AND v_total_hours > 0 THEN v_avg_power_kw := v_pre_total / v_total_hours; ELSE v_avg_power_kw := r_ac.power_consumption_watts / 1000.0; END IF;\\n    IF v_avg_outdoor - v_avg_indoor > 0 THEN\\n      v_carnot_coef := (v_avg_indoor + 273.15) / (v_avg_outdoor - v_avg_indoor);\\n      IF v_seasonal_eff > v_carnot_coef THEN v_seasonal_eff := v_carnot_coef; END IF;\\n    END IF;\\n    SELECT MAX(phase_change_heat_kj_per_kg), AVG(refrigerant_flow_rate_kg_per_s) INTO v_phase_change, v_actual_flow FROM refrigerant_properties WHERE refrigerant_type = r_ac.refrigerant_type;\\n    v_phase_change := NVL(v_phase_change, 200);\\n    v_actual_flow := NVL(v_actual_flow, v_cooling_kw / 200);\\n    IF v_phase_change > 0 THEN\\n      v_required_flow := v_cooling_k... (+2312)",
+   "result": "error: DatabaseError: ORA-06550: line 97, column 3:\nPLS-00905: object LC_AIR_CONDITIONER_EP3BFFEC00.SP is invalid\nORA-06550: line 97, column 3:\nPL/SQL: Statement ignored\nHelp: https://docs.oracle.com/error-help/db/ora-06550/"
+  },
+  {
+   "step": 30,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "BEGIN\n  EXECUTE IMMEDIATE 'CREATE TABLE air_conditioner_info (ac_id NUMBER PRIMARY KEY, cooling_capacity_btu NUMBER)';\n  EXECUTE IMMEDIATE q'[CREATE OR REPLACE PROCEDURE tcur AS\n    CURSOR c IS SELECT * FROM air_conditioner_info ORDER BY ac_id FOR UPDATE;\n  BEGIN\n    OPEN c;\n    CLOSE c;\n  END;]';\n  EXECUTE IMMEDIATE 'BEGIN tcur; END;';\nEND;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 31,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "BEGIN\n  EXECUTE IMMEDIATE 'CREATE TABLE air_conditioner_info (ac_id NUMBER PRIMARY KEY, cooling_capacity_btu NUMBER)';\n  EXECUTE IMMEDIATE q'[CREATE OR REPLACE PROCEDURE tcur2 AS\n    CURSOR c IS SELECT * FROM air_conditioner_info ORDER BY ac_id FOR UPDATE;\n    r c%ROWTYPE;\n  BEGIN\n    OPEN c;\n    FETCH c INTO r;\n    CLOSE c;\n  END;]';\n  EXECUTE IMMEDIATE 'BEGIN tcur2; END;';\nEND;"
+   },
+   "result": "error: DatabaseError: ORA-00955: name is already used by an existing object\nORA-06512: at line 2\nHelp: https://docs.oracle.com/error-help/db/ora-00955/"
+  },
+  {
+   "step": 32,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables WHERE table_name IN ('AIR_CONDITIONER_INFO','ENERGY_CONSUMPTION','USAGE_RECORDS','CARBON_EMISSIONS','REFRIGERANT_PROPERTIES')"
+   },
+   "result": "(TABLE_NAME)\n(no rows)"
+  },
+  {
+   "step": 33,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT COUNT(*) FROM user_tables"
+   },
+   "result": "COUNT(*)\n134"
+  },
+  {
+   "step": 34,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables WHERE table_name LIKE 'AIR%' OR table_name LIKE 'TCUR%' OR table_name LIKE 'SP%'"
+   },
+   "result": "(TABLE_NAME)\n(no rows)"
+  },
+  {
+   "step": 35,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT object_name, object_type FROM user_objects WHERE object_name LIKE 'TCUR%' OR object_name='SP'"
+   },
+   "result": "(OBJECT_NAME | OBJECT_TYPE)\n(no rows)"
+  },
+  {
+   "step": 36,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 37,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "BEGIN DBMS_OUTPUT.PUT_LINE('hello'); END;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 38,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": "{\"sql\": \"BEGIN\\n  EXECUTE IMMEDIATE 'CREATE TABLE air_conditioner_info (ac_id NUMBER PRIMARY KEY, cooling_capacity_btu NUMBER, heating_capacity_btu NUMBER, energy_efficiency_ratio NUMBER, power_consumption_watts NUMBER, refrigerant_type VARCHAR2(20))';\\n  EXECUTE IMMEDIATE 'CREATE TABLE carbon_emissions (id NUMBER PRIMARY KEY, emission_factor NUMBER, annual_emissions_tonnes NUMBER)';\\n  EXECUTE IMMEDIATE 'CREATE TABLE energy_consumption (energy_id NUMBER PRIMARY KEY, ac_id NUMBER, energy_consumption_kwh NUMBER, power_consumption_watts NUMBER, outdoor_temperature_celsius NUMBER)';\\n  EXECUTE IMMEDIATE 'CREATE TABLE usage_records (usage_id NUMBER PRIMARY KEY, ac_id NUMBER, usage_duration_hours NUMBER, \\\"mode\\\" VARCHAR2(20), indoor_temperature_celsius NUMBER, outdoor_temperature_celsius NUMBER)';\\n  EXECUTE IMMEDIATE 'CREATE TABLE refrigerant_properties (refrigerant_type VARCHAR2(20) PRIMARY KEY, phase_change_heat_kj_per_kg NUMBER, refrigerant_flow_rate_kg_per_s NUMBER)';\\n  EXECUTE IMMEDIATE q'![CREATE OR REPLACE PROCEDURE sp(\\n  para_flow_degradation_threshold NUMBER,\\n  para_eer_degradation_ratio NUMBER,\\n  para_outdoor_heat_threshold NUMBER\\n) AS\\n  TYPE num_tab IS TABLE OF NUMBER;\\n  v_next_id NUMBER;\\n  v_cooling_kw NUMBER;\\n  v_heating_kw NUMBER;\\n  v_pre_total NUMBER;\\n  v_total_hours NUMBER;\\n  v_avg_indoor NUMBER;\\n  v_avg_outdoor NUMBER;\\n  v_output NUMBER;\\n  v_seasonal_eff NUMBER;\\n  v_avg_power_kw NUMBER;\\n  v_carnot_coef NUMBER;\\n  v_phase_change NUMBER;\\n  v_actual_flow NUMBER;\\n  v_required_flow NUMBER;\\n  v_emission_factor NUMBER;\\n  v_del_ids num_tab;\\n  v_del_kwh num_tab;\\n  v_post_total NUMBER;\\n  v_post_eff NUMBER;\\n  v_post_avg_power_kw NUMBER;\\n  CURSOR c_ac IS SELECT * FROM air_conditioner_info ORDER BY ac_id FOR UPDATE;\\n  r_ac c_ac%ROWTYPE;\\nBEGIN\\n  SELECT NVL(MAX(id),0)+1 INTO v_next_id FROM carbon_emissions;\\n  OPEN c_ac;\\n  LOOP\\n    FETCH c_ac INTO r_ac;\\n    EXIT WHEN c_ac%NOTFOUND;\\n    v_cooling_kw := r_ac.cooling_capacity_btu / 3412.0;\\n    v_heating_kw := r_ac.heating_capacity_btu / 3412.0;\\n    SELECT NVL(SUM(energy_consumption_kwh),0) INTO v_pre_total FROM energy_consumption WHERE ac_id = r_ac.ac_id;\\n    SELECT NVL(SUM(usage_duration_hours),0) INTO v_total_hours FROM usage_records WHERE ac_id = r_ac.ac_id;\\n    SELECT AVG(indoor_temperature_celsius), AVG(outdoor_temperature_celsius) INTO v_avg_indoor, v_avg_outdoor FROM usage_records WHERE ac_id = r_ac.ac_id;\\n    v_avg_indoor := NVL(v_avg_indoor, 24.0);\\n    v_avg_outdoor := NVL(v_avg_outdoor, 30.0);\\n    SELECT NVL(SUM(CASE WHEN \\\"mode\\\" = 'Cooling' THEN v_cooling_kw * usage_duration_hours ELSE v_heating_kw * usage_duration_hours END),0) INTO v_output FROM usage_records WHERE ac_id = r_ac.ac_id;\\n    IF v_pre_total > 0 THEN v_seasonal_eff := v_output / v_pre_total; ELSE v_seasonal_eff := r_ac.energy_efficiency_ratio; END IF;\\n    IF v_pre_total > 0 AND v_total_hours > 0 THEN v_avg_power_kw := v_pre_total / v_total_hours; ELSE v_avg_power_kw := r_ac.power_consumption_watts / 1000.0; END IF;\\n    IF v_avg_outdoor - v_avg_indoor > 0 THEN\\n      v_carnot_coef := (v_avg_indoor + 273.15) / (v_avg_outdoor - v_avg_indoor);\\n      IF v_seasonal_eff > v_carnot_coef THEN v_seasonal_eff := v_carnot_coef; END IF;\\n    END IF;\\n    SELECT MAX(phase_change_heat_kj_per_kg), AVG(refrigerant_flow_rate_kg_per_s) INTO v_phase_change, v_actual_flow FROM refrigerant_properties WHERE refrigerant_type = r_ac.refrigerant_type;\\n    v_phase_change := NVL(v_phase_change, 200);\\n    v_actual_flow := NVL(v_actual_flow, v_cooling_kw / 200);\\n    IF v_phase_change > 0 THEN\\n      v_required_flow := v_cooling_kw / v_phase_change;\\n      IF v_actual_flow < v_required_flow * para_flow_degradation_threshold THEN\\n        SELECT NVL(MAX(emission_factor),0.5) INTO v_emission_factor FROM carbon_emissions;\\n        v_del_ids := num_tab();\\n        v_del_kwh := num_tab();\\n        SELECT energy_id, energy_consumption_kwh BULK COLLECT INTO v_del_ids, v_del_kwh FROM energy_consum... (+2288)",
+   "result": "error: DatabaseError: ORA-00900: invalid SQL statement\nORA-06512: at line 7\nHelp: https://docs.oracle.com/error-help/db/ora-00900/"
+  },
+  {
+   "step": 39,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT line, position, text FROM user_errors WHERE name='SP' ORDER BY sequence"
+   },
+   "result": "(LINE | POSITION | TEXT)\n(no rows)"
+  },
+  {
+   "step": 40,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "BEGIN\n  EXECUTE IMMEDIATE 'CREATE TABLE zz_test_table (ac_id NUMBER PRIMARY KEY, cooling_capacity_btu NUMBER)';\n  EXECUTE IMMEDIATE q'[CREATE OR REPLACE PROCEDURE zz_proc AS\n    CURSOR c IS SELECT * FROM zz_test_table ORDER BY ac_id FOR UPDATE;\n    r c%ROWTYPE;\n  BEGIN\n    OPEN c;\n    FETCH c INTO r;\n    CLOSE c;\n  END;]';\n  EXECUTE IMMEDIATE 'BEGIN zz_proc; END;';\nEND;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 41,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": "{\"sql\": \"BEGIN\\n  FOR t IN (SELECT table_name FROM user_tables WHERE table_name IN ('AIR_CONDITIONER_INFO','CARBON_EMISSIONS','ENERGY_CONSUMPTION','USAGE_RECORDS','REFRIGERANT_PROPERTIES')) LOOP\\n    EXECUTE IMMEDIATE 'DROP TABLE '||t.table_name||' PURGE';\\n  END LOOP;\\n  EXECUTE IMMEDIATE 'CREATE TABLE air_conditioner_info (ac_id NUMBER PRIMARY KEY, cooling_capacity_btu NUMBER, heating_capacity_btu NUMBER, energy_efficiency_ratio NUMBER, power_consumption_watts NUMBER, refrigerant_type VARCHAR2(20))';\\n  EXECUTE IMMEDIATE 'CREATE TABLE carbon_emissions (id NUMBER PRIMARY KEY, emission_factor NUMBER, annual_emissions_tonnes NUMBER)';\\n  EXECUTE IMMEDIATE 'CREATE TABLE energy_consumption (energy_id NUMBER PRIMARY KEY, ac_id NUMBER, energy_consumption_kwh NUMBER, power_consumption_watts NUMBER, outdoor_temperature_celsius NUMBER)';\\n  EXECUTE IMMEDIATE 'CREATE TABLE usage_records (usage_id NUMBER PRIMARY KEY, ac_id NUMBER, usage_duration_hours NUMBER, \\\"mode\\\" VARCHAR2(20), indoor_temperature_celsius NUMBER, outdoor_temperature_celsius NUMBER)';\\n  EXECUTE IMMEDIATE 'CREATE TABLE refrigerant_properties (refrigerant_type VARCHAR2(20) PRIMARY KEY, phase_change_heat_kj_per_kg NUMBER, refrigerant_flow_rate_kg_per_s NUMBER)';\\n  EXECUTE IMMEDIATE q'~CREATE OR REPLACE PROCEDURE sp(\\n  para_flow_degradation_threshold NUMBER,\\n  para_eer_degradation_ratio NUMBER,\\n  para_outdoor_heat_threshold NUMBER\\n) AS\\n  TYPE num_tab IS TABLE OF NUMBER;\\n  v_next_id NUMBER;\\n  v_cooling_kw NUMBER;\\n  v_heating_kw NUMBER;\\n  v_pre_total NUMBER;\\n  v_total_hours NUMBER;\\n  v_avg_indoor NUMBER;\\n  v_avg_outdoor NUMBER;\\n  v_output NUMBER;\\n  v_seasonal_eff NUMBER;\\n  v_avg_power_kw NUMBER;\\n  v_carnot_coef NUMBER;\\n  v_phase_change NUMBER;\\n  v_actual_flow NUMBER;\\n  v_required_flow NUMBER;\\n  v_emission_factor NUMBER;\\n  v_del_ids num_tab;\\n  v_del_kwh num_tab;\\n  v_post_total NUMBER;\\n  v_post_eff NUMBER;\\n  v_post_avg_power_kw NUMBER;\\n  CURSOR c_ac IS SELECT * FROM air_conditioner_info ORDER BY ac_id FOR UPDATE;\\n  r_ac c_ac%ROWTYPE;\\nBEGIN\\n  SELECT NVL(MAX(id),0)+1 INTO v_next_id FROM carbon_emissions;\\n  OPEN c_ac;\\n  LOOP\\n    FETCH c_ac INTO r_ac;\\n    EXIT WHEN c_ac%NOTFOUND;\\n    v_cooling_kw := r_ac.cooling_capacity_btu / 3412.0;\\n    v_heating_kw := r_ac.heating_capacity_btu / 3412.0;\\n    SELECT NVL(SUM(energy_consumption_kwh),0) INTO v_pre_total FROM energy_consumption WHERE ac_id = r_ac.ac_id;\\n    SELECT NVL(SUM(usage_duration_hours),0) INTO v_total_hours FROM usage_records WHERE ac_id = r_ac.ac_id;\\n    SELECT AVG(indoor_temperature_celsius), AVG(outdoor_temperature_celsius) INTO v_avg_indoor, v_avg_outdoor FROM usage_records WHERE ac_id = r_ac.ac_id;\\n    v_avg_indoor := NVL(v_avg_indoor, 24.0);\\n    v_avg_outdoor := NVL(v_avg_outdoor, 30.0);\\n    SELECT NVL(SUM(CASE WHEN \\\"mode\\\" = 'Cooling' THEN v_cooling_kw * usage_duration_hours ELSE v_heating_kw * usage_duration_hours END),0) INTO v_output FROM usage_records WHERE ac_id = r_ac.ac_id;\\n    IF v_pre_total > 0 THEN v_seasonal_eff := v_output / v_pre_total; ELSE v_seasonal_eff := r_ac.energy_efficiency_ratio; END IF;\\n    IF v_pre_total > 0 AND v_total_hours > 0 THEN v_avg_power_kw := v_pre_total / v_total_hours; ELSE v_avg_power_kw := r_ac.power_consumption_watts / 1000.0; END IF;\\n    IF v_avg_outdoor - v_avg_indoor > 0 THEN\\n      v_carnot_coef := (v_avg_indoor + 273.15) / (v_avg_outdoor - v_avg_indoor);\\n      IF v_seasonal_eff > v_carnot_coef THEN v_seasonal_eff := v_carnot_coef; END IF;\\n    END IF;\\n    SELECT MAX(phase_change_heat_kj_per_kg), AVG(refrigerant_flow_rate_kg_per_s) INTO v_phase_change, v_actual_flow FROM refrigerant_properties WHERE refrigerant_type = r_ac.refrigerant_type;\\n    v_phase_change := NVL(v_phase_change, 200);\\n    v_actual_flow := NVL(v_actual_flow, v_cooling_kw / 200);\\n    IF v_phase_change > 0 THEN\\n      v_required_flow := v_cooling_kw / v_phase_change;\\n      IF v_actual_flow < v_required_flow * para_flow_degradation_threshold THEN\\n        SE... (+2541)",
+   "result": "error: DatabaseError: ORA-00955: name is already used by an existing object\nORA-06512: at line 5\nHelp: https://docs.oracle.com/error-help/db/ora-00955/"
+  },
+  {
+   "step": 42,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": "{\"code\": \"CREATE OR REPLACE PROCEDURE sp(\\n  para_flow_degradation_threshold NUMBER,\\n  para_eer_degradation_ratio NUMBER,\\n  para_outdoor_heat_threshold NUMBER\\n) AS\\n  TYPE num_tab IS TABLE OF NUMBER;\\n  v_next_id NUMBER;\\n  v_cooling_kw NUMBER;\\n  v_heating_kw NUMBER;\\n  v_pre_total NUMBER;\\n  v_total_hours NUMBER;\\n  v_avg_indoor NUMBER;\\n  v_avg_outdoor NUMBER;\\n  v_output NUMBER;\\n  v_seasonal_eff NUMBER;\\n  v_avg_power_kw NUMBER;\\n  v_carnot_coef NUMBER;\\n  v_phase_change NUMBER;\\n  v_actual_flow NUMBER;\\n  v_required_flow NUMBER;\\n  v_emission_factor NUMBER;\\n  v_del_ids num_tab;\\n  v_del_kwh num_tab;\\n  v_post_total NUMBER;\\n  v_post_eff NUMBER;\\n  v_post_avg_power_kw NUMBER;\\n  CURSOR c_ac IS SELECT * FROM air_conditioner_info ORDER BY ac_id FOR UPDATE;\\n  r_ac c_ac%ROWTYPE;\\nBEGIN\\n  SELECT NVL(MAX(id),0)+1 INTO v_next_id FROM carbon_emissions;\\n\\n  OPEN c_ac;\\n  LOOP\\n    FETCH c_ac INTO r_ac;\\n    EXIT WHEN c_ac%NOTFOUND;\\n\\n    v_cooling_kw := r_ac.cooling_capacity_btu / 3412.0;\\n    v_heating_kw := r_ac.heating_capacity_btu / 3412.0;\\n\\n    SELECT NVL(SUM(energy_consumption_kwh),0)\\n      INTO v_pre_total\\n    FROM energy_consumption\\n    WHERE ac_id = r_ac.ac_id;\\n\\n    SELECT NVL(SUM(usage_duration_hours),0)\\n      INTO v_total_hours\\n    FROM usage_records\\n    WHERE ac_id = r_ac.ac_id;\\n\\n    SELECT AVG(indoor_temperature_celsius), AVG(outdoor_temperature_celsius)\\n      INTO v_avg_indoor, v_avg_outdoor\\n    FROM usage_records\\n    WHERE ac_id = r_ac.ac_id;\\n    v_avg_indoor := NVL(v_avg_indoor, 24.0);\\n    v_avg_outdoor := NVL(v_avg_outdoor, 30.0);\\n\\n    SELECT NVL(SUM(CASE WHEN \\\"mode\\\" = 'Cooling'\\n                        THEN v_cooling_kw * usage_duration_hours\\n                        ELSE v_heating_kw * usage_duration_hours\\n                   END),0)\\n      INTO v_output\\n    FROM usage_records\\n    WHERE ac_id = r_ac.ac_id;\\n\\n    IF v_pre_total > 0 THEN\\n      v_seasonal_eff := v_output / v_pre_total;\\n    ELSE\\n      v_seasonal_eff := r_ac.energy_efficiency_ratio;\\n    END IF;\\n\\n    IF v_pre_total > 0 AND v_total_hours > 0 THEN\\n      v_avg_power_kw := v_pre_total / v_total_hours;\\n    ELSE\\n      v_avg_power_kw := r_ac.power_consumption_watts / 1000.0;\\n    END IF;\\n\\n    IF v_avg_outdoor - v_avg_indoor > 0 THEN\\n      v_carnot_coef := (v_avg_indoor + 273.15) / (v_avg_outdoor - v_avg_indoor);\\n      IF v_seasonal_eff > v_carnot_coef THEN\\n        v_seasonal_eff := v_carnot_coef;\\n      END IF;\\n    END IF;\\n\\n    SELECT MAX(phase_change_heat_kj_per_kg), AVG(refrigerant_flow_rate_kg_per_s)\\n      INTO v_phase_change, v_actual_flow\\n    FROM refrigerant_properties\\n    WHERE refrigerant_type = r_ac.refrigerant_type;\\n\\n    v_phase_change := NVL(v_phase_change, 200);\\n    v_actual_flow := NVL(v_actual_flow, v_cooling_kw / 200);\\n\\n    IF v_phase_change > 0 THEN\\n      v_required_flow := v_cooling_kw / v_phase_change;\\n      IF v_actual_flow < v_required_flow * para_flow_degradation_threshold THEN\\n\\n        SELECT NVL(MAX(emission_factor),0.5)\\n          INTO v_emission_factor\\n        FROM carbon_emissions;\\n\\n        v_del_ids := num_tab();\\n        v_del_kwh := num_tab();\\n        SELECT energy_id, energy_consumption_kwh\\n          BULK COLLECT INTO v_del_ids, v_del_kwh\\n        FROM energy_consumption\\n        WHERE ac_id = r_ac.ac_id\\n          AND power_consumption_watts > r_ac.power_consumption_watts * 1.15\\n          AND outdoor_temperature_celsius > para_outdoor_heat_threshold\\n        ORDER BY energy_id;\\n\\n        IF v_del_ids.COUNT > 0 THEN\\n          FOR i IN 1..v_del_ids.COUNT LOOP\\n            DELETE FROM energy_consumption WHERE energy_id = v_del_ids(i);\\n          END LOOP;\\n        END IF;\\n\\n        SELECT NVL(SUM(energy_consumption_kwh),0)\\n          INTO v_post_total\\n        FROM energy_consumption\\n        WHERE ac_id = r_ac.ac_id;\\n\\n        IF v_post_total > 0 THEN\\n          v_post_eff := v_output / v_post_total;\\n        ELSE\\n          v_post_eff := r_ac.energy_efficienc... (+1462)",
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 43,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "CREATE OR REPLACE PROCEDURE sp(\n  para_flow_degradation_threshold NUMBER,\n  para_eer_degradation_ratio NUMBER,\n  para_outdoor_heat_threshold NUMBER\n) AS\n  TYPE num_tab IS TABLE OF NUMBER;\n  v_next_id NUMBER;\n  v_cooling_kw NUMBER;\n  v_heating_kw NUMBER;\n  v_pre_total NUMBER;\n  v_total_hours NUMBER;\n  v_avg_indoor NUMBER;\n  v_avg_outdoor NUMBER;\n  v_output NUMBER;\n  v_seasonal_eff NUMBER;\n  v_avg_power_kw NUMBER;\n  v_carnot_coef NUMBER;\n  v_phase_change NUMBER;\n  v_actual_flow NUMBER;\n  v_required_flow NUMBER;\n  v_emission_factor NUMBER;\n  v_del_ids num_tab;\n  v_del_kwh num_tab;\n  v_post_total NUMBER;\n  v_post_eff NUMBER;\n  v_post_avg_power_kw NUMBER;\n  CURSOR c_ac IS SELECT * FROM air_conditioner_info ORDER BY ac_id FOR UPDATE;\n  r_ac c_ac%ROWTYPE;\nBEGIN\n  SELECT NVL(MAX(id),0)+1 INTO v_next_id FROM carbon_emissions;\n\n  OPEN c_ac;\n  LOOP\n    FETCH c_ac INTO r_ac;\n    EXIT WHEN c_ac%NOTFOUND;\n\n    v_cooling_kw := r_ac.cooling_capacity_btu / 3412.0;\n    v_heating_kw := r_ac.heating_capacity_btu / 3412.0;\n\n    SELECT NVL(SUM(energy_consumption_kwh),0)\n      INTO v_pre_total\n    FROM energy_consumption\n    WHERE ac_id = r_ac.ac_id;\n\n    SELECT NVL(SUM(usage_duration_hours),0)\n      INTO v_total_hours\n    FROM usage_records\n    WHERE ac_id = r_ac.ac_id;\n\n    SELECT AVG(indoor_temperature_celsius), AVG(outdoor_temperature_celsius)\n      INTO v_avg_indoor, v_avg_outdoor\n    FROM usage_records\n    WHERE ac_id = r_ac.ac_id;\n    v_avg_indoor := NVL(v_avg_indoor, 24.0);\n    v_avg_outdoor := NVL(v_avg_outdoor, 30.0);\n\n    SELECT NVL(SUM(CASE WHEN \"mode\" = 'Cooling'\n                        THEN v_cooling_kw * usage_duration_hours\n                        ELSE v_heating_kw * usage_duration_hours\n                   END),0)\n      INTO v_output\n    FROM usage_records\n    WHERE ac_id = r_ac.ac_id;\n\n    IF v_pre_total > 0 THEN\n      v_seasonal_eff := v_output / v_pre_total;\n    ELSE\n      v_seasonal_eff := r_ac.energy_efficiency_ratio;\n    END IF;\n\n    IF v_pre_total > 0 AND v_total_ho"
+  },
+  {
+   "step": 44,
+   "actor": "tool",
+   "tool": "submit",
+   "args": "{\"answer\": \"CREATE OR REPLACE PROCEDURE sp(\\n  para_flow_degradation_threshold NUMBER,\\n  para_eer_degradation_ratio NUMBER,\\n  para_outdoor_heat_threshold NUMBER\\n) AS\\n  TYPE num_tab IS TABLE OF NUMBER;\\n  v_next_id NUMBER;\\n  v_cooling_kw NUMBER;\\n  v_heating_kw NUMBER;\\n  v_pre_total NUMBER;\\n  v_total_hours NUMBER;\\n  v_avg_indoor NUMBER;\\n  v_avg_outdoor NUMBER;\\n  v_output NUMBER;\\n  v_seasonal_eff NUMBER;\\n  v_avg_power_kw NUMBER;\\n  v_carnot_coef NUMBER;\\n  v_phase_change NUMBER;\\n  v_actual_flow NUMBER;\\n  v_required_flow NUMBER;\\n  v_emission_factor NUMBER;\\n  v_del_ids num_tab;\\n  v_del_kwh num_tab;\\n  v_post_total NUMBER;\\n  v_post_eff NUMBER;\\n  v_post_avg_power_kw NUMBER;\\n  CURSOR c_ac IS SELECT * FROM air_conditioner_info ORDER BY ac_id FOR UPDATE;\\n  r_ac c_ac%ROWTYPE;\\nBEGIN\\n  SELECT NVL(MAX(id),0)+1 INTO v_next_id FROM carbon_emissions;\\n\\n  OPEN c_ac;\\n  LOOP\\n    FETCH c_ac INTO r_ac;\\n    EXIT WHEN c_ac%NOTFOUND;\\n\\n    v_cooling_kw := r_ac.cooling_capacity_btu / 3412.0;\\n    v_heating_kw := r_ac.heating_capacity_btu / 3412.0;\\n\\n    SELECT NVL(SUM(energy_consumption_kwh),0)\\n      INTO v_pre_total\\n    FROM energy_consumption\\n    WHERE ac_id = r_ac.ac_id;\\n\\n    SELECT NVL(SUM(usage_duration_hours),0)\\n      INTO v_total_hours\\n    FROM usage_records\\n    WHERE ac_id = r_ac.ac_id;\\n\\n    SELECT AVG(indoor_temperature_celsius), AVG(outdoor_temperature_celsius)\\n      INTO v_avg_indoor, v_avg_outdoor\\n    FROM usage_records\\n    WHERE ac_id = r_ac.ac_id;\\n    v_avg_indoor := NVL(v_avg_indoor, 24.0);\\n    v_avg_outdoor := NVL(v_avg_outdoor, 30.0);\\n\\n    SELECT NVL(SUM(CASE WHEN \\\"mode\\\" = 'Cooling'\\n                        THEN v_cooling_kw * usage_duration_hours\\n                        ELSE v_heating_kw * usage_duration_hours\\n                   END),0)\\n      INTO v_output\\n    FROM usage_records\\n    WHERE ac_id = r_ac.ac_id;\\n\\n    IF v_pre_total > 0 THEN\\n      v_seasonal_eff := v_output / v_pre_total;\\n    ELSE\\n      v_seasonal_eff := r_ac.energy_efficiency_ratio;\\n    END IF;\\n\\n    IF v_pre_total > 0 AND v_total_hours > 0 THEN\\n      v_avg_power_kw := v_pre_total / v_total_hours;\\n    ELSE\\n      v_avg_power_kw := r_ac.power_consumption_watts / 1000.0;\\n    END IF;\\n\\n    IF v_avg_outdoor - v_avg_indoor > 0 THEN\\n      v_carnot_coef := (v_avg_indoor + 273.15) / (v_avg_outdoor - v_avg_indoor);\\n      IF v_seasonal_eff > v_carnot_coef THEN\\n        v_seasonal_eff := v_carnot_coef;\\n      END IF;\\n    END IF;\\n\\n    SELECT MAX(phase_change_heat_kj_per_kg), AVG(refrigerant_flow_rate_kg_per_s)\\n      INTO v_phase_change, v_actual_flow\\n    FROM refrigerant_properties\\n    WHERE refrigerant_type = r_ac.refrigerant_type;\\n\\n    v_phase_change := NVL(v_phase_change, 200);\\n    v_actual_flow := NVL(v_actual_flow, v_cooling_kw / 200);\\n\\n    IF v_phase_change > 0 THEN\\n      v_required_flow := v_cooling_kw / v_phase_change;\\n      IF v_actual_flow < v_required_flow * para_flow_degradation_threshold THEN\\n\\n        SELECT NVL(MAX(emission_factor),0.5)\\n          INTO v_emission_factor\\n        FROM carbon_emissions;\\n\\n        v_del_ids := num_tab();\\n        v_del_kwh := num_tab();\\n        SELECT energy_id, energy_consumption_kwh\\n          BULK COLLECT INTO v_del_ids, v_del_kwh\\n        FROM energy_consumption\\n        WHERE ac_id = r_ac.ac_id\\n          AND power_consumption_watts > r_ac.power_consumption_watts * 1.15\\n          AND outdoor_temperature_celsius > para_outdoor_heat_threshold\\n        ORDER BY energy_id;\\n\\n        IF v_del_ids.COUNT > 0 THEN\\n          FOR i IN 1..v_del_ids.COUNT LOOP\\n            DELETE FROM energy_consumption WHERE energy_id = v_del_ids(i);\\n          END LOOP;\\n        END IF;\\n\\n        SELECT NVL(SUM(energy_consumption_kwh),0)\\n          INTO v_post_total\\n        FROM energy_consumption\\n        WHERE ac_id = r_ac.ac_id;\\n\\n        IF v_post_total > 0 THEN\\n          v_post_eff := v_output / v_post_total;\\n        ELSE\\n          v_post_eff := r_ac.energy_efficie... (+1464)",
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n  para_flow_degradation_threshold NUMBER,\n  para_eer_degradation_ratio NUMBER,\n  para_outdoor_heat_threshold NUMBER\n) AS\n  TYPE num_tab IS TABLE OF NUMBER;\n  v_next_id NUMBER;\n  v_cooling_kw NUMBER;\n  v_heating_kw NUMBER;\n  v_pre_total NUMBER;\n  v_total_hours NUMBER;\n  v_avg_indoor NUMBER;\n  v_avg_outdoor NUMBER;\n  v_output NUMBER;\n  v_seasonal_eff NUMBER;\n  v_avg_power_kw NUMBER;\n  v_carnot_coef NUMBER;\n  v_phase_change NUMBER;\n  v_actual_flow NUMBER;\n  v_required_flow NUMBER;\n  v_emission_factor NUMBER;\n  v_del_ids num_tab;\n  v_del_kwh num_tab;\n  v_post_total NUMBER;\n  v_post_eff NUMBER;\n  v_post_avg_power_kw NUMBER;\n  CURSOR c_ac IS SELECT * FROM air_conditioner_info ORDER BY ac_id FOR UPDATE;\n  r_ac c_ac%ROWTYPE;\nBEGIN\n  SELECT NVL(MAX(id),0)+1 INTO v_next_id FROM carbon_emissions;\n\n  OPEN c_ac;\n  LOOP\n    FETCH c_ac INTO r_ac;\n    EXIT WHEN c_ac%NOTFOUND;\n\n    v_cooling_kw := r_ac.cooling_capacity_btu / 3412.0;\n    v_heating_kw := r_ac.heating_capacity_btu / 3412.0;\n\n    SELECT NVL(SUM(energy_consumption_kwh),0)\n      INTO v_pre_total\n    FROM energy_consumption\n    WHERE ac_id = r_ac.ac_id;\n\n    SELECT NVL(SUM(usage_duration_hours),0)\n      INTO v_total_hours\n    FROM usage_records\n    WHERE ac_id = r_ac.ac_id;\n\n    SELECT AVG(indoor_temperature_celsius), AVG(outdoor_temperature_celsius)\n      INTO v_avg_indoor, v_avg_outdoor\n    FROM usage_records\n    WHERE ac_id = r_ac.ac_id;\n    v_avg_indoor := NVL(v_avg_indoor, 24.0);\n    v_avg_outdoor := NVL(v_avg_outdoor, 30.0);\n\n    SELECT NVL(SUM(CASE WHEN \"mode\" = 'Cooling'\n                        THEN v_cooling_kw * usage_duration_hours\n                        ELSE v_heating_kw * usage_duration_hours\n                   END),0)\n      INTO v_output\n    FROM usage_records\n    WHERE ac_id = r_ac.ac_id;\n\n    IF v_pre_total > 0 THEN\n      v_seasonal_eff := v_output / v_pre_total;\n    ELSE\n      v_seasonal_eff := r_ac.energy_efficiency_ratio;\n    END IF;\n\n    IF v_pre_total > 0 AND v_total_hours > 0 THEN\n      v_avg_power_kw := v_pre_total / v_total_hours;\n    ELSE\n      v_avg_power_kw := r_ac.power_consumption_watts / 1000.0;\n    END IF;\n\n    IF v_avg_outdoor - v_avg_indoor > 0 THEN\n      v_carnot_coef := (v_avg_indoor + 273.15) / (v_avg_outdoor - v_avg_indoor);\n      IF v_seasonal_eff > v_carnot_coef THEN\n        v_seasonal_eff := v_carnot_coef;\n      END IF;\n    END IF;\n\n    SELECT MAX(phase_change_heat_kj_per_kg), AVG(refrigerant_flow_rate_kg_per_s)\n      INTO v_phase_change, v_actual_flow\n    FROM refrigerant_properties\n    WHERE refrigerant_type = r_ac.refrigerant_type;\n\n    v_phase_change := NVL(v_phase_change, 200);\n    v_actual_flow := NVL(v_actual_flow, v_cooling_kw / 200);\n\n    IF v_phase_change > 0 THEN\n      v_required_flow := v_cooling_kw / v_phase_change;\n      IF v_actual_flow < v_required_flow * para_flow_degradation_threshold THEN\n\n        SELECT NVL(MAX(emission_factor),0.5)\n          INTO v_emission_factor\n        FROM carbon_emissions;\n\n        v_del_ids := num_tab();\n        v_del_kwh := num_tab();\n        SELECT energy_id, energy_consumption_kwh\n          BULK COLLECT INTO v_del_ids, v_del_kwh\n        FROM energy_consumption\n        WHERE ac_id = r_ac.ac_id\n          AND power_consumption_watts > r_ac.power_consumption_watts * 1.15\n          AND outdoor_temperature_celsius > para_outdoor_heat_threshold\n        ORDER BY energy_id;\n\n        IF v_del_ids.COUNT > 0 THEN\n          FOR i IN 1..v_del_ids.COUNT LOOP\n            DELETE FROM energy_consumption WHERE energy_id = v_del_ids(i);\n          END LOOP;\n        END IF;\n\n        SELECT NVL(SUM(energy_consumption_kwh),0)\n          INTO v_post_total\n        FROM energy_consumption\n        WHERE ac_id = r_ac.ac_id;\n\n        IF v_post_total > 0 THEN\n          v_post_eff := v_output / v_post_total;\n        ELSE\n          v_post_eff := r_ac.energy_efficiency_ratio;\n        END IF;\n\n        IF v_post_total > 0 AND v_total_hours > 0 THEN\n          v_post_avg_power_kw := v_post_total / v_total_hours;\n        ELSE\n          v_post_avg_power_kw := r_ac.power_consumption_watts / 1000.0;\n        END IF;\n\n        IF v_avg_outdoor - v_avg_indoor > 0 THEN\n          v_carnot_coef := (v_avg_indoor + 273.15) / (v_avg_outdoor - v_avg_indoor);\n          IF v_post_eff > v_carnot_coef THEN\n            v_post_eff := v_carnot_coef;\n          END IF;\n        END IF;\n\n        IF v_post_eff < r_ac.energy_efficiency_ratio * para_eer_degradation_ratio THEN\n          UPDATE air_conditioner_info\n             SET energy_efficiency_ratio = v_post_eff,\n                 power_consumption_watts = v_post_avg_power_kw * 1000.0\n           WHERE ac_id = r_ac.ac_id;\n        END IF;\n\n        INSERT INTO carbon_emissions(id, emission_factor, annual_emissions_tonnes)\n        VALUES (v_next_id, v_emission_factor, v_pre_total * v_emission_factor / 1000.0);\n        v_next_id := v_next_id + 1;\n\n        IF v_del_ids.COUNT > 0 THEN\n          FOR i IN 1..v_del_ids.COUNT LOOP\n            INSERT INTO carbon_emissions(id, emission_factor, annual_emissions_tonnes)\n            VALUES (v_next_id, v_emission_factor, NVL(v_del_kwh(i),0) * v_emission_factor / 1000.0);\n            v_next_id := v_next_id + 1;\n          END LOOP;\n        END IF;\n\n      END IF;\n    END IF;\n\n  END LOOP;\n  CLOSE c_ac;\nEND sp;"
+ },
+ "pair": null
+}

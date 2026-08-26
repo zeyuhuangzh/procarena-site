@@ -1,0 +1,120 @@
+{
+ "id": "sp-ora-a1b2-noTools--oracle_b2_000",
+ "run": "sp-ora-a1b2-noTools",
+ "task_id": "oracle_b2_000",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "b2",
+ "dialect": "oracle",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true,
+   "performance": true
+  },
+  "metrics": {
+   "criterion": "work",
+   "min_speedup": 1.1,
+   "scale_rows": 10000,
+   "repeats": 4,
+   "measure": "executions",
+   "seconds": {
+    "gold": 3.14262,
+    "baseline": 6.203094,
+    "candidate": 3.158785
+   },
+   "work": {
+    "gold": {
+     "executions": 6378,
+     "logical_reads": 87718
+    },
+    "baseline": {
+     "executions": 58940,
+     "logical_reads": 239775
+    },
+    "candidate": {
+     "executions": 128,
+     "logical_reads": 69814
+    }
+   },
+   "speedup_vs_baseline": 1.9638,
+   "work_ratio_vs_baseline": 460.4688,
+   "ratio_vs_gold": 1.0051,
+   "score_v1": 0.5984,
+   "scaled": {
+    "Institution": 910,
+    "building": 1250,
+    "protein": 2000
+   },
+   "same_state_as_gold": true
+  },
+  "attribution": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 294.3,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "The attached file current_procedure.sql is a stored procedure that is functionally correct but has been running too slowly on real production data volumes. Treat that attached procedure as the specification of the required behaviour.\n\nRewrite it so that, for every input, it produces exactly the same final database state as the attached procedure, with less database work. The procedure name and parameter list must not change. The signature must remain exactly:\n\nCREATE OR REPLACE PROCEDURE sp(\n    para_Enrollment     IN NUMBER,\n    para_Institution_id IN VARCHAR2,\n    para_Height_feet    IN NUMBER,\n    para_Street_address IN VARCHAR2\n) IS\n...\n\nReturn the complete stored procedure and nothing else.",
+  "materials": [
+   {
+    "file": "current_procedure.sql",
+    "kind": "current procedure (correct but slow)",
+    "text": "CREATE OR REPLACE PROCEDURE sp(\n    para_Enrollment     IN NUMBER,\n    para_Institution_id IN VARCHAR2,\n    para_Height_feet    IN NUMBER,\n    para_Street_address IN VARCHAR2\n) IS\n    status_code NUMBER(10) := 1;\n    message_str VARCHAR2(4000);\n    multiplier  NUMBER(10) := 3;\n    v_floors \"building\".\"Floors\"%TYPE;\n    v_building_id \"building\".\"building_id\"%TYPE;\n    CURSOR building_cursor IS\n        SELECT \"Floors\", \"building_id\"\n        FROM \"building\"\n        WHERE \"Street_address\" = para_Street_address\n        ORDER BY \"building_id\"\n        FOR UPDATE;\nBEGIN\n    IF para_Enrollment < 5 THEN\n        status_code := 10;\n\n        FOR inst IN (SELECT \"Institution_id\" FROM \"Institution\") LOOP\n            IF inst.\"Institution_id\" = para_Institution_id THEN\n                UPDATE \"Institution\"\n                SET \"Enrollment\" = para_Enrollment + 1\n                WHERE \"Institution_id\" = inst.\"Institution_id\";\n            END IF;\n        END LOOP;\n    ELSIF para_Enrollment < 15 THEN\n        status_code := 20;\n\n        FOR b IN (SELECT \"building_id\", \"Height_feet\" FROM \"building\") LOOP\n            IF b.\"Height_feet\" = para_Height_feet THEN\n                DELETE FROM \"building\"\n                WHERE \"building_id\" = b.\"building_id\";\n            END IF;\n        END LOOP;\n    ELSIF para_Enrollment < 25 THEN\n        status_code := 30;\n\n        FOR b IN (SELECT \"building_id\", \"Height_feet\" FROM \"building\") LOOP\n            IF b.\"Height_feet\" = para_Height_feet THEN\n                UPDATE \"building\"\n                SET \"Street_address\" = para_Street_address || '_medium'\n                WHERE \"building_id\" = b.\"building_id\";\n            END IF;\n        END LOOP;\n    ELSIF para_Enrollment < 35 THEN\n        status_code := 40;\n\n        FOR inst IN (SELECT \"Institution_id\", \"Enrollment\" FROM \"Institution\") LOOP\n            IF inst.\"Enrollment\" = para_Enrollment THEN\n                UPDATE \"Institution\"\n                SET \"Institution_id\" = para_Institution_id || '_large'\n                WHERE \"Institution_id\" = inst.\"Institution_id\";\n            END IF;\n        END LOOP;\n    ELSE\n        status_code := 50;\n\n        FOR inst IN (SELECT \"Institution_id\", \"Enrollment\" FROM \"Institution\") LOOP\n            IF inst.\"Enrollment\" > para_Enrollment THEN\n                DELETE FROM \"Institution\"\n                WHERE \"Institution_id\" = inst.\"Institution_id\";\n            END IF;\n        END LOOP;\n    END IF;\n\n    OPEN building_cursor;\n    LOOP\n        FETCH building_cursor INTO v_floors, v_building_id;\n        EXIT WHEN building_cursor%NOTFOUND;\n\n        SELECT \"Floors\"\n        INTO v_floors\n        FROM \"building\"\n        WHERE \"Street_address\" = para_Street_address\n          AND \"building_id\" = v_building_id;\n\n        UPDATE \"building\"\n        SET \"Floors\" = v_floors + 1\n        WHERE CURRENT OF building_cursor;\n    END LOOP;\n    CLOSE building_cursor;\n\n    message_str := 'processing';\n\n    FOR b IN (SELECT \"building_id\", \"Street_address\" FROM \"building\") LOOP\n        IF b.\"Street_address\" = para_Street_address THEN\n            UPDATE \"building\"\n            SET \"Height_feet\" = para_Height_feet + status_code\n            WHERE \"building_id\" = b.\"building_id\";\n        END IF;\n    END LOOP;\n\n    FOR inst IN (SELECT \"Institution_id\" FROM \"Institution\") LOOP\n        IF inst.\"Institution_id\" = para_Institution_id || message_str THEN\n            DELETE FROM \"Institution\"\n            WHERE \"Institution_id\" = inst.\"Institution_id\";\n        END IF;\n    END LOOP;\n\n    multiplier := multiplier + status_code;\n\n    FOR inst IN (SELECT \"Institution_id\" FROM \"Institution\") LOOP\n        IF inst.\"Institution_id\" = para_Institution_id THEN\n            UPDATE \"Institution\"\n            SET \"Enrollment\" = para_Enrollment * multiplier\n            WHERE \"Institution_id\" = inst.\"Institution_id\";\n        END IF;\n    END LOOP;\n\n    FOR b IN (SELECT \"building_id\", \"Street_address\" FROM \"building\") LOOP\n        IF b.\"Street_address\" = para_Street_address || '_old' THEN\n            DELETE FROM \"building\"\n            WHERE \"building_id\" = b.\"building_id\";\n        END IF;\n    END LOOP;\n\n    FOR b IN (SELECT \"building_id\", \"Street_address\" FROM \"building\") LOOP\n        IF b.\"Street_address\" = para_Street_address THEN\n            UPDATE \"building\"\n            SET \"Height_feet\" = para_Height_feet - 5\n            WHERE \"building_id\" = b.\"building_id\";\n        END IF;\n    END LOOP;\n\n    message_str := 'updated';\n\n    FOR inst IN (SELECT \"Institution_id\", \"Enrollment\" FROM \"Institution\") LOOP\n        IF inst.\"Enrollment\" = para_Enrollment THEN\n            UPDATE \"Institution\"\n            SET \"Institution_id\" = para_Institution_id || message_str\n            WHERE \"Institution_id\" = inst.\"Institution_id\";\n        END IF;\n    END LOOP;\n\n    FOR inst IN (SELECT \"Institution_id\", \"Enrollment\" FROM \"Institution\") LOOP\n        IF inst.\"Enrollment\" < status_code THEN\n            DELETE FROM \"Institution\"\n            WHERE \"Institution_id\" = inst.\"Institution_id\";\n        END IF;\n    END LOOP;\n\n    FOR b IN (SELECT \"building_id\", \"Height_feet\" FROM \"building\") LOOP\n        IF b.\"Height_feet\" = para_Height_feet THEN\n            UPDATE \"building\"\n            SET \"Street_address\" = para_Street_address || '_processed'\n            WHERE \"building_id\" = b.\"building_id\";\n        END IF;\n    END LOOP;\n\n    status_code := status_code + 5;\n\n    FOR b IN (SELECT \"building_id\", \"Height_feet\" FROM \"building\") LOOP\n        IF b.\"Height_feet\" > para_Height_feet + 20 THEN\n            DELETE FROM \"building\"\n            WHERE \"building_id\" = b.\"building_id\";\n        END IF;\n    END LOOP;\n\n    FOR inst IN (SELECT \"Institution_id\" FROM \"Institution\") LOOP\n        IF inst.\"Institution_id\" = para_Institution_id THEN\n            UPDATE \"Institution\"\n            SET \"Enrollment\" = para_Enrollment + status_code\n            WHERE \"Institution_id\" = inst.\"Institution_id\";\n        END IF;\n    END LOOP;\n\n    message_str := 'final_stage';\n\n    FOR b IN (SELECT \"building_id\", \"Street_address\" FROM \"building\") LOOP\n        IF b.\"Street_address\" = para_Street_address THEN\n            UPDATE \"building\"\n            SET \"Height_feet\" = para_Height_feet + 8\n            WHERE \"building_id\" = b.\"building_id\";\n        END IF;\n    END LOOP;\n\n    FOR inst IN (SELECT \"Institution_id\" FROM \"Institution\") LOOP\n        IF inst.\"Institution_id\" = para_Institution_id || message_str THEN\n            DELETE FROM \"Institution\"\n            WHERE \"Institution_id\" = inst.\"Institution_id\";\n        END IF;\n    END LOOP;\n\n    IF para_Height_feet >= 100 THEN\n        FOR b IN (SELECT \"building_id\", \"Height_feet\" FROM \"building\") LOOP\n            IF b.\"Height_feet\" > para_Height_feet THEN\n                UPDATE \"building\"\n                SET \"Name\" = \"Name\" || '_tall'\n                WHERE \"building_id\" = b.\"building_id\";\n            END IF;\n        END LOOP;\n    ELSE\n        FOR b IN (SELECT \"building_id\", \"Height_feet\" FROM \"building\") LOOP\n            IF b.\"Height_feet\" <= para_Height_feet THEN\n                UPDATE \"building\"\n                SET \"Name\" = \"Name\" || '_low'\n                WHERE \"building_id\" = b.\"building_id\";\n            END IF;\n        END LOOP;\n    END IF;\nEND sp;\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    para_Enrollment     IN NUMBER,\n    para_Institution_id IN VARCHAR2,\n    para_Height_feet    IN NUMBER,\n    para_Street_address IN VARCHAR2\n) IS\n    status_code NUMBER(10) := 1;\n    message_str VARCHAR2(4000);\n    multiplier  NUMBER(10) := 3;\nBEGIN\n    IF para_Enrollment < 5 THEN\n        status_code := 10;\n        UPDATE \"Institution\"\n           SET \"Enrollment\" = para_Enrollment + 1\n         WHERE \"Institution_id\" = para_Institution_id;\n    ELSIF para_Enrollment < 15 THEN\n        status_code := 20;\n        DELETE FROM \"building\"\n         WHERE \"Height_feet\" = para_Height_feet;\n    ELSIF para_Enrollment < 25 THEN\n        status_code := 30;\n        UPDATE \"building\"\n           SET \"Street_address\" = para_Street_address || '_medium'\n         WHERE \"Height_feet\" = para_Height_feet;\n    ELSIF para_Enrollment < 35 THEN\n        status_code := 40;\n        UPDATE \"Institution\"\n           SET \"Institution_id\" = para_Institution_id || '_large'\n         WHERE \"Enrollment\" = para_Enrollment;\n    ELSE\n        status_code := 50;\n        DELETE FROM \"Institution\"\n         WHERE \"Enrollment\" > para_Enrollment;\n    END IF;\n\n    UPDATE \"building\"\n       SET \"Floors\" = \"Floors\" + 1\n     WHERE \"Street_address\" = para_Street_address;\n\n    message_str := 'processing';\n\n    UPDATE \"building\"\n       SET \"Height_feet\" = para_Height_feet + status_code\n     WHERE \"Street_address\" = para_Street_address;\n\n    DELETE FROM \"Institution\"\n     WHERE \"Institution_id\" = para_Institution_id || message_str;\n\n    multiplier := multiplier + status_code;\n\n    UPDATE \"Institution\"\n       SET \"Enrollment\" = para_Enrollment * multiplier\n     WHERE \"Institution_id\" = para_Institution_id;\n\n    DELETE FROM \"building\"\n     WHERE \"Street_address\" = para_Street_address || '_old';\n\n    UPDATE \"building\"\n       SET \"Height_feet\" = para_Height_feet - 5\n     WHERE \"Street_address\" = para_Street_address;\n\n    message_str := 'updated';\n\n    UPDATE \"Institution\"\n       SET \"Institution_id\" = para_Institution_id || message_str\n     WHERE \"Enrollment\" = para_Enrollment;\n\n    DELETE FROM \"Institution\"\n     WHERE \"Enrollment\" < status_code;\n\n    UPDATE \"building\"\n       SET \"Street_address\" = para_Street_address || '_processed'\n     WHERE \"Height_feet\" = para_Height_feet;\n\n    status_code := status_code + 5;\n\n    DELETE FROM \"building\"\n     WHERE \"Height_feet\" > para_Height_feet + 20;\n\n    UPDATE \"Institution\"\n       SET \"Enrollment\" = para_Enrollment + status_code\n     WHERE \"Institution_id\" = para_Institution_id;\n\n    message_str := 'final_stage';\n\n    UPDATE \"building\"\n       SET \"Height_feet\" = para_Height_feet + 8\n     WHERE \"Street_address\" = para_Street_address;\n\n    DELETE FROM \"Institution\"\n     WHERE \"Institution_id\" = para_Institution_id || message_str;\n\n    IF para_Height_feet >= 100 THEN\n        UPDATE \"building\"\n           SET \"Name\" = \"Name\" || '_tall'\n         WHERE \"Height_feet\" > para_Height_feet;\n    ELSE\n        UPDATE \"building\"\n           SET \"Name\" = \"Name\" || '_low'\n         WHERE \"Height_feet\" <= para_Height_feet;\n    END IF;\nEND sp;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    para_Enrollment     IN NUMBER,\n    para_Institution_id IN VARCHAR2,\n    para_Height_feet    IN NUMBER,\n    para_Street_address IN VARCHAR2\n) IS\n    status_code NUMBER(10) := 1;\n    message_str VARCHAR2(4000);\n    multiplier  NUMBER(10) := 3;\nBEGIN\n    IF para_Enrollment < 5 THEN\n        status_code := 10;\n        UPDATE \"Institution\"\n           SET \"Enrollment\" = para_Enrollment + 1\n         WHERE \"Institution_id\" = para_Institution_id;\n    ELSIF para_Enrollment < 15 THEN\n        status_code := 20;\n        DELETE FROM \"building\"\n         WHERE \"Height_feet\" = para_Height_feet;\n    ELSIF para_Enrollment < 25 THEN\n        status_code := 30;\n        UPDATE \"building\"\n           SET \"Street_address\" = para_Street_address || '_medium'\n         WHERE \"Height_feet\" = para_Height_feet;\n    ELSIF para_Enrollment < 35 THEN\n        status_code := 40;\n        UPDATE \"Institution\"\n           SET \"Institution_id\" = para_Institution_id || '_large'\n         WHERE \"Enrollment\" = para_Enrollment;\n    ELSE\n        status_code := 50;\n        DELETE FROM \"Institution\"\n         WHERE \"Enrollment\" > para_Enrollment;\n    END IF;\n\n    UPDATE \"building\"\n       SET \"Floors\" = \"Floors\" + 1\n     WHERE \"Street_address\" = para_Street_address;\n\n    message_str := 'processing';\n\n    UPDATE \"building\"\n       SET \"Height_feet\" = para_Height_feet + status_code\n     WHERE \"Street_address\" = para_Street_address;\n\n    DELETE FROM \"Institution\"\n     WHERE \"Institution_id\" = para_Institution_id || message_str;\n\n    multiplier := multiplier + status_code;\n\n    UPDATE \"Institution\"\n       SET \"Enrollment\" = para_Enrollment * multiplier\n     WHERE \"Institution_id\" = para_Institution_id;\n\n    DELETE FROM \"building\"\n     WHERE \"Street_address\" = para_Street_address || '_old';\n\n    UPDATE \"building\"\n       SET \"Height_feet\" = para_Height_feet - 5\n     WHERE \"Street_address\" = para_Street_address;\n\n    message_str := 'updated';\n\n    UPDATE \"Institution\"\n       SET \"Institution_id\" = para_Institution_id || message_str\n     WHERE \"Enrollment\" = para_Enrollment;\n\n    DELETE FROM \"Institution\"\n     WHERE \"Enrollment\" < status_code;\n\n    UPDATE \"building\"\n       SET \"Street_address\" = para_Street_address || '_processed'\n     WHERE \"Height_feet\" = para_Height_feet;\n\n    status_code := status_code + 5;\n\n    DELETE FROM \"building\"\n     WHERE \"Height_feet\" > para_Height_feet + 20;\n\n    UPDATE \"Institution\"\n       SET \"Enrollment\" = para_Enrollment + status_code\n     WHERE \"Institution_id\" = para_Institution_id;\n\n    message_str := 'final_stage';\n\n    UPDATE \"building\"\n       SET \"Height_feet\" = para_Height_feet + 8\n     WHERE \"Street_address\" = para_Street_address;\n\n    DELETE FROM \"Institution\"\n     WHERE \"Institution_id\" = para_Institution_id || message_str;\n\n    IF para_Height_feet >= 100 THEN\n        UPDATE \"building\"\n           SET \"Name\" = \"Name\" || '_tall'\n         WHERE \"Height_feet\" > para_Height_feet;\n    ELSE\n        UPDATE \"building\"\n           SET \"Name\" = \"Name\" || '_low'\n         WHERE \"Height_feet\" <= para_Height_feet;\n    END IF;\nEND sp;"
+ },
+ "pair": null
+}

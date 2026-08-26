@@ -1,0 +1,557 @@
+{
+ "id": "ep-ora-a1-k--oracle_a1_000",
+ "run": "ep-ora-a1-k",
+ "task_id": "oracle_a1_000",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "full",
+ "scenario": "a1",
+ "dialect": "oracle",
+ "model": "deepseek-v4-flash",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "candidate did not create: line 9:12 PL/SQL: ORA-00942: table or view does not exist; line 8:5 PL/SQL: SQL Statement ignored; line 7:10 PLS-00341: declaration of cursor 'C_DRIVER' is incomplete or malformed; line 0:0 PL/SQL: Compilation unit analysis terminated",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "spec",
+  "recovered": 1,
+  "oracle_size": 5
+ },
+ "summary": {
+  "steps": 45,
+  "seconds": 172.7,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 1,
+   "off_oracle": 0
+  },
+  "recovered": 1,
+  "oracle_size": 5,
+  "entries_per_question": 0.5,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 3,
+   "describe_table": 1,
+   "ask_user": 1,
+   "ask_selector": 1,
+   "execute_scratch": 36,
+   "compile_plsql": 1,
+   "submit": 1
+  },
+  "final_warning": false
+ },
+ "task": {
+  "prompt": "The procedure must be named sp and accept four parameters in this exact order: para_Age as NUMBER, para_Name as VARCHAR2, para_Party as VARCHAR2, and para_Home_city as VARCHAR2. The procedure reads and writes only the driver and pupil_transport tables. Because the cursor selects the entire driver row, it reads driver.Driver_ID, driver.Name, driver.Party, driver.Home_city, and driver.Age. It writes driver.Name and driver.Home_city. It deletes rows from driver based on driver.Party. It reads pupil_transport.Driver_ID and pupil_transport.Years_Working, and it writes pupil_transport.Years_Working. The number 1 is used as the increment, and the null literal is used to test driver.Party.\n\nOperations must follow the operation spine.\n\nFirst, open a cursor over the driver rows where driver.Age is strictly greater than para_Age and driver.Party is equal to para_Party. Both conditions must be true for a row to be included.\n\nThen loop through the cursor one row at a time. For each fetched row, set driver.Name to para_Name. If the cursor finds no rows that satisfy both conditions, the loop does not run and no driver.Name values are changed by this part.\n\nAfter the loop finishes, close the cursor.\n\nNext, delete every row from the driver table whose driver.Party is null. If there are no such rows, no deletion occurs.\n\nNext, update every remaining row in the driver table by setting driver.Home_city to para_Home_city. This applies to all driver rows present at that point. If there are no driver rows, this step has no effect.\n\nFinally, update the pupil_transport table by increasing pupil_transport.Years_Working by 1 for every pupil_transport row whose pupil_transport.Driver_ID matches the driver.Driver_ID of any driver row that qualifies at that moment. If no driver rows qualify, or if no pupil_transport row has a matching pupil_transport.Driver_ID, no pupil_transport rows are updated.\n\nThe procedure is subject to the raw-call discipline.\n\nImplement this as an Oracle (PL/SQL) stored procedure named `sp` with the parameter list exactly `sp(para_Age NUMBER, para_Name VARCHAR2, para_Party VARCHAR2, para_Home_city VARCHAR2)`. Return the complete stored procedure, and nothing else.\n",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the operation spine?",
+   "answer": "Operations must occur in the following order."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the raw-call discipline?",
+   "answer": "The procedure has no explicit exception handling. Any error raised during opening, fetching, updating, or deleting is not caught inside the procedure and propagates to the caller. The procedure also does not issue an explicit commit or rollback."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What does the cursor do to the selected driver rows?",
+   "answer": "The cursor locks the selected driver rows for update."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 1,
+   "key": "What makes a driver row qualify for the school_bus update?",
+   "answer": "A qualifying driver row is one whose driver.Party is equal to para_Party at that moment."
+  },
+  {
+   "id": "E1",
+   "op": "env_contradiction",
+   "revealed_at": 6,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is pupil_transport?",
+   "answer": "No such object exists; the document means the school_bus table."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable driver , columns = [ Driver_ID ( NUMBER | primary key | values : 3 , 4 ) , Name ( VARCHAR2 | values : Douglas McCrory , Minnie Gonzalez ) , Party ( VARCHAR2 | values : Dem , Dem ) , Home_city ( VARCHAR2 | values : Hartford , Coventry ) , Age ( NUMBER | values : 52 , 38 ) ]\ntable school , columns = [ School_ID ( NUMBER | primary key | values : 2 , 3 ) , Grade ( VARCHAR2 | values : 1st-3rd grade , College ) , School ( VARCHAR2 | values : Harvard Law School , Harvard Law School ) , Location ( VARCHAR2 | values : Los Angeles, California , Jakarta, Indonesia ) , Type ( VARCHAR2 | values : Private , Public ) ]\ntable school_bus , columns = [ School_ID ( NUMBER | primary key | values : 7 , 1 ) , Driver_ID ( NUMBER | values : 3 , 9 ) , Years_Working ( NUMBER | values : 6 , 3 ) , If_full_time ( VARCHAR2 | values : F , F ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "driver",
+    "limit": 10
+   },
+   "result": "Driver_ID | Name | Party | Home_city | Age\n1 | Matthew Ritter | Dem | Hartford | 40\n2 | Dan Carter | Rep | Bethel | 30\n3 | Minnie Gonzalez | Dem | Hartford | 46\n4 | Angel Acre | Dem | Hartford | 42\n5 | Brandon McGee | Dem | Hartford | 45\n6 | Edwin Vargas | Dem | Hartford | 52\n7 | Douglas McCrory | Dem | Hartford | 36\n8 | Timothy Ackert | Rep | Coventry | 35\n9 | Jason Rojas | Dem | East Hartford | 38\n10 | Henry Genga | Dem | East Hartford | 37"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "pupil_transport",
+    "limit": 10
+   },
+   "result": "error: no such table: 'pupil_transport'. Tables: driver, school, school_bus"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "school_bus"
+   },
+   "result": "table school_bus , columns = [ School_ID ( NUMBER | primary key | values : 7 , 1 ) , Driver_ID ( NUMBER | values : 3 , 9 ) , Years_Working ( NUMBER | values : 6 , 3 ) , If_full_time ( VARCHAR2 | values : F , F ) ]"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "school_bus",
+    "limit": 20
+   },
+   "result": "School_ID | Driver_ID | Years_Working | If_full_time\n1 | 10 | 10 | F\n3 | 4 | 6 | T\n4 | 3 | 3 | T\n5 | 7 | 8 | T\n7 | 9 | 2 | T"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "The database I'm working against has tables `driver`, `school`, and `school_bus` — there is no table named `pupil_transport`. However, `school_bus` has exactly the columns the spec assigns to `pupil_transport` (Driver_ID, Years_Working). Should the procedure reference the actual table `school_bus` (i.e., \"pupil_transport\" in the spec is just a conceptual name), or should it literally reference a table named `pupil_transport`?"
+   },
+   "result": "No such object exists; the document means the school_bus table.",
+   "revealed": [
+    "E1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "The final step updates pupil_transport.Years_Working for rows whose Driver_ID matches \"any driver row that qualifies at that moment.\" Which driver rows count as \"qualifying\" for this final step?",
+    "options": [
+     "Driver rows satisfying both cursor conditions at that moment: Age > para_Age AND Party = para_Party.",
+     "All driver rows present at that moment (i.e., every remaining driver row after the delete step)."
+    ]
+   },
+   "result": "1",
+   "index": 1,
+   "options": [
+    "None of the following are correct.",
+    "Driver rows satisfying both cursor conditions at that moment: Age > para_Age AND Party = para_Party.",
+    "All driver rows present at that moment (i.e., every remaining driver row after the delete step)."
+   ],
+   "entry": "M2",
+   "status": "refuted",
+   "conflict_noted": false
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n  para_Age NUMBER,\n  para_Name VARCHAR2,\n  para_Party VARCHAR2,\n  para_Home_city VARCHAR2\n) AS\n  CURSOR c_driver IS\n    SELECT Driver_ID, Name, Party, Home_city, Age\n      FROM driver\n     WHERE Age > para_Age AND Party = para_Party;\n  v_row c_driver%ROWTYPE;\nBEGIN\n  OPEN c_driver;\n  LOOP\n    FETCH c_driver INTO v_row;\n    EXIT WHEN c_driver%NOTFOUND;\n    UPDATE driver SET Name = para_Name WHERE Driver_ID = v_row.Driver_ID;\n  END LOOP;\n  CLOSE c_driver;\n\n  DELETE FROM driver WHERE Party IS NULL;\n\n  UPDATE driver SET Home_city = para_Home_city;\n\n  UPDATE school_bus\n     SET Years_Working = Years_Working + 1\n   WHERE Driver_ID IN (SELECT Driver_ID FROM driver\n                        WHERE Age > para_Age AND Party = para_Party);\nEND sp;\n/"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(40, 'X', 'Dem', 'Z');\nSELECT * FROM driver ORDER BY Driver_ID;\nSELECT * FROM school_bus ORDER BY School_ID;"
+   },
+   "result": "error: DatabaseError: ORA-00933: SQL command not properly ended\nHelp: https://docs.oracle.com/error-help/db/ora-00933/"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(40, 'X', 'Dem', 'Z')"
+   },
+   "result": "error: DatabaseError: ORA-06575: Package or function SP is in an invalid state\nHelp: https://docs.oracle.com/error-help/db/ora-06575/"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n  para_Age NUMBER,\n  para_Name VARCHAR2,\n  para_Party VARCHAR2,\n  para_Home_city VARCHAR2\n) AS\n  CURSOR c_driver IS\n    SELECT Driver_ID, Name, Party, Home_city, Age\n      FROM driver\n     WHERE Age > para_Age AND Party = para_Party;\n  v_row c_driver%ROWTYPE;\nBEGIN\n  OPEN c_driver;\n  LOOP\n    FETCH c_driver INTO v_row;\n    EXIT WHEN c_driver%NOTFOUND;\n    UPDATE driver SET Name = para_Name WHERE Driver_ID = v_row.Driver_ID;\n  END LOOP;\n  CLOSE c_driver;\n\n  DELETE FROM driver WHERE Party IS NULL;\n\n  UPDATE driver SET Home_city = para_Home_city;\n\n  UPDATE school_bus\n     SET Years_Working = Years_Working + 1\n   WHERE Driver_ID IN (SELECT Driver_ID FROM driver\n                        WHERE Age > para_Age AND Party = para_Party);\nEND sp;"
+   },
+   "result": "compile error: line 9:12 PL/SQL: ORA-00942: table or view does not exist; line 8:5 PL/SQL: SQL Statement ignored; line 7:10 PLS-00341: declaration of cursor 'C_DRIVER' is incomplete or malformed; line 0:0 PL/SQL: Compilation unit analysis terminated",
+   "compiled": false
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n  para_Age NUMBER,\n  para_Name VARCHAR2,\n  para_Party VARCHAR2,\n  para_Home_city VARCHAR2\n) AS\n  CURSOR c_driver IS\n    SELECT Driver_ID, Name, Party, Home_city, Age\n      FROM driver\n     WHERE Age > para_Age AND Party = para_Party;\n  v_row c_driver%ROWTYPE;\nBEGIN\n  OPEN c_driver;\n  LOOP\n    FETCH c_driver INTO v_row;\n    EXIT WHEN c_driver%NOTFOUND;\n    UPDATE driver SET Name = para_Name WHERE Driver_ID = v_row.Driver_ID;\n  END LOOP;\n  CLOSE c_driver;\n\n  DELETE FROM driver WHERE Party IS NULL;\n\n  UPDATE driver SET Home_city = para_Home_city;\n\n  UPDATE school_bus\n     SET Years_Working = Years_Working + 1\n   WHERE Driver_ID IN (SELECT Driver_ID FROM driver\n                        WHERE Age > para_Age AND Party = para_Party);\nEND sp;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT name, type, status FROM user_objects WHERE object_name = 'SP'"
+   },
+   "result": "error: DatabaseError: ORA-00904: \"TYPE\": invalid identifier\nHelp: https://docs.oracle.com/error-help/db/ora-00904/"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT line, position, text FROM user_errors WHERE name = 'SP'"
+   },
+   "result": "(LINE | POSITION | TEXT)\n(no rows)"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT object_name, object_type, status FROM user_objects WHERE object_name = 'SP'"
+   },
+   "result": "(OBJECT_NAME | OBJECT_TYPE | STATUS)\n(no rows)"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT object_name, object_type, status FROM user_objects ORDER BY object_type"
+   },
+   "result": "OBJECT_NAME | OBJECT_TYPE | STATUS\nLOGMNR$COL_GG_TABF_PUBLIC | FUNCTION | VALID\nLOGMNR$GSBA_GG_TABF_PUBLIC | FUNCTION | VALID\nLOGMNR$USER_GG_TABF_PUBLIC | FUNCTION | VALID\nLOGMNR$SEQ_GG_TABF_PUBLIC | FUNCTION | VALID\nLOGMNR$TAB_GG_TABF_PUBLIC | FUNCTION | VALID\nLOGMNR$KEY_GG_TABF_PUBLIC | FUNCTION | VALID\nMVIEW$_ADV_FJG_PK | INDEX | VALID\nMVIEW$_ADV_GC_PK | INDEX | VALID\nMVIEW$_ADV_INFO_PK | INDEX | VALID\nMVIEW$_ADV_JOURNAL_PK | INDEX | VALID\nMVIEW$_ADV_LEVEL_PK | INDEX | VALID\nMVIEW$_ADV_LOG_PK | INDEX | VALID\nMVIEW$_ADV_OUTPUT_PK | INDEX | VALID\nMVIEW$_ADV_PARAMETERS_PK | INDEX | VALID\nMVIEW$_ADV_PRETTY_IDX_01 | INDEX | VALID\nMVIEW$_ADV_ROLLUP_PK | INDEX | VALID\nMVIEW$_ADV_SQLDEPEND_IDX_01 | INDEX | VALID\nMVIEW$_ADV_TEMP_IDX_01 | INDEX | VALID\nMVIEW$_ADV_WORKLOAD_IDX_01 | INDEX | VALID\nMVIEW$_ADV_WORKLOAD_PK | INDEX | VALID\nOL$HNT_NUM | INDEX | VALID\nOL$NAME | INDEX | VALID\nOL$SIGNATURE | INDEX | VALID\nREDO_DB_IDX | INDEX | VALID\nREDO_LOG_IDX | INDEX | VALID\nREPL_SUPPORT_MATRIX_PK | INDEX | VALID\nSYS_C002559 | INDEX | VALID\nSYS_C005845 | INDEX | VALID\nSYS_IL0000001472C00010$$ | INDEX | VALID\nSYS_IL0000001476C00008$$ | INDEX | VALID\nSYS_IL0000001480C00011$$ | INDEX | VALID\nSYS_IL0000001485C00009$$ | INDEX | VALID\nSYS_IL0000001485C00012$$ | INDEX | VALID\nSYS_IL0000008817C00012$$ | INDEX | VALID\nSYS_IL0000009354C00021$$ | INDEX | VALID\nSYS_IL0000014505C00008$$ | INDEX | VALID\nSYS_IL0000014508C00007$$ | INDEX | VALID\nSYS_IL0000016978C00009$$ | INDEX | VALID\nSYS_IL0000016990C00003$$ | INDEX | VALID\nUNQ_PAIRS | INDEX | VALID\nLOGMNR_I1LOGMNR_BUILDLOG | INDEX | VALID\nLOGMNR_I1NTAB$ | INDEX | VALID\nLOGMNR_I1OBJ$ | INDEX | VALID\nLOGMNR_I1OPQTYPE$ | INDEX | VALID\nLOGMNR_I1PARTOBJ$ | INDEX | VALID\nLOGMNR_I1PROPS$ | INDEX | VALID\nLOGMNR_I1REFCON$ | INDEX | VALID\nLOGMNR_I1SEED$ | INDEX | VALID\nLOGMNR_I1SHARD_TS | INDEX | VALID\nLOGMNR_I1SUBCOLTYPE$ | INDEX | VALID\n... (more rows not shown)"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(40, 'X', 'Dem', 'Z')"
+   },
+   "result": "error: DatabaseError: ORA-06575: Package or function SP is in an invalid state\nHelp: https://docs.oracle.com/error-help/db/ora-06575/"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, object_name, object_type, status FROM all_objects WHERE object_name = 'SP'"
+   },
+   "result": "OWNER | OBJECT_NAME | OBJECT_TYPE | STATUS\nNETWORK_2 | SP | PROCEDURE | INVALID\nPARTY_HOST | SP | PROCEDURE | VALID\nPARTY_PEOPLE | SP | PROCEDURE | VALID\nPERFORMANCE_ATTENDANCE | SP | PROCEDURE | VALID\nPERPETRATOR | SP | PROCEDURE | VALID\nPETS_1 | SP | PROCEDURE | VALID\nPHONE_1 | SP | PROCEDURE | VALID\nPHONE_MARKET | SP | PROCEDURE | VALID\nPILOT_RECORD | SP | PROCEDURE | VALID\nPOKER_PLAYER | SP | PROCEDURE | VALID\nPRODUCT_CATALOG | SP | PROCEDURE | VALID\nPRODUCTS_FOR_HIRE | SP | PROCEDURE | VALID\nPROGRAM_SHARE | SP | PROCEDURE | VALID\nPROTEIN_INSTITUTE | SP | PROCEDURE | VALID\nRACE_TRACK | SP | PROCEDURE | VALID\nRAILWAY | SP | PROCEDURE | VALID\nREAL_ESTATE_PROPERTIES | SP | PROCEDURE | VALID\nRIDING_CLUB | SP | PROCEDURE | VALID\nROLLER_COASTER | SP | PROCEDURE | VALID\nSCHOOL_FINANCE | SP | PROCEDURE | VALID\nSCHOOL_PLAYER | SP | PROCEDURE | VALID\nSCIENTIST_1 | SP | PROCEDURE | VALID\nSHIP_1 | SP | PROCEDURE | INVALID\nSHIP_MISSION | SP | PROCEDURE | VALID\nSHOP_MEMBERSHIP | SP | PROCEDURE | VALID\nSINGER | SP | PROCEDURE | INVALID\nSOCCER_1 | SP | PROCEDURE | VALID\nSOCCER_2 | SP | PROCEDURE | VALID\nSOLVENCY_II | SP | PROCEDURE | VALID\nSPORTS_COMPETITION | SP | PROCEDURE | VALID\nSTORE_PRODUCT | SP | PROCEDURE | VALID\nSTORM_RECORD | SP | PROCEDURE | VALID\nSTUDENT_ASSESSMENT | SP | PROCEDURE | VALID\nSWIMMING | SP | PROCEDURE | INVALID\nTHEME_GALLERY | SP | PROCEDURE | VALID\nVOTER_2 | SP | PROCEDURE | INVALID\nWINE_1 | SP | PROCEDURE | VALID\nWORLD_1 | SP | PROCEDURE | VALID\nSCHOOL_BUS | SP | PROCEDURE | INVALID\nRESTAURANT_1 | SP | PROCEDURE | VALID\nSTORE_1 | SP | PROCEDURE | VALID\nSHIP_MISSION_E3D070 | SP | PROCEDURE | VALID\nROLLER_COASTER_E3D070 | SP | PROCEDURE | VALID\nSINGER_E3D070 | SP | PROCEDURE | VALID\nSHOP_MEMBERSHIP_E3D070 | SP | PROCEDURE | VALID\nWINE_1_E3D070 | SP | PROCEDURE | VALID\nSCHOOL_PLAYER_E3D070 | SP | PROCEDURE | VALID\nTHEME_GALLERY_E3D070 | SP | PROCEDURE | VALID\nSWIMMING_E3D070 | SP | PROCEDURE | INVALID\nVOTER_2_E3D070 | SP | PROCEDURE | VALID\n... (more rows not shown)"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT user FROM dual"
+   },
+   "result": "USER\nSYSTEM"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables ORDER BY table_name"
+   },
+   "result": "TABLE_NAME\nAQ$_INTERNET_AGENTS\nAQ$_INTERNET_AGENT_PRIVS\nAQ$_KEY_SHARD_MAP\nAQ$_QUEUES\nAQ$_QUEUE_TABLES\nAQ$_SCHEDULES\nHELP\nLOGMNRC_CONCOL_GG\nLOGMNRC_CON_GG\nLOGMNRC_DBNAME_UID_MAP\nLOGMNRC_GSBA\nLOGMNRC_GSII\nLOGMNRC_GTCS\nLOGMNRC_GTLO\nLOGMNRC_INDCOL_GG\nLOGMNRC_IND_GG\nLOGMNRC_SEQ_GG\nLOGMNRC_SHARD_TS\nLOGMNRC_TS\nLOGMNRC_TSPART\nLOGMNRC_USER\nLOGMNRGGC_GTCS\nLOGMNRGGC_GTLO\nLOGMNRP_CTAS_PART_MAP\nLOGMNRT_MDDL$\nLOGMNR_AGE_SPILL$\nLOGMNR_ATTRCOL$\nLOGMNR_ATTRIBUTE$\nLOGMNR_CCOL$\nLOGMNR_CDEF$\nLOGMNR_COL$\nLOGMNR_COLTYPE$\nLOGMNR_CON$\nLOGMNR_CONTAINER$\nLOGMNR_DICTIONARY$\nLOGMNR_DICTSTATE$\nLOGMNR_DID$\nLOGMNR_ENC$\nLOGMNR_ERROR$\nLOGMNR_FILTER$\nLOGMNR_GLOBAL$\nLOGMNR_GT_TAB_INCLUDE$\nLOGMNR_GT_USER_INCLUDE$\nLOGMNR_GT_XID_INCLUDE$\nLOGMNR_ICOL$\nLOGMNR_IDNSEQ$\nLOGMNR_IND$\nLOGMNR_INDCOMPART$\nLOGMNR_INDPART$\nLOGMNR_INDSUBPART$\n... (more rows not shown)"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_owner, table_name, synonym_name FROM all_synonyms WHERE synonym_name IN ('DRIVER','SCHOOL','SCHOOL_BUS')"
+   },
+   "result": "(TABLE_OWNER | TABLE_NAME | SYNONYM_NAME)\n(no rows)"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name FROM all_tables WHERE table_name IN ('DRIVER','SCHOOL','SCHOOL_BUS')"
+   },
+   "result": "(OWNER | TABLE_NAME)\n(no rows)"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, object_name, object_type, status FROM all_objects WHERE object_name IN ('DRIVER','SCHOOL','SCHOOL_BUS')"
+   },
+   "result": "(OWNER | OBJECT_NAME | OBJECT_TYPE | STATUS)\n(no rows)"
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM driver"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name FROM all_tables WHERE owner = 'SCHOOL_BUS'"
+   },
+   "result": "OWNER | TABLE_NAME\nSCHOOL_BUS | driver\nSCHOOL_BUS | school\nSCHOOL_BUS | school_bus"
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM SCHOOL_BUS.driver"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TABLE driver (Driver_ID NUMBER PRIMARY KEY, Name VARCHAR2(100), Party VARCHAR2(50), Home_city VARCHAR2(100), Age NUMBER)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 28,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TABLE school_bus (School_ID NUMBER PRIMARY KEY, Driver_ID NUMBER, Years_Working NUMBER, If_full_time VARCHAR2(5))"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 29,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO driver VALUES (1,'Matthew Ritter','Dem','Hartford',40);\nINSERT INTO driver VALUES (2,'Dan Carter','Rep','Bethel',30);\nINSERT INTO driver VALUES (3,'Minnie Gonzalez','Dem','Hartford',46);\nINSERT INTO driver VALUES (4,'Angel Acre','Dem','Hartford',42);\nINSERT INTO driver VALUES (5,'Brandon McGee','Dem','Hartford',45);\nINSERT INTO driver VALUES (6,'Edwin Vargas','Dem','Hartford',52);\nINSERT INTO driver VALUES (7,'Douglas McCrory','Dem','Hartford',36);\nINSERT INTO driver VALUES (8,'Timothy Ackert','Rep','Coventry',35);\nINSERT INTO driver VALUES (9,'Jason Rojas','Dem','East Hartford',38);\nINSERT INTO driver VALUES (10,'Henry Genga','Dem','East Hartford',37);\nINSERT INTO school_bus VALUES (1,10,10,'F');\nINSERT INTO school_bus VALUES (3,4,6,'T');\nINSERT INTO school_bus VALUES (4,3,3,'T');\nINSERT INTO school_bus VALUES (5,7,8,'T');\nINSERT INTO school_bus VALUES (7,9,2,'T');"
+   },
+   "result": "error: DatabaseError: ORA-00933: SQL command not properly ended\nHelp: https://docs.oracle.com/error-help/db/ora-00933/"
+  },
+  {
+   "step": 30,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT ALL\nINTO driver VALUES (1,'Matthew Ritter','Dem','Hartford',40)\nINTO driver VALUES (2,'Dan Carter','Rep','Bethel',30)\nINTO driver VALUES (3,'Minnie Gonzalez','Dem','Hartford',46)\nINTO driver VALUES (4,'Angel Acre','Dem','Hartford',42)\nINTO driver VALUES (5,'Brandon McGee','Dem','Hartford',45)\nINTO driver VALUES (6,'Edwin Vargas','Dem','Hartford',52)\nINTO driver VALUES (7,'Douglas McCrory','Dem','Hartford',36)\nINTO driver VALUES (8,'Timothy Ackert','Rep','Coventry',35)\nINTO driver VALUES (9,'Jason Rojas','Dem','East Hartford',38)\nINTO driver VALUES (10,'Henry Genga','Dem','East Hartford',37)\nSELECT 1 FROM dual"
+   },
+   "result": "ok, 10 row(s) affected"
+  },
+  {
+   "step": 31,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT ALL\nINTO school_bus VALUES (1,10,10,'F')\nINTO school_bus VALUES (3,4,6,'T')\nINTO school_bus VALUES (4,3,3,'T')\nINTO school_bus VALUES (5,7,8,'T')\nINTO school_bus VALUES (7,9,2,'T')\nSELECT 1 FROM dual"
+   },
+   "result": "ok, 5 row(s) affected"
+  },
+  {
+   "step": 32,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n  para_Age NUMBER,\n  para_Name VARCHAR2,\n  para_Party VARCHAR2,\n  para_Home_city VARCHAR2\n) AS\n  CURSOR c_driver IS\n    SELECT Driver_ID, Name, Party, Home_city, Age\n      FROM driver\n     WHERE Age > para_Age AND Party = para_Party;\n  v_row c_driver%ROWTYPE;\nBEGIN\n  OPEN c_driver;\n  LOOP\n    FETCH c_driver INTO v_row;\n    EXIT WHEN c_driver%NOTFOUND;\n    UPDATE driver SET Name = para_Name WHERE Driver_ID = v_row.Driver_ID;\n  END LOOP;\n  CLOSE c_driver;\n\n  DELETE FROM driver WHERE Party IS NULL;\n\n  UPDATE driver SET Home_city = para_Home_city;\n\n  UPDATE school_bus\n     SET Years_Working = Years_Working + 1\n   WHERE Driver_ID IN (SELECT Driver_ID FROM driver\n                        WHERE Age > para_Age AND Party = para_Party);\nEND sp;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 33,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(40, 'X', 'Dem', 'Z')"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 34,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM driver ORDER BY Driver_ID"
+   },
+   "result": "DRIVER_ID | NAME | PARTY | HOME_CITY | AGE\n1 | Matthew Ritter | Dem | Z | 40\n2 | Dan Carter | Rep | Z | 30\n3 | X | Dem | Z | 46\n4 | X | Dem | Z | 42\n5 | X | Dem | Z | 45\n6 | X | Dem | Z | 52\n7 | Douglas McCrory | Dem | Z | 36\n8 | Timothy Ackert | Rep | Z | 35\n9 | Jason Rojas | Dem | Z | 38\n10 | Henry Genga | Dem | Z | 37"
+  },
+  {
+   "step": 35,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM school_bus ORDER BY School_ID"
+   },
+   "result": "SCHOOL_ID | DRIVER_ID | YEARS_WORKING | IF_FULL_TIME\n1 | 10 | 10 | F\n3 | 4 | 7 | T\n4 | 3 | 4 | T\n5 | 7 | 8 | T\n7 | 9 | 2 | T"
+  },
+  {
+   "step": 36,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO driver VALUES (11,'Null Person',NULL,'Nowhere',50)"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 37,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(100, 'N', 'Rep', 'City')"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 38,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM driver ORDER BY Driver_ID"
+   },
+   "result": "DRIVER_ID | NAME | PARTY | HOME_CITY | AGE\n1 | Matthew Ritter | Dem | City | 40\n2 | Dan Carter | Rep | City | 30\n3 | X | Dem | City | 46\n4 | X | Dem | City | 42\n5 | X | Dem | City | 45\n6 | X | Dem | City | 52\n7 | Douglas McCrory | Dem | City | 36\n8 | Timothy Ackert | Rep | City | 35\n9 | Jason Rojas | Dem | City | 38\n10 | Henry Genga | Dem | City | 37"
+  },
+  {
+   "step": 39,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM school_bus ORDER BY School_ID"
+   },
+   "result": "SCHOOL_ID | DRIVER_ID | YEARS_WORKING | IF_FULL_TIME\n1 | 10 | 10 | F\n3 | 4 | 7 | T\n4 | 3 | 4 | T\n5 | 7 | 8 | T\n7 | 9 | 2 | T"
+  },
+  {
+   "step": 40,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO driver VALUES (12,'Null Two',NULL,'Nowhere',60);\nINSERT INTO driver VALUES (13,'Null Three',NULL,'Nowhere',55)"
+   },
+   "result": "error: DatabaseError: ORA-00933: SQL command not properly ended\nHelp: https://docs.oracle.com/error-help/db/ora-00933/"
+  },
+  {
+   "step": 41,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO driver VALUES (12,'Null Two',NULL,'Nowhere',60)"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 42,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO driver VALUES (13,'Null Three',NULL,'Nowhere',55)"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 43,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(50, 'P', NULL, 'Nullville')"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 44,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM driver ORDER BY Driver_ID"
+   },
+   "result": "DRIVER_ID | NAME | PARTY | HOME_CITY | AGE\n1 | Matthew Ritter | Dem | Nullville | 40\n2 | Dan Carter | Rep | Nullville | 30\n3 | X | Dem | Nullville | 46\n4 | X | Dem | Nullville | 42\n5 | X | Dem | Nullville | 45\n6 | X | Dem | Nullville | 52\n7 | Douglas McCrory | Dem | Nullville | 36\n8 | Timothy Ackert | Rep | Nullville | 35\n9 | Jason Rojas | Dem | Nullville | 38\n10 | Henry Genga | Dem | Nullville | 37"
+  },
+  {
+   "step": 45,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n  para_Age NUMBER,\n  para_Name VARCHAR2,\n  para_Party VARCHAR2,\n  para_Home_city VARCHAR2\n) AS\n  CURSOR c_driver IS\n    SELECT Driver_ID, Name, Party, Home_city, Age\n      FROM driver\n     WHERE Age > para_Age AND Party = para_Party;\n  v_row c_driver%ROWTYPE;\nBEGIN\n  OPEN c_driver;\n  LOOP\n    FETCH c_driver INTO v_row;\n    EXIT WHEN c_driver%NOTFOUND;\n    UPDATE driver SET Name = para_Name WHERE Driver_ID = v_row.Driver_ID;\n  END LOOP;\n  CLOSE c_driver;\n\n  DELETE FROM driver WHERE Party IS NULL;\n\n  UPDATE driver SET Home_city = para_Home_city;\n\n  UPDATE school_bus\n     SET Years_Working = Years_Working + 1\n   WHERE Driver_ID IN (SELECT Driver_ID FROM driver\n                        WHERE Age > para_Age AND Party = para_Party);\nEND sp;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n  para_Age NUMBER,\n  para_Name VARCHAR2,\n  para_Party VARCHAR2,\n  para_Home_city VARCHAR2\n) AS\n  CURSOR c_driver IS\n    SELECT Driver_ID, Name, Party, Home_city, Age\n      FROM driver\n     WHERE Age > para_Age AND Party = para_Party;\n  v_row c_driver%ROWTYPE;\nBEGIN\n  OPEN c_driver;\n  LOOP\n    FETCH c_driver INTO v_row;\n    EXIT WHEN c_driver%NOTFOUND;\n    UPDATE driver SET Name = para_Name WHERE Driver_ID = v_row.Driver_ID;\n  END LOOP;\n  CLOSE c_driver;\n\n  DELETE FROM driver WHERE Party IS NULL;\n\n  UPDATE driver SET Home_city = para_Home_city;\n\n  UPDATE school_bus\n     SET Years_Working = Years_Working + 1\n   WHERE Driver_ID IN (SELECT Driver_ID FROM driver\n                        WHERE Age > para_Age AND Party = para_Party);\nEND sp;"
+ },
+ "pair": {
+  "single_run": "st-oracle-a1b2",
+  "single_task": "oracle_a1_000"
+ }
+}

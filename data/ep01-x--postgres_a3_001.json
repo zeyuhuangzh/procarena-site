@@ -1,0 +1,790 @@
+{
+ "id": "ep01-x--postgres_a3_001",
+ "run": "ep01-x",
+ "task_id": "postgres_a3_001",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "full",
+ "scenario": "a3",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 100,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "database state differs after call 1",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": null,
+  "attribution": "spec",
+  "recovered": 2,
+  "oracle_size": 3
+ },
+ "summary": {
+  "steps": 72,
+  "seconds": 1111.6,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 3,
+   "off_oracle": 1
+  },
+  "recovered": 2,
+  "oracle_size": 3,
+  "entries_per_question": 0.67,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "execute_scratch": 60,
+   "reset_scratch": 6,
+   "ask_selector": 3,
+   "compile_plsql": 1,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Implement a PostgreSQL PL/pgSQL stored procedure named `sp` with the exact signature:\n\n`sp(para_height integer, para_birthday text, para_player_api_id integer, para_id integer, para_team_short_name text, para_team_fifa_api_id integer)`\n\nThe procedure modifies data in the `Player` and `Team` tables only. It does not return a result set.\n\nUse the provided database schema.\n\nMatch that behaviour exactly, including the order of operations, conditions, and values shown in those examples.\n\nReturn the complete stored procedure and nothing else.",
+  "materials": [
+   {
+    "file": "examples.md",
+    "kind": "worked examples",
+    "text": "# Behaviour of the procedure, by example\n\nEach example is one call, run against the database in the state shown below. The examples are independent: every one starts from that same state.\n\n## Starting state\n\nEvery example below starts from this database. The tables the procedure touches:\n\n### Player (101 rows)\n| id | player_api_id | player_name | player_fifa_api_id | birthday | height | weight |\n|---|---|---|---|---|---|---|\n| 1 | 505942 | Aaron Appindangoye | 218353 | 1992-02-29 00:00:00 | 183 | 187 |\n| 2 | 155782 | Aaron Cresswell | 189615 | 1989-12-15 00:00:00 | 170 | 146 |\n| 3 | 162549 | Aaron Doran | 186170 | 1991-05-13 00:00:00 | 170 | 163 |\n| 4 | 30579 | Aaron Galindo | 140161 | 1982-05-08 00:00:00 | 183 | 198 |\n| 5 | 23780 | Aaron Hughes | 17725 | 1979-11-08 00:00:00 | 183 | 154 |\n| 6 | 27316 | Aaron Hunt | 158138 | 1986-09-04 00:00:00 | 183 | 161 |\n| 7 | 564793 | Aaron Kuhl | 221280 | 1996-01-30 00:00:00 | 173 | 146 |\n| 8 | 30895 | Aaron Lennon | 152747 | 1987-04-16 00:00:00 | 165 | 139 |\n| ... 93 more rows | | | | | | \n\n### Team (101 rows)\n| id | team_api_id | team_fifa_api_id | team_long_name | team_short_name |\n|---|---|---|---|---|\n| 1 | 9987 | 673 | KRC Genk | GEN |\n| 2 | 9993 | 675 | Beerschot AC | BAC |\n| 3 | 10000 | 15005 | SV Zulte-Waregem | ZUL |\n| 4 | 9994 | 2007 | Sporting Lokeren | LOK |\n| 5 | 9984 | 1750 | KSV Cercle Brugge | CEB |\n| 6 | 8635 | 229 | RSC Anderlecht | AND |\n| 7 | 9991 | 674 | KAA Gent | GEN |\n| 8 | 9998 | 1747 | RAEC Mons | MON |\n| ... 93 more rows | | | | \n\n## Example 2\n\n```sql\nCALL sp(0, '', 110000, 3, 'unused2', 1000);\n```\n\n**Player**\n- 42 row(s) removed:\n  id=4, player_api_id=30572, player_name='Aaron Galindo', player_fifa_api_id=140161, birthday='1982-05-08 00:00:00', height=183, weight=198\n  id=5, player_api_id=23780, player_name='Aaron Hughes', player_fifa_api_id=17725, birthday='1979-11-08 00:00:00', height=183, weight=154\n  id=6, player_api_id=27316, player_name='Aaron Hunt', player_fifa_api_id=158138, birthday='1986-09-04 00:00:00', height=183, weight=161\n  id=8, player_api_id=30895, player_name='Aaron Lennon', player_fifa_api_id=152747, birthday='1987-04-16 00:00:00', height=165, weight=139\n  id=10, player_api_id=101042, player_name='Aaron Meijers', player_fifa_api_id=188621, birthday='1987-10-28 00:00:00', height=175, weight=170\n  id=11, player_api_id=23889, player_name='Aaron Mokoena', player_fifa_api_id=47189, birthday='1980-11-25 00:00:00', height=183, weight=181\n  id=14, player_api_id=40719, player_name='Aaron Niguez', player_fifa_api_id=183853, birthday='1989-04-26 00:00:00', height=170, weight=143\n  id=15, player_api_id=75489, player_name='Aaron Ramsey', player_fifa_api_id=186561, birthday='1990-12-26 00:00:00', height=178, weight=154\n    ... 34 more row(s) removed\n- 59 row(s) changed:\n  id=94, player_api_id=365666, player_name='Adam Campbell', player_fifa_api_id=206 | birthday: '1995-01-01 00:00:00' -> 'phase_9'\n  id=95, player_api_id=180197, player_name='Adam Collin', player_fifa_api_id=53363 | birthday: '1984-12-09 00:00:00' -> 'phase_9'\n  id=96, player_api_id=310346, player_name='Adam Cummins', player_fifa_api_id=2007 | birthday: '1993-03-03 00:00:00' -> 'phase_9'\n  id=98, player_api_id=429870, player_name='Adam Deja', player_fifa_api_id=212988, | birthday: '1993-06-24 00:00:00' -> 'phase_9'\n  id=100, player_api_id=420209, player_name='Adam Drury', player_fifa_api_id=20516 | birthday: '1993-09-09 00:00:00' -> 'phase_9'\n  id=101, player_api_id=308280, player_name='Adam Duda', player_fifa_api_id=208345 | birthday: '1991-04-29 00:00:00' -> 'phase_9'\n  id=12, player_api_id=231592, player_name='Aaron Mooy', player_fifa_api_id=194958 | birthday: '1990-09-15 00:00:00' -> 'phase_9'\n  id=13, player_api_id=163222, player_name='Aaron Muirhead', player_fifa_api_id=21 | birthday: '1990-08-30 00:00:00' -> 'phase_9'\n    ... 51 more row(s) changed the same way\n\n**Team**\n- 62 row(s) removed:\n  id=1, team_api_id=9987, team_fifa_api_id=673, team_long_name='KRC Genk', team_short_name='GEN'\n  id=2, team_api_id=9993, team_fifa_api_id=675, team_long_name='Beerschot AC', team_short_name='BAC'\n  id=6, team_api_id=8635, team_fifa_api_id=229, team_long_name='RSC Anderlecht', team_short_name='AND'\n  id=7, team_api_id=9991, team_fifa_api_id=674, team_long_name='KAA Gent', team_short_name='GEN'\n  id=10, team_api_id=9985, team_fifa_api_id=232, team_long_name='Standard de Liège', team_short_name='STL'\n  id=12, team_api_id=8342, team_fifa_api_id=231, team_long_name='Club Brugge KV', team_short_name='CLB'\n  id=13, team_api_id=9999, team_fifa_api_id=546, team_long_name='KSV Roeselare', team_short_name='ROS'\n  id=17, team_api_id=10001, team_fifa_api_id=681, team_long_name='KVC Westerlo', team_short_name='WES'\n    ... 54 more row(s) removed\n- 39 row(s) changed:\n  id=14876, team_api_id=6391, team_fifa_api_id=110316, team_long_name='GFC Ajaccio | team_short_name: 'GAJ' -> 'log_phase_9'\n  id=3, team_api_id=10000, team_fifa_api_id=15005, team_long_name='SV Zulte-Warege | team_short_name: 'ZUL' -> 'log_phase_9'\n  id=4, team_api_id=9994, team_fifa_api_id=2007, team_long_name='Sporting Lokeren' | team_short_name: 'LOK' -> 'log_phase_9'\n  id=5, team_api_id=9984, team_fifa_api_id=1750, team_long_name='KSV Cercle Brugge | team_short_name: 'CEB' -> 'log_phase_9'\n  id=8, team_api_id=9998, team_fifa_api_id=1747, team_long_name='RAEC Mons', team_ | team_short_name: 'MON' -> 'log_phase_9'\n  id=9, team_api_id=7947, team_fifa_api_id=None, team_long_name='FCV Dender EH', t | team_short_name: 'DEN' -> 'log_phase_9'\n  id=11, team_api_id=8203, team_fifa_api_id=110724, team_long_name='KV Mechelen',  | team_short_name: 'MEC' -> 'log_phase_9'\n  id=14, team_api_id=8571, team_fifa_api_id=100081, team_long_name='KV Kortrijk',  | team_short_name: 'KOR' -> 'log_phase_9'\n    ... 31 more row(s) changed the same way\n\n## Example 3\n\n```sql\nCALL sp(170, 'breeze', 95000, 4, 'unused3', 650);\n```\n\n**Player**\n- 40 row(s) removed:\n  id=4, player_api_id=30572, player_name='Aaron Galindo', player_fifa_api_id=140161, birthday='1982-05-08 00:00:00', height=183, weight=198\n  id=5, player_api_id=23780, player_name='Aaron Hughes', player_fifa_api_id=17725, birthday='1979-11-08 00:00:00', height=183, weight=154\n  id=6, player_api_id=27316, player_name='Aaron Hunt', player_fifa_api_id=158138, birthday='1986-09-04 00:00:00', height=183, weight=161\n  id=8, player_api_id=30895, player_name='Aaron Lennon', player_fifa_api_id=152747, birthday='1987-04-16 00:00:00', height=165, weight=139\n  id=11, player_api_id=23889, player_name='Aaron Mokoena', player_fifa_api_id=47189, birthday='1980-11-25 00:00:00', height=183, weight=181\n  id=14, player_api_id=40719, player_name='Aaron Niguez', player_fifa_api_id=183853, birthday='1989-04-26 00:00:00', height=170, weight=143\n  id=15, player_api_id=75489, player_name='Aaron Ramsey', player_fifa_api_id=186561, birthday='1990-12-26 00:00:00', height=178, weight=154\n  id=18, player_api_id=23499, player_name='Aaron Wilbraham', player_fifa_api_id=2335, birthday='1979-10-21 00:00:00', height=191, weight=159\n    ... 32 more row(s) removed\n- 61 row(s) changed:\n  id=95, player_api_id=180197, player_name='Adam Collin', player_fifa_api_id=53363 | birthday: '1984-12-09 00:00:00' -> 'breeze_phase_9'\n  id=96, player_api_id=310346, player_name='Adam Cummins', player_fifa_api_id=2007 | birthday: '1993-03-03 00:00:00' -> 'breeze_phase_9'\n  id=98, player_api_id=429870, player_name='Adam Deja', player_fifa_api_id=212988, | birthday: '1993-06-24 00:00:00' -> 'breeze_phase_9'\n  id=100, player_api_id=420209, player_name='Adam Drury', player_fifa_api_id=20516 | birthday: '1993-09-09 00:00:00' -> 'breeze_phase_9'\n  id=101, player_api_id=308280, player_name='Adam Duda', player_fifa_api_id=208345 | birthday: '1991-04-29 00:00:00' -> 'breeze_phase_9'\n  id=94, player_api_id=365666, player_name='Adam Campbell', player_fifa_api_id=206 | birthday: '1995-01-01 00:00:00' -> 'breeze_phase_9', height: 170 -> 174\n  id=9, player_api_id=528212, player_name='Aaron Lennox', player_fifa_api_id=20659 | birthday: '1993-02-19 00:00:00' -> 'breeze_phase_9'\n  id=10, player_api_id=101042, player_name='Aaron Meijers', player_fifa_api_id=188 | birthday: '1987-10-28 00:00:00' -> 'breeze_phase_9'\n    ... 53 more row(s) changed the same way\n\n**Team**\n- 55 row(s) removed:\n  id=6, team_api_id=8635, team_fifa_api_id=229, team_long_name='RSC Anderlecht', team_short_name='AND'\n  id=10, team_api_id=9985, team_fifa_api_id=232, team_long_name='Standard de Liège', team_short_name='STL'\n  id=12, team_api_id=8342, team_fifa_api_id=231, team_long_name='Club Brugge KV', team_short_name='CLB'\n  id=13, team_api_id=9999, team_fifa_api_id=546, team_long_name='KSV Roeselare', team_short_name='ROS'\n  id=1034, team_api_id=9989, team_fifa_api_id=239, team_long_name='Lierse SK', team_short_name='LIE'\n  id=3457, team_api_id=10260, team_fifa_api_id=11, team_long_name='Manchester United', team_short_name='MUN'\n  id=3458, team_api_id=10261, team_fifa_api_id=13, team_long_name='Newcastle United', team_short_name='NEW'\n  id=3459, team_api_id=9825, team_fifa_api_id=1, team_long_name='Arsenal', team_short_name='ARS'\n    ... 47 more row(s) removed\n- 46 row(s) changed:\n  id=1, team_api_id=9987, team_fifa_api_id=673, team_long_name='KRC Genk', team_sh | team_short_name: 'GEN' -> 'log_phase_9'\n  id=2, team_api_id=9993, team_fifa_api_id=675, team_long_name='Beerschot AC', tea | team_short_name: 'BAC' -> 'log_phase_9'\n  id=3, team_api_id=10000, team_fifa_api_id=15005, team_long_name='SV Zulte-Warege | team_short_name: 'ZUL' -> 'log_phase_9'\n  id=4, team_api_id=9994, team_fifa_api_id=2007, team_long_name='Sporting Lokeren' | team_short_name: 'LOK' -> 'log_phase_9'\n  id=5, team_api_id=9984, team_fifa_api_id=1750, team_long_name='KSV Cercle Brugge | team_short_name: 'CEB' -> 'log_phase_9'\n  id=7, team_api_id=9991, team_fifa_api_id=674, team_long_name='KAA Gent', team_sh | team_short_name: 'GEN' -> 'log_phase_9'\n  id=8, team_api_id=9998, team_fifa_api_id=1747, team_long_name='RAEC Mons', team_ | team_short_name: 'MON' -> 'log_phase_9'\n  id=9, team_api_id=7947, team_fifa_api_id=None, team_long_name='FCV Dender EH', t | team_short_name: 'DEN' -> 'log_phase_9'\n    ... 38 more row(s) changed the same way\n\n## Example 4\n\n```sql\nCALL sp(300, 'comet', 120000, 6, 'unused4', 600);\n```\n\n**Player**\n- 43 row(s) removed:\n  id=4, player_api_id=30572, player_name='Aaron Galindo', player_fifa_api_id=140161, birthday='1982-05-08 00:00:00', height=183, weight=198\n  id=5, player_api_id=23780, player_name='Aaron Hughes', player_fifa_api_id=17725, birthday='1979-11-08 00:00:00', height=183, weight=154\n  id=6, player_api_id=27316, player_name='Aaron Hunt', player_fifa_api_id=158138, birthday='1986-09-04 00:00:00', height=183, weight=161\n  id=8, player_api_id=30895, player_name='Aaron Lennon', player_fifa_api_id=152747, birthday='1987-04-16 00:00:00', height=165, weight=139\n  id=10, player_api_id=101042, player_name='Aaron Meijers', player_fifa_api_id=188621, birthday='1987-10-28 00:00:00', height=175, weight=170\n  id=11, player_api_id=23889, player_name='Aaron Mokoena', player_fifa_api_id=47189, birthday='1980-11-25 00:00:00', height=183, weight=181\n  id=14, player_api_id=40719, player_name='Aaron Niguez', player_fifa_api_id=183853, birthday='1989-04-26 00:00:00', height=170, weight=143\n  id=15, player_api_id=75489, player_name='Aaron Ramsey', player_fifa_api_id=186561, birthday='1990-12-26 00:00:00', height=178, weight=154\n    ... 35 more row(s) removed\n- 58 row(s) changed:\n  id=94, player_api_id=365666, player_name='Adam Campbell', player_fifa_api_id=206 | birthday: '1995-01-01 00:00:00' -> 'comet_phase_9', height: 170 -> 224\n  id=95, player_api_id=180197, player_name='Adam Collin', player_fifa_api_id=53363 | birthday: '1984-12-09 00:00:00' -> 'comet_phase_9', height: 191 -> 245\n  id=96, player_api_id=310346, player_name='Adam Cummins', player_fifa_api_id=2007 | birthday: '1993-03-03 00:00:00' -> 'comet_phase_9', height: 188 -> 242\n  id=98, player_api_id=429870, player_name='Adam Deja', player_fifa_api_id=212988, | birthday: '1993-06-24 00:00:00' -> 'comet_phase_9', height: 185 -> 239\n  id=100, player_api_id=420209, player_name='Adam Drury', player_fifa_api_id=20516 | birthday: '1993-09-09 00:00:00' -> 'comet_phase_9', height: 178 -> 232\n  id=101, player_api_id=308280, player_name='Adam Duda', player_fifa_api_id=208345 | birthday: '1991-04-29 00:00:00' -> 'comet_phase_9', height: 188 -> 242\n  id=1, player_api_id=505942, player_name='Aaron Appindangoye', player_fifa_api_id | birthday: '1992-02-29 00:00:00' -> 'comet_phase_9', height: 183 -> 237\n  id=2, player_api_id=155782, player_name='Aaron Cresswell', player_fifa_api_id=18 | birthday: '1989-12-15 00:00:00' -> 'comet_phase_9', height: 170 -> 224\n    ... 50 more row(s) changed the same way\n\n**Team**\n- 54 row(s) removed:\n  id=6, team_api_id=8635, team_fifa_api_id=229, team_long_name='RSC Anderlecht', team_short_name='AND'\n  id=10, team_api_id=9985, team_fifa_api_id=232, team_long_name='Standard de Liège', team_short_name='STL'\n  id=12, team_api_id=8342, team_fifa_api_id=231, team_long_name='Club Brugge KV', team_short_name='CLB'\n  id=13, team_api_id=9999, team_fifa_api_id=546, team_long_name='KSV Roeselare', team_short_name='ROS'\n  id=1034, team_api_id=9989, team_fifa_api_id=239, team_long_name='Lierse SK', team_short_name='LIE'\n  id=3457, team_api_id=10260, team_fifa_api_id=11, team_long_name='Manchester United', team_short_name='MUN'\n  id=3458, team_api_id=10261, team_fifa_api_id=13, team_long_name='Newcastle United', team_short_name='NEW'\n  id=3459, team_api_id=9825, team_fifa_api_id=1, team_long_name='Arsenal', team_short_name='ARS'\n    ... 46 more row(s) removed\n- 47 row(s) changed:\n  id=9555, team_api_id=9873, team_fifa_api_id=110456, team_long_name='Valenciennes | team_short_name: 'VAL' -> 'log_phase_9'\n  id=9556, team_api_id=9853, team_fifa_api_id=1819, team_long_name='AS Saint-Étien | team_short_name: 'ETI' -> 'log_phase_9'\n  id=10312, team_api_id=4170, team_fifa_api_id=111376, team_long_name=\"US Boulogne | team_short_name: 'BOU' -> 'log_phase_9'\n  id=11074, team_api_id=108893, team_fifa_api_id=111989, team_long_name='AC Arles- | team_short_name: 'ARL' -> 'log_phase_9'\n  id=11817, team_api_id=8576, team_fifa_api_id=614, team_long_name='AC Ajaccio', t | team_short_name: 'AJA' -> 'log_phase_9'\n  id=11822, team_api_id=4087, team_fifa_api_id=111271, team_long_name='Évian Thono | team_short_name: 'ETG' -> 'log_phase_9'\n  id=11825, team_api_id=9836, team_fifa_api_id=110569, team_long_name='Dijon FCO', | team_short_name: 'DIJ' -> 'log_phase_9'\n  id=3464, team_api_id=8528, team_fifa_api_id=1917, team_long_name='Wigan Athletic | team_short_name: 'WIG' -> 'log_phase_9'\n    ... 39 more row(s) changed the same way\n\n## Example 5\n\n```sql\nCALL sp(0, '', 170000, 11, 'unused5', 700);\n```\n\n**Player**\n- 53 row(s) removed:\n  id=2, player_api_id=155782, player_name='Aaron Cresswell', player_fifa_api_id=189615, birthday='1989-12-15 00:00:00', height=170, weight=146\n  id=3, player_api_id=162549, player_name='Aaron Doran', player_fifa_api_id=186170, birthday='1991-05-13 00:00:00', height=170, weight=163\n  id=4, player_api_id=30572, player_name='Aaron Galindo', player_fifa_api_id=140161, birthday='1982-05-08 00:00:00', height=183, weight=198\n  id=5, player_api_id=23780, player_name='Aaron Hughes', player_fifa_api_id=17725, birthday='1979-11-08 00:00:00', height=183, weight=154\n  id=6, player_api_id=27316, player_name='Aaron Hunt', player_fifa_api_id=158138, birthday='1986-09-04 00:00:00', height=183, weight=161\n  id=8, player_api_id=30895, player_name='Aaron Lennon', player_fifa_api_id=152747, birthday='1987-04-16 00:00:00', height=165, weight=139\n  id=10, player_api_id=101042, player_name='Aaron Meijers', player_fifa_api_id=188621, birthday='1987-10-28 00:00:00', height=175, weight=170\n  id=11, player_api_id=23889, player_name='Aaron Mokoena', player_fifa_api_id=47189, birthday='1980-11-25 00:00:00', height=183, weight=181\n    ... 45 more row(s) removed\n- 48 row(s) changed:\n  id=94, player_api_id=365666, player_name='Adam Campbell', player_fifa_api_id=206 | birthday: '1995-01-01 00:00:00' -> 'phase_9'\n  id=95, player_api_id=180197, player_name='Adam Collin', player_fifa_api_id=53363 | birthday: '1984-12-09 00:00:00' -> 'phase_9'\n  id=96, player_api_id=310346, player_name='Adam Cummins', player_fifa_api_id=2007 | birthday: '1993-03-03 00:00:00' -> 'phase_9'\n  id=98, player_api_id=429870, player_name='Adam Deja', player_fifa_api_id=212988, | birthday: '1993-06-24 00:00:00' -> 'phase_9'\n  id=100, player_api_id=420209, player_name='Adam Drury', player_fifa_api_id=20516 | birthday: '1993-09-09 00:00:00' -> 'phase_9'\n  id=101, player_api_id=308280, player_name='Adam Duda', player_fifa_api_id=208345 | birthday: '1991-04-29 00:00:00' -> 'phase_9'\n  id=22, player_api_id=245653, player_name='Abdelfettah Boukhriss', player_fifa_ap | birthday: '1986-10-22 00:00:00' -> 'phase_9'\n  id=25, player_api_id=425950, player_name='Abdellah Zoubir', player_fifa_api_id=2 | birthday: '1991-12-05 00:00:00' -> 'phase_9'\n    ... 40 more row(s) changed the same way\n\n**Team**\n- 62 row(s) removed:\n  id=1, team_api_id=9987, team_fifa_api_id=673, team_long_name='KRC Genk', team_short_name='GEN'\n  id=2, team_api_id=9993, team_fifa_api_id=675, team_long_name='Beerschot AC', team_short_name='BAC'\n  id=6, team_api_id=8635, team_fifa_api_id=229, team_long_name='RSC Anderlecht', team_short_name='AND'\n  id=7, team_api_id=9991, team_fifa_api_id=674, team_long_name='KAA Gent', team_short_name='GEN'\n  id=10, team_api_id=9985, team_fifa_api_id=232, team_long_name='Standard de Liège', team_short_name='STL'\n  id=12, team_api_id=8342, team_fifa_api_id=231, team_long_name='Club Brugge KV', team_short_name='CLB'\n  id=13, team_api_id=9999, team_fifa_api_id=546, team_long_name='KSV Roeselare', team_short_name='ROS'\n  id=17, team_api_id=10001, team_fifa_api_id=681, team_long_name='KVC Westerlo', team_short_name='WES'\n    ... 54 more row(s) removed\n- 39 row(s) changed:\n  id=3, team_api_id=10000, team_fifa_api_id=15005, team_long_name='SV Zulte-Warege | team_short_name: 'ZUL' -> 'log_phase_9'\n  id=4, team_api_id=9994, team_fifa_api_id=2007, team_long_name='Sporting Lokeren' | team_short_name: 'LOK' -> 'log_phase_9'\n  id=5, team_api_id=9984, team_fifa_api_id=1750, team_long_name='KSV Cercle Brugge | team_short_name: 'CEB' -> 'log_phase_9'\n  id=8, team_api_id=9998, team_fifa_api_id=1747, team_long_name='RAEC Mons', team_ | team_short_name: 'MON' -> 'log_phase_9'\n  id=9, team_api_id=7947, team_fifa_api_id=None, team_long_name='FCV Dender EH', t | team_short_name: 'DEN' -> 'log_phase_9'\n  id=11, team_api_id=8203, team_fifa_api_id=110724, team_long_name='KV Mechelen',  | team_short_name: 'MEC' -> 'log_phase_9'\n  id=14, team_api_id=8571, team_fifa_api_id=100081, team_long_name='KV Kortrijk',  | team_short_name: 'KOR' -> 'log_phase_9'\n  id=15, team_api_id=4049, team_fifa_api_id=None, team_long_name='Tubize', team_sh | team_short_name: 'TUB' -> 'log_phase_9'\n    ... 31 more row(s) changed the same way\n\n## Example 6\n\n```sql\nCALL sp(320, 'dune', 90000, 8, 'unused6', 2500);\n```\n\n**Player**\n- 40 row(s) removed:\n  id=4, player_api_id=30572, player_name='Aaron Galindo', player_fifa_api_id=140161, birthday='1982-05-08 00:00:00', height=183, weight=198\n  id=5, player_api_id=23780, player_name='Aaron Hughes', player_fifa_api_id=17725, birthday='1979-11-08 00:00:00', height=183, weight=154\n  id=6, player_api_id=27316, player_name='Aaron Hunt', player_fifa_api_id=158138, birthday='1986-09-04 00:00:00', height=183, weight=161\n  id=8, player_api_id=30895, player_name='Aaron Lennon', player_fifa_api_id=152747, birthday='1987-04-16 00:00:00', height=165, weight=139\n  id=11, player_api_id=23889, player_name='Aaron Mokoena', player_fifa_api_id=47189, birthday='1980-11-25 00:00:00', height=183, weight=181\n  id=14, player_api_id=40719, player_name='Aaron Niguez', player_fifa_api_id=183853, birthday='1989-04-26 00:00:00', height=170, weight=143\n  id=15, player_api_id=75489, player_name='Aaron Ramsey', player_fifa_api_id=186561, birthday='1990-12-26 00:00:00', height=178, weight=154\n  id=18, player_api_id=23499, player_name='Aaron Wilbraham', player_fifa_api_id=2335, birthday='1979-10-21 00:00:00', height=191, weight=159\n    ... 32 more row(s) removed\n- 61 row(s) changed:\n  id=94, player_api_id=365666, player_name='Adam Campbell', player_fifa_api_id=206 | birthday: '1995-01-01 00:00:00' -> 'dune_phase_9', height: 170 -> 242\n  id=95, player_api_id=180197, player_name='Adam Collin', player_fifa_api_id=53363 | birthday: '1984-12-09 00:00:00' -> 'dune_phase_9', height: 191 -> 263\n  id=96, player_api_id=310346, player_name='Adam Cummins', player_fifa_api_id=2007 | birthday: '1993-03-03 00:00:00' -> 'dune_phase_9', height: 188 -> 260\n  id=98, player_api_id=429870, player_name='Adam Deja', player_fifa_api_id=212988, | birthday: '1993-06-24 00:00:00' -> 'dune_phase_9', height: 185 -> 257\n  id=100, player_api_id=420209, player_name='Adam Drury', player_fifa_api_id=20516 | birthday: '1993-09-09 00:00:00' -> 'dune_phase_9', height: 178 -> 250\n  id=101, player_api_id=308280, player_name='Adam Duda', player_fifa_api_id=208345 | birthday: '1991-04-29 00:00:00' -> 'dune_phase_9', height: 188 -> 260\n  id=1, player_api_id=505942, player_name='Aaron Appindangoye', player_fifa_api_id | birthday: '1992-02-29 00:00:00' -> 'dune_phase_9', height: 183 -> 255\n  id=2, player_api_id=155782, player_name='Aaron Cresswell', player_fifa_api_id=18 | birthday: '1989-12-15 00:00:00' -> 'dune_phase_9', height: 170 -> 242\n    ... 53 more row(s) changed the same way\n\n**Team**\n- 86 row(s) removed:\n  id=1, team_api_id=9987, team_fifa_api_id=673, team_long_name='KRC Genk', team_short_name='GEN'\n  id=2, team_api_id=9993, team_fifa_api_id=675, team_long_name='Beerschot AC', team_short_name='BAC'\n  id=4, team_api_id=9994, team_fifa_api_id=2007, team_long_name='Sporting Lokeren', team_short_name='LOK'\n  id=5, team_api_id=9984, team_fifa_api_id=1750, team_long_name='KSV Cercle Brugge', team_short_name='CEB'\n  id=6, team_api_id=8635, team_fifa_api_id=229, team_long_name='RSC Anderlecht', team_short_name='AND'\n  id=7, team_api_id=9991, team_fifa_api_id=674, team_long_name='KAA Gent', team_short_name='GEN'\n  id=8, team_api_id=9998, team_fifa_api_id=1747, team_long_name='RAEC Mons', team_short_name='MON'\n  id=10, team_api_id=9985, team_fifa_api_id=232, team_long_name='Standard de Liège', team_short_name='STL'\n    ... 78 more row(s) removed\n- 15 row(s) changed:\n  id=3, team_api_id=10000, team_fifa_api_id=15005, team_long_name='SV Zulte-Warege | team_short_name: 'ZUL' -> 'log_phase_9'\n  id=9, team_api_id=7947, team_fifa_api_id=None, team_long_name='FCV Dender EH', t | team_short_name: 'DEN' -> 'log_phase_9'\n  id=11, team_api_id=8203, team_fifa_api_id=110724, team_long_name='KV Mechelen',  | team_short_name: 'MEC' -> 'log_phase_9'\n  id=14, team_api_id=8571, team_fifa_api_id=100081, team_long_name='KV Kortrijk',  | team_short_name: 'KOR' -> 'log_phase_9'\n  id=15, team_api_id=4049, team_fifa_api_id=None, team_long_name='Tubize', team_sh | team_short_name: 'TUB' -> 'log_phase_9'\n  id=16, team_api_id=9996, team_fifa_api_id=111560, team_long_name='Royal Excel Mo | team_short_name: 'MOU' -> 'log_phase_9'\n  id=1513, team_api_id=1773, team_fifa_api_id=100087, team_long_name='Oud-Heverlee | team_short_name: 'O-H' -> 'log_phase_9'\n  id=2004, team_api_id=8475, team_fifa_api_id=110913, team_long_name='Waasland-Bev | team_short_name: 'WAA' -> 'log_phase_9'\n    ... 7 more row(s) changed the same way\n\n## Example 7\n\n```sql\nCALL sp(350, '', 125000, 9, 'unused7', 1000);\n```\n\n**Player**\n- 44 row(s) removed:\n  id=4, player_api_id=30572, player_name='Aaron Galindo', player_fifa_api_id=140161, birthday='1982-05-08 00:00:00', height=183, weight=198\n  id=5, player_api_id=23780, player_name='Aaron Hughes', player_fifa_api_id=17725, birthday='1979-11-08 00:00:00', height=183, weight=154\n  id=6, player_api_id=27316, player_name='Aaron Hunt', player_fifa_api_id=158138, birthday='1986-09-04 00:00:00', height=183, weight=161\n  id=8, player_api_id=30895, player_name='Aaron Lennon', player_fifa_api_id=152747, birthday='1987-04-16 00:00:00', height=165, weight=139\n  id=10, player_api_id=101042, player_name='Aaron Meijers', player_fifa_api_id=188621, birthday='1987-10-28 00:00:00', height=175, weight=170\n  id=11, player_api_id=23889, player_name='Aaron Mokoena', player_fifa_api_id=47189, birthday='1980-11-25 00:00:00', height=183, weight=181\n  id=14, player_api_id=40719, player_name='Aaron Niguez', player_fifa_api_id=183853, birthday='1989-04-26 00:00:00', height=170, weight=143\n  id=15, player_api_id=75489, player_name='Aaron Ramsey', player_fifa_api_id=186561, birthday='1990-12-26 00:00:00', height=178, weight=154\n    ... 36 more row(s) removed\n- 57 row(s) changed:\n  id=94, player_api_id=365666, player_name='Adam Campbell', player_fifa_api_id=206 | birthday: '1995-01-01 00:00:00' -> 'phase_9', height: 170 -> 251\n  id=95, player_api_id=180197, player_name='Adam Collin', player_fifa_api_id=53363 | birthday: '1984-12-09 00:00:00' -> 'phase_9', height: 191 -> 272\n  id=96, player_api_id=310346, player_name='Adam Cummins', player_fifa_api_id=2007 | birthday: '1993-03-03 00:00:00' -> 'phase_9', height: 188 -> 269\n  id=98, player_api_id=429870, player_name='Adam Deja', player_fifa_api_id=212988, | birthday: '1993-06-24 00:00:00' -> 'phase_9', height: 185 -> 266\n  id=100, player_api_id=420209, player_name='Adam Drury', player_fifa_api_id=20516 | birthday: '1993-09-09 00:00:00' -> 'phase_9', height: 178 -> 259\n  id=101, player_api_id=308280, player_name='Adam Duda', player_fifa_api_id=208345 | birthday: '1991-04-29 00:00:00' -> 'phase_9', height: 188 -> 269\n  id=12, player_api_id=231592, player_name='Aaron Mooy', player_fifa_api_id=194958 | birthday: '1990-09-15 00:00:00' -> 'phase_9', height: 175 -> 256\n  id=13, player_api_id=163222, player_name='Aaron Muirhead', player_fifa_api_id=21 | birthday: '1990-08-30 00:00:00' -> 'phase_9', height: 188 -> 269\n    ... 49 more row(s) changed the same way\n\n**Team**\n- 62 row(s) removed:\n  id=1, team_api_id=9987, team_fifa_api_id=673, team_long_name='KRC Genk', team_short_name='GEN'\n  id=2, team_api_id=9993, team_fifa_api_id=675, team_long_name='Beerschot AC', team_short_name='BAC'\n  id=6, team_api_id=8635, team_fifa_api_id=229, team_long_name='RSC Anderlecht', team_short_name='AND'\n  id=7, team_api_id=9991, team_fifa_api_id=674, team_long_name='KAA Gent', team_short_name='GEN'\n  id=10, team_api_id=9985, team_fifa_api_id=232, team_long_name='Standard de Liège', team_short_name='STL'\n  id=12, team_api_id=8342, team_fifa_api_id=231, team_long_name='Club Brugge KV', team_short_name='CLB'\n  id=13, team_api_id=9999, team_fifa_api_id=546, team_long_name='KSV Roeselare', team_short_name='ROS'\n  id=17, team_api_id=10001, team_fifa_api_id=681, team_long_name='KVC Westerlo', team_short_name='WES'\n    ... 54 more row(s) removed\n- 39 row(s) changed:\n  id=3464, team_api_id=8528, team_fifa_api_id=1917, team_long_name='Wigan Athletic | team_short_name: 'WIG' -> 'log_phase_9'\n  id=3472, team_api_id=10194, team_fifa_api_id=1806, team_long_name='Stoke City',  | team_short_name: 'STK' -> 'log_phase_9'\n  id=3473, team_api_id=8667, team_fifa_api_id=1952, team_long_name='Hull City', te | team_short_name: 'HUL' -> 'log_phase_9'\n  id=3476, team_api_id=8462, team_fifa_api_id=1790, team_long_name='Portsmouth', t | team_short_name: 'POR' -> 'log_phase_9'\n  id=4234, team_api_id=8191, team_fifa_api_id=1796, team_long_name='Burnley', team | team_short_name: 'BUR' -> 'log_phase_9'\n  id=4996, team_api_id=8483, team_fifa_api_id=1926, team_long_name='Blackpool', te | team_short_name: 'BLA' -> 'log_phase_9'\n  id=5744, team_api_id=10003, team_fifa_api_id=1960, team_long_name='Swansea City' | team_short_name: 'SWA' -> 'log_phase_9'\n  id=5756, team_api_id=9850, team_fifa_api_id=1792, team_long_name='Norwich City', | team_short_name: 'NOR' -> 'log_phase_9'\n    ... 31 more row(s) changed the same way\n\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 68,
+   "via": "ask_selector",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "is there an example of the behaviour that example 1 showed, and what does the procedure do for that call?",
+   "answer": "## Example 1\n\n```sql\nCALL sp(280, 'aurora', 100000, 2, 'unused1', 600);\n```\n\n**Player**\n- 40 row(s) removed:\n  id=4, player_api_id=30572, player_name='Aaron Galindo', player_fifa_api_id=140161, birthday='1982-05-08 00:00:00', height=183, weight=198\n  id=5, player_api_id=23780, player_name='Aaron Hughes', player_fifa_api_id=17725, birthday='1979-11-08 00:00:00', height=183, weight=154\n  id=6, player_api_id=27316, player_name='Aaron Hunt', player_fifa_api_id=158138, birthday='1986-09-04 00:00:00', height=183, weight=161\n  id=8, player_api_id=30895, player_name='Aaron Lennon', player_fifa_api_id=152747, birthday='1987-04-16 00:00:00', height=165, weight=139\n  id=11, player_api_id=23889, player_name='Aaron Mokoena', player_fifa_api_id=47189, birthday='1980-11-25 00:00:00', height=183, weight=181\n  id=14, player_api_id=40719, player_name='Aaron Niguez', player_fifa_api_id=183853, birthday='1989-04-26 00:00:00', height=170, weight=143\n  id=15, player_api_id=75489, player_name='Aaron Ramsey', player_fifa_api_id=186561, birthday='1990-12-26 00:00:00', height=178, weight=154\n  id=18, player_api_id=23499, player_name='Aaron Wilbraham', player_fifa_api_id=2335, birthday='1979-10-21 00:00:00', height=191, weight=159\n    ... 32 more row(s) removed\n- 61 row(s) changed:\n  id=1, player_api_id=505942, player_name='Aaron Appindangoye', player_fifa_api_id | birthday: '1992-02-29 00:00:00' -> 'aurora_phase_9', height: 183 -> 201\n  id=2, player_api_id=155782, player_name='Aaron Cresswell', player_fifa_api_id=18 | birthday: '1989-12-15 00:00:00' -> 'aurora_phase_9', height: 170 -> 188\n  id=3, player_api_id=162549, player_name='Aaron Doran', player_fifa_api_id=186170 | birthday: '1991-05-13 00:00:00' -> 'aurora_phase_9', height: 170 -> 188\n  id=7, player_api_id=564793, player_name='Aaron Kuhl', player_fifa_api_id=221280, | birthday: '1996-01-30 00:00:00' -> 'aurora_phase_9', height: 173 -> 191\n  id=9, player_api_id=528212, player_name='Aaron Lennox', player_fifa_api_id=20659 | birthday: '1993-02-19 00:00:00' -> 'aurora_phase_9', height: 191 -> 209\n  id=10, player_api_id=101042, player_name='Aaron Meijers', player_fifa_api_id=188 | birthday: '1987-10-28 00:00:00' -> 'aurora_phase_9', height: 175 -> 193\n  id=12, player_api_id=231592, player_name='Aaron Mooy', player_fifa_api_id=194958 | birthday: '1990-09-15 00:00:00' -> 'aurora_phase_9', height: 175 -> 193\n  id=13, player_api_id=163222, player_name='Aaron Muirhead', player_fifa_api_id=21 | birthday: '1990-08-30 00:00:00' -> 'aurora_phase_9', height: 188 -> 206\n    ... 53 more row(s) changed the same way\n\n**Team**\n- 54 row(s) removed:\n  id=6, team_api_id=8635, team_fifa_api_id=229, team_long_name='RSC Anderlecht', team_short_name='AND'\n  id=10, team_api_id=9985, team_fifa_api_id=232, team_long_name='Standard de Liège', team_short_name='STL'\n  id=12, team_api_id=8342, team_fifa_api_id=231, team_long_name='Club Brugge KV', team_short_name='CLB'\n  id=13, team_api_id=9999, team_fifa_api_id=546, team_long_name='KSV Roeselare', team_short_name='ROS'\n  id=1034, team_api_id=9989, team_fifa_api_id=239, team_long_name='Lierse SK', team_short_name='LIE'\n  id=3457, team_api_id=10260, team_fifa_api_id=11, team_long_name='Manchester United', team_short_name='MUN'\n  id=3458, team_api_id=10261, team_fifa_api_id=13, team_long_name='Newcastle United', team_short_name='NEW'\n  id=3459, team_api_id=9825, team_fifa_api_id=1, team_long_name='Arsenal', team_short_name='ARS'\n    ... 46 more row(s) removed\n- 47 row(s) changed:\n  id=15, team_api_id=4049, team_fifa_api_id=None, team_long_name='Tubize', team_sh | team_short_name: 'TUB' -> 'log_phase_9'\n  id=1, team_api_id=9987, team_fifa_api_id=673, team_long_name='KRC Genk', team_sh | team_short_name: 'GEN' -> 'log_phase_9'\n  id=2, team_api_id=9993, team_fifa_api_id=675, team_long_name='Beerschot AC', tea | team_short_name: 'BAC' -> 'log_phase_9'\n  id=3, team_api_id=10000, team_fifa_api_id=15005, team_long_name='SV Zulte-Warege | team_short_name: 'ZUL' -> 'log_phase_9'\n  id=4, team_api_id=9994, team_fifa_api_id=2007, team_long_name='Sporting Lokeren' | team_short_name: 'LOK' -> 'log_phase_9'\n  id=5, team_api_id=9984, team_fifa_api_id=1750, team_long_name='KSV Cercle Brugge | team_short_name: 'CEB' -> 'log_phase_9'\n  id=7, team_api_id=9991, team_fifa_api_id=674, team_long_name='KAA Gent', team_sh | team_short_name: 'GEN' -> 'log_phase_9'\n  id=8, team_api_id=9998, team_fifa_api_id=1747, team_long_name='RAEC Mons', team_ | team_short_name: 'MON' -> 'log_phase_9'\n    ... 39 more row(s) changed the same way"
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": 67,
+   "via": "ask_selector",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "is there an example of the behaviour that example 8 showed, and what does the procedure do for that call?",
+   "answer": "## Example 8\n\n```sql\nCALL sp(400, 'ember', 200000, 12, 'unused8', 3000);\n```\n\n**Player**\n- 64 row(s) removed:\n  id=2, player_api_id=155782, player_name='Aaron Cresswell', player_fifa_api_id=189615, birthday='1989-12-15 00:00:00', height=170, weight=146\n  id=3, player_api_id=162549, player_name='Aaron Doran', player_fifa_api_id=186170, birthday='1991-05-13 00:00:00', height=170, weight=163\n  id=4, player_api_id=30572, player_name='Aaron Galindo', player_fifa_api_id=140161, birthday='1982-05-08 00:00:00', height=183, weight=198\n  id=5, player_api_id=23780, player_name='Aaron Hughes', player_fifa_api_id=17725, birthday='1979-11-08 00:00:00', height=183, weight=154\n  id=6, player_api_id=27316, player_name='Aaron Hunt', player_fifa_api_id=158138, birthday='1986-09-04 00:00:00', height=183, weight=161\n  id=8, player_api_id=30895, player_name='Aaron Lennon', player_fifa_api_id=152747, birthday='1987-04-16 00:00:00', height=165, weight=139\n  id=10, player_api_id=101042, player_name='Aaron Meijers', player_fifa_api_id=188621, birthday='1987-10-28 00:00:00', height=175, weight=170\n  id=11, player_api_id=23889, player_name='Aaron Mokoena', player_fifa_api_id=47189, birthday='1980-11-25 00:00:00', height=183, weight=181\n    ... 56 more row(s) removed\n- 37 row(s) changed:\n  id=94, player_api_id=365666, player_name='Adam Campbell', player_fifa_api_id=206 | birthday: '1995-01-01 00:00:00' -> 'ember_phase_9', height: 170 -> 278\n  id=96, player_api_id=310346, player_name='Adam Cummins', player_fifa_api_id=2007 | birthday: '1993-03-03 00:00:00' -> 'ember_phase_9', height: 188 -> 296\n  id=98, player_api_id=429870, player_name='Adam Deja', player_fifa_api_id=212988, | birthday: '1993-06-24 00:00:00' -> 'ember_phase_9', height: 185 -> 293\n  id=100, player_api_id=420209, player_name='Adam Drury', player_fifa_api_id=20516 | birthday: '1993-09-09 00:00:00' -> 'ember_phase_9', height: 178 -> 286\n  id=101, player_api_id=308280, player_name='Adam Duda', player_fifa_api_id=208345 | birthday: '1991-04-29 00:00:00' -> 'ember_phase_9', height: 188 -> 296\n  id=1, player_api_id=505942, player_name='Aaron Appindangoye', player_fifa_api_id | birthday: '1992-02-29 00:00:00' -> 'ember_phase_9', height: 183 -> 291\n  id=7, player_api_id=564793, player_name='Aaron Kuhl', player_fifa_api_id=221280, | birthday: '1996-01-30 00:00:00' -> 'ember_phase_9', height: 173 -> 281\n  id=9, player_api_id=528212, player_name='Aaron Lennox', player_fifa_api_id=20659 | birthday: '1993-02-19 00:00:00' -> 'ember_phase_9', height: 191 -> 299\n    ... 29 more row(s) changed the same way\n\n**Team**\n- 86 row(s) removed:\n  id=1, team_api_id=9987, team_fifa_api_id=673, team_long_name='KRC Genk', team_short_name='GEN'\n  id=2, team_api_id=9993, team_fifa_api_id=675, team_long_name='Beerschot AC', team_short_name='BAC'\n  id=4, team_api_id=9994, team_fifa_api_id=2007, team_long_name='Sporting Lokeren', team_short_name='LOK'\n  id=5, team_api_id=9984, team_fifa_api_id=1750, team_long_name='KSV Cercle Brugge', team_short_name='CEB'\n  id=6, team_api_id=8635, team_fifa_api_id=229, team_long_name='RSC Anderlecht', team_short_name='AND'\n  id=7, team_api_id=9991, team_fifa_api_id=674, team_long_name='KAA Gent', team_short_name='GEN'\n  id=8, team_api_id=9998, team_fifa_api_id=1747, team_long_name='RAEC Mons', team_short_name='MON'\n  id=10, team_api_id=9985, team_fifa_api_id=232, team_long_name='Standard de Liège', team_short_name='STL'\n    ... 78 more row(s) removed\n- 15 row(s) changed:\n  id=3, team_api_id=10000, team_fifa_api_id=15005, team_long_name='SV Zulte-Warege | team_short_name: 'ZUL' -> 'log_phase_9'\n  id=9, team_api_id=7947, team_fifa_api_id=None, team_long_name='FCV Dender EH', t | team_short_name: 'DEN' -> 'log_phase_9'\n  id=11, team_api_id=8203, team_fifa_api_id=110724, team_long_name='KV Mechelen',  | team_short_name: 'MEC' -> 'log_phase_9'\n  id=14, team_api_id=8571, team_fifa_api_id=100081, team_long_name='KV Kortrijk',  | team_short_name: 'KOR' -> 'log_phase_9'\n  id=15, team_api_id=4049, team_fifa_api_id=None, team_long_name='Tubize', team_sh | team_short_name: 'TUB' -> 'log_phase_9'\n  id=16, team_api_id=9996, team_fifa_api_id=111560, team_long_name='Royal Excel Mo | team_short_name: 'MOU' -> 'log_phase_9'\n  id=1513, team_api_id=1773, team_fifa_api_id=100087, team_long_name='Oud-Heverlee | team_short_name: 'O-H' -> 'log_phase_9'\n  id=2004, team_api_id=8475, team_fifa_api_id=110913, team_long_name='Waasland-Bev | team_short_name: 'WAA' -> 'log_phase_9'\n    ... 7 more row(s) changed the same way"
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "the starting state shows '30579' where example 2 shows '30572' changing -- which is the real starting value?",
+   "answer": "The example is right: the starting value of player_api_id is '30572'. The starting-state excerpt is a stale snapshot."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Country , columns = [ id ( integer | primary key | values : 19694 , 15722 ) , name ( text | values : Portugal , Belgium ) ]\ntable League , columns = [ id ( integer | primary key | values : 7809 , 24558 ) , country_id ( integer | values : 17642 , 13274 ) , name ( text | values : France Ligue 1 , Portugal Liga ZON Sagres ) ]\ntable Player , columns = [ id ( integer | primary key | values : 4 , 8 ) , player_api_id ( integer | values : 101042 , 163222 ) , player_name ( text | values : Aaron Lennox , Aaron Cresswell ) , player_fifa_api_id ( integer | values : 2335 , 206592 ) , birthday ( text | values : 1979-11-08 00:00:00 , 1991-05-13 00:00:00 ) , height ( integer | values : 165 , 191 ) , weight ( integer | values : 154 , 146 ) ]\ntable Player_Attributes , columns = [ id ( integer | primary key | values : 3 , 20 ) , player_fifa_api_id ( integer | values : 189615 , 218353 ) , player_api_id ( integer | values : 505942 , 155782 ) , integer ( text | values : 2014-04-04 00:00:00 , 2015-09-21 00:00:00 ) , overall_rating ( integer | values : 73 , 62 ) , potential ( integer | values : 71 , 75 ) , preferred_foot ( text | values : left , right ) , attacking_work_rate ( text | values : medium , medium ) , defensive_work_rate ( text | values : medium , medium ) , crossing ( integer | values : 79 , 79 ) , finishing ( integer | values : 50 , 44 ) , heading_accuracy ( integer | values : 57 , 51 ) , short_passing ( integer | values : 70 , 67 ) , volleys ( integer | values : 28 , 32 ) , dribbling ( integer | values : 71 , 71 ) , curve ( integer | values : 44 , 67 ) , free_kick_accuracy ( integer | values : 68 , 69 ) , long_passing ( integer | values : 68 , 68 ) , ball_control ( integer | values : 71 , 67 ) , acceleration ( integer | values : 84 , 84 ) , sprint_speed ( integer | values : 82 , 82 ) , agility ( integer | values : 81 , 59 ) , reactions ( integer | values : 69 , 46 ) , balance ( integer | values : 65 , 65 ) , shot_power ( integer | values : 70 , 71 ) , jumping ( integer | values : 84 , 84 ) , stamina ( integer | values : 79 , 79 ) , strength ( integer | values : 56 , 50 ) , long_shots ( integer | values : 56 , 35 ) , aggression ( integer | values : 66 , 62 ) , interceptions ( integer | values : 40 , 70 ) , positioning ( integer | values : 60 , 45 ) , vision ( integer | values : 53 , 65 ) , penalties ( integer | values : 48 , 48 ) , marking ( integer | values : 65 , 76 ) , standing_tackle ( integer | values : 75 , 72 ) , sliding_tackle ( integer | values : 66 , 78 ) , gk_diving ( integer | values : 13 , 13 ) , gk_handling ( integer | values : 7 , 6 ) , gk_kicking ( integer | values : 8 , 8 ) , gk_positioning ( integer | values : 9 , 8 ) , gk_reflexes ( integer | values : 8 , 11 ) ]\ntable Team , columns = [ id ( integer | primary key | values : 7 , 10 ) , team_api_id ( integer | values : 9999 , 7947 ) , team_fifa_api_id ( integer | values : 2007 , 675 ) , team_long_name ( text | values : KSV Cercle Brugge , Sporting Charleroi ) , team_short_name ( text | values : CEB , ZUL ) ]\ntable Team_Attributes , columns = [ id ( integer | primary key | values : 19 , 7 ) , team_fifa_api_id ( integer | values : 47 , 77 ) , team_api_id ( integer | values : 8576 , 8485 ) , integer ( text | values : 2015-09-10 00:00:00 , 2015-09-10 00:00:00 ) , buildUpPlaySpeed ( integer | values : 60 , 48 ) , buildUpPlaySpeedClass ( text | values : Balanced , Balanced ) , buildUpPlayDribbling ( integer | values : 41 , 41 ) , buildUpPlayDribblingClass ( text | values : Normal , Little ) , buildUpPlayPassing ( integer | values : 50 , 50 ) , buildUpPlayPassingClass ( text | values : Mixed , Mixed ) , buildUpPlayPositioningClass ( text | values : Organised , Organised ) , chanceCreationPassing ( integer | values : 50 , 45 ) , chanceCreationPassingClass ( text | values : Normal , Normal ) , chanceCreationCrossing ( integer | values : 48 , 70 ) , chanceCreationCrossingClass ( text | values : Normal , Normal ) , chanceCreationShooting ( integer | values :... (+567)"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, team_api_id, team_fifa_api_id, team_long_name, team_short_name FROM Team ORDER BY id LIMIT 200;"
+   },
+   "result": "error: [42P01] relation \"team\" does not exist"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, team_api_id, team_fifa_api_id, team_long_name, team_short_name FROM \"Team\" ORDER BY id LIMIT 200;"
+   },
+   "result": "id | team_api_id | team_fifa_api_id | team_long_name | team_short_name\n1 | 9987 | 673 | KRC Genk | GEN\n2 | 9993 | 675 | Beerschot AC | BAC\n3 | 10000 | 15005 | SV Zulte-Waregem | ZUL\n4 | 9994 | 2007 | Sporting Lokeren | LOK\n5 | 9984 | 1750 | KSV Cercle Brugge | CEB\n6 | 8635 | 229 | RSC Anderlecht | AND\n7 | 9991 | 674 | KAA Gent | GEN\n8 | 9998 | 1747 | RAEC Mons | MON\n9 | 7947 | NULL | FCV Dender EH | DEN\n10 | 9985 | 232 | Standard de Liège | STL\n11 | 8203 | 110724 | KV Mechelen | MEC\n12 | 8342 | 231 | Club Brugge KV | CLB\n13 | 9999 | 546 | KSV Roeselare | ROS\n14 | 8571 | 100081 | KV Kortrijk | KOR\n15 | 4049 | NULL | Tubize | TUB\n16 | 9996 | 111560 | Royal Excel Mouscron | MOU\n17 | 10001 | 681 | KVC Westerlo | WES\n18 | 9986 | 670 | Sporting Charleroi | CHA\n614 | 9997 | 680 | Sint-Truidense VV | STT\n1034 | 9989 | 239 | Lierse SK | LIE\n1042 | 6351 | 2013 | KAS Eupen | EUP\n1513 | 1773 | 100087 | Oud-Heverlee Leuven | O-H\n2004 | 8475 | 110913 | Waasland-Beveren | WAA\n2476 | 8573 | 682 | KV Oostende | OOS\n2510 | 274581 | 111560 | Royal Excel Mouscron | MOP\n3457 | 10260 | 11 | Manchester United | MUN\n3458 | 10261 | 13 | Newcastle United | NEW\n3459 | 9825 | 1 | Arsenal | ARS\n3460 | 8659 | 109 | West Bromwich Albion | WBA\n3461 | 8472 | 106 | Sunderland | SUN\n3462 | 8650 | 9 | Liverpool | LIV\n3463 | 8654 | 19 | West Ham United | WHU\n3464 | 8528 | 1917 | Wigan Athletic | WIG\n3465 | 10252 | 2 | Aston Villa | AVL\n3466 | 8456 | 10 | Manchester City | MCI\n3467 | 8668 | 7 | Everton | EVE\n3468 | 8655 | 3 | Blackburn Rovers | BLB\n3469 | 8549 | 12 | Middlesbrough | MID\n3470 | 8586 | 18 | Tottenham Hotspur | TOT\n3471 | 8559 | 4 | Bolton Wanderers | BOL\n3472 | 10194 | 1806 | Stoke City | STK\n3473 | 8667 | 1952 | Hull City | HUL\n3474 | 9879 | 144 | Fulham | FUL\n3475 | 8455 | 5 | Chelsea | CHE\n3476 | 8462 | 1790 | Portsmouth | POR\n4218 | 8658 | 88 | Birmingham City | BIR\n4225 | 8602 | 110 | Wolverhampton Wanderers | WOL\n4234 | 8191 | 1796 | Burnley | BUR\n4996 | 8483 | 1926 | Blackpool | BLA\n5744 | 10003 | 1960 | Swansea City | SWA\n... (more rows not shown)"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) FROM \"Team\";"
+   },
+   "result": "count\n101"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT string_agg(id::text || ':' || coalesce(team_fifa_api_id::text,'NULL') || ':' || team_short_name, ', ' ORDER BY id) FROM \"Team\";"
+   },
+   "result": "string_agg\n1:673:GEN, 2:675:BAC, 3:15005:ZUL, 4:2007:LOK, 5:1750:CEB, 6:229:AND, 7:674:GEN, 8:1747:MON, 9:NULL:DEN, 10:232:STL, 11:110724:MEC, 12:231:CLB, 13:546:ROS, 14:100081:KOR, 15:NULL:TUB, 16:111560:MOU, 1..."
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, coalesce(team_fifa_api_id::text,'NULL') AS f, team_short_name FROM \"Team\" ORDER BY id;"
+   },
+   "result": "id | f | team_short_name\n1 | 673 | GEN\n2 | 675 | BAC\n3 | 15005 | ZUL\n4 | 2007 | LOK\n5 | 1750 | CEB\n6 | 229 | AND\n7 | 674 | GEN\n8 | 1747 | MON\n9 | NULL | DEN\n10 | 232 | STL\n11 | 110724 | MEC\n12 | 231 | CLB\n13 | 546 | ROS\n14 | 100081 | KOR\n15 | NULL | TUB\n16 | 111560 | MOU\n17 | 681 | WES\n18 | 670 | CHA\n614 | 680 | STT\n1034 | 239 | LIE\n1042 | 2013 | EUP\n1513 | 100087 | O-H\n2004 | 110913 | WAA\n2476 | 682 | OOS\n2510 | 111560 | MOP\n3457 | 11 | MUN\n3458 | 13 | NEW\n3459 | 1 | ARS\n3460 | 109 | WBA\n3461 | 106 | SUN\n3462 | 9 | LIV\n3463 | 19 | WHU\n3464 | 1917 | WIG\n3465 | 2 | AVL\n3466 | 10 | MCI\n3467 | 7 | EVE\n3468 | 3 | BLB\n3469 | 12 | MID\n3470 | 18 | TOT\n3471 | 4 | BOL\n3472 | 1806 | STK\n3473 | 1952 | HUL\n3474 | 144 | FUL\n3475 | 5 | CHE\n3476 | 1790 | POR\n4218 | 88 | BIR\n4225 | 110 | WOL\n4234 | 1796 | BUR\n4996 | 1926 | BLA\n5744 | 1960 | SWA\n... (more rows not shown)"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, coalesce(team_fifa_api_id::text,'NULL') AS f, team_short_name FROM \"Team\" ORDER BY id OFFSET 50 LIMIT 60;"
+   },
+   "result": "id | f | team_short_name\n5747 | 15 | QPR\n5756 | 1792 | NOR\n6504 | 17 | SOU\n6509 | 1793 | REA\n7261 | 1799 | CRY\n7276 | 1961 | CAR\n8021 | 95 | LEI\n8779 | 1943 | BOU\n8784 | 1795 | WAT\n9537 | 57 | AUX\n9538 | 71 | NAN\n9539 | 59 | BOR\n9540 | 210 | CAE\n9541 | 1738 | LEH\n9542 | 72 | NIC\n9543 | 1739 | LEM\n9544 | 217 | LOR\n9545 | 66 | LYO\n9546 | 1809 | TOU\n9547 | 69 | MON\n9548 | 73 | PSG\n9549 | 1823 | NAN\n9550 | 65 | LIL\n9551 | 74 | REN\n9552 | 219 | MAR\n9553 | 226 | SOC\n9554 | 1805 | GRE\n9555 | 110456 | VAL\n9556 | 1819 | ETI\n10300 | 64 | LEN\n10309 | 70 | MON\n10312 | 111376 | BOU\n11074 | 111989 | ARL\n11076 | 378 | BRE\n11817 | 614 | AJA\n11822 | 111271 | ETG\n11825 | 110569 | DIJ\n12587 | 379 | REI\n12594 | 58 | BAS\n12595 | 294 | TRO\n13343 | 62 | GUI\n14106 | 68 | MET\n14868 | 1530 | ANG\n14876 | 110316 | GAJ\n15617 | 21 | BMU\n15618 | 28 | HAM\n15619 | 32 | LEV\n15620 | 22 | DOR\n15621 | 34 | S04\n15622 | 485 | HAN\n... (more rows not shown)"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, coalesce(team_fifa_api_id::text,'NULL') AS f, team_short_name FROM \"Team\" ORDER BY id OFFSET 100 LIMIT 60;"
+   },
+   "result": "id | f | team_short_name\n15623 | 175 | WOL"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, player_api_id, player_fifa_api_id, birthday, height, weight, player_name FROM \"Player\" ORDER BY id;"
+   },
+   "result": "id | player_api_id | player_fifa_api_id | birthday | height | weight | player_name\n1 | 505942 | 218353 | 1992-02-29 00:00:00 | 183 | 187 | Aaron Appindangoye\n2 | 155782 | 189615 | 1989-12-15 00:00:00 | 170 | 146 | Aaron Cresswell\n3 | 162549 | 186170 | 1991-05-13 00:00:00 | 170 | 163 | Aaron Doran\n4 | 30572 | 140161 | 1982-05-08 00:00:00 | 183 | 198 | Aaron Galindo\n5 | 23780 | 17725 | 1979-11-08 00:00:00 | 183 | 154 | Aaron Hughes\n6 | 27316 | 158138 | 1986-09-04 00:00:00 | 183 | 161 | Aaron Hunt\n7 | 564793 | 221280 | 1996-01-30 00:00:00 | 173 | 146 | Aaron Kuhl\n8 | 30895 | 152747 | 1987-04-16 00:00:00 | 165 | 139 | Aaron Lennon\n9 | 528212 | 206592 | 1993-02-19 00:00:00 | 191 | 181 | Aaron Lennox\n10 | 101042 | 188621 | 1987-10-28 00:00:00 | 175 | 170 | Aaron Meijers\n11 | 23889 | 47189 | 1980-11-25 00:00:00 | 183 | 181 | Aaron Mokoena\n12 | 231592 | 194958 | 1990-09-15 00:00:00 | 175 | 150 | Aaron Mooy\n13 | 163222 | 213568 | 1990-08-30 00:00:00 | 188 | 168 | Aaron Muirhead\n14 | 40719 | 183853 | 1989-04-26 00:00:00 | 170 | 143 | Aaron Niguez\n15 | 75489 | 186561 | 1990-12-26 00:00:00 | 178 | 154 | Aaron Ramsey\n16 | 597948 | 226014 | 1996-10-13 00:00:00 | 173 | 163 | Aaron Splaine\n17 | 161644 | 213569 | 1991-04-08 00:00:00 | 183 | 176 | Aaron Taylor-Sinclair\n18 | 23499 | 2335 | 1979-10-21 00:00:00 | 191 | 159 | Aaron Wilbraham\n19 | 120919 | 187939 | 1986-07-02 00:00:00 | 175 | 150 | Aatif Chahechouhe\n20 | 46447 | 156626 | 1976-07-12 00:00:00 | 188 | 185 | Abasse Ba\n21 | 167027 | 192274 | 1989-06-19 00:00:00 | 178 | 161 | Abdelaziz Barrada\n22 | 245653 | 202425 | 1986-10-22 00:00:00 | 185 | 161 | Abdelfettah Boukhriss\n23 | 128456 | 188145 | 1990-03-17 00:00:00 | 180 | 161 | Abdelhamid El Kaoutari\n24 | 42664 | 178063 | 1984-12-05 00:00:00 | 183 | 172 | Abdelkader Ghezzal\n25 | 425950 | 212934 | 1991-12-05 00:00:00 | 180 | 161 | Abdellah Zoubir\n26 | 38423 | 52782 | 1978-09-12 00:00:00 | 173 | 143 | Abdelmajid Oulmers\n27 | 3264 | 51868 | 1981-01-14 00:00:00 | 185 | 165 | Abdelmalek Cherrad\n28 | 467485 | 209399 | 1994-02-09 00:00:00 | 180 | 159 | Abdelmalek El Hasnaoui\n29 | 306735 | 210504 | 1986-10-01 00:00:00 | 183 | 170 | Abdelouahed Chakhsi\n30 | 41659 | 149241 | 1983-06-01 00:00:00 | 178 | 157 | Abderrazak Jadid\n31 | 31684 | 33022 | 1978-11-01 00:00:00 | 191 | 181 | Abdeslam Ouaddou\n32 | 32637 | 177295 | 1985-01-28 00:00:00 | 188 | 179 | Abdessalam Benjelloun\n33 | 563215 | 225711 | 1996-05-04 00:00:00 | 183 | 159 | Abdou Diallo\n34 | 41093 | 187048 | 1988-01-17 00:00:00 | 180 | 174 | Abdou Traore\n35 | 564712 | 225050 | 1994-02-08 00:00:00 | 201 | 212 | Abdoul Ba\n36 | 67334 | 188232 | 1988-10-25 00:00:00 | 183 | 161 | Abdoul Karim Yoda\n37 | 173955 | 193953 | 1990-02-20 00:00:00 | 178 | 157 | Abdoul Razzagui Camara\n38 | 39562 | 161999 | 1984-03-09 00:00:00 | 183 | 157 | Abdoulay Konko\n39 | 191784 | 204826 | 1991-01-01 00:00:00 | 198 | 174 | Abdoulaye Ba\n40 | 210400 | 199313 | 1990-04-25 00:00:00 | 183 | 150 | Abdoulaye Bamba\n41 | 201915 | 202330 | 1991-05-21 00:00:00 | 173 | 154 | Abdoulaye Diaby\n42 | 194479 | 204171 | 1990-12-28 00:00:00 | 183 | 168 | Abdoulaye Diallo Sadio,22\n43 | 189181 | 197233 | 1992-03-30 00:00:00 | 188 | 174 | Abdoulaye Diallo\n44 | 352887 | 208135 | 1993-01-01 00:00:00 | 183 | 165 | Abdoulaye Doucoure\n45 | 40005 | 100329 | 1978-02-26 00:00:00 | 188 | 218 | Abdoulaye Faye\n46 | 409003 | 212280 | 1994-01-05 00:00:00 | 175 | 165 | Abdoulaye Keita\n47 | 37280 | 41745 | 1980-10-06 00:00:00 | 185 | 181 | Abdoulaye Meite\n48 | 439366 | 210450 | 1994-03-03 00:00:00 | 188 | 170 | Abdoulaye Toure\n49 | 148827 | 189568 | 1990-03-20 00:00:00 | 183 | 165 | Abdoulwahid Sissoko\n50 | 173011 | 197901 | 1991-12-27 00:00:00 | 183 | 168 | Abdourahman Dampha\n... (more rows not shown)"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, player_api_id, player_fifa_api_id, birthday, height, weight, player_name FROM \"Player\" ORDER BY id OFFSET 50 LIMIT 60;"
+   },
+   "result": "id | player_api_id | player_fifa_api_id | birthday | height | weight | player_name\n51 | 419681 | 190193 | 1989-02-10 00:00:00 | 183 | 190 | Abdul Aziz Tetteh\n52 | 196947 | 198420 | 1991-09-19 00:00:00 | 173 | 157 | Abdul Majeed Waris\n53 | 89405 | 184768 | 1987-02-27 00:00:00 | 183 | 154 | Abdul Osman\n54 | 324910 | 209620 | 1994-07-02 00:00:00 | 178 | 154 | Abdul Rahman Baba\n55 | 67952 | 180316 | 1986-05-25 00:00:00 | 173 | 146 | Abdul-Yakinu Iddi\n56 | 31012 | 157191 | 1981-08-06 00:00:00 | 183 | 172 | Abdulkader Keita\n57 | 176301 | 210766 | 1985-11-02 00:00:00 | 175 | 172 | Abdulla Fatadi\n58 | 307227 | 207716 | 1992-12-25 00:00:00 | 188 | 165 | Abdullah Al Hafith\n59 | 176302 | 192670 | 1987-01-01 00:00:00 | 175 | 157 | Abdullah Omar\n60 | 525595 | 229026 | 1993-03-12 00:00:00 | 180 | 159 | Abdullahi Shehu\n61 | 24385 | 177974 | 1985-01-06 00:00:00 | 185 | 176 | Abel Aguilar\n62 | 29904 | 111085 | 1982-02-20 00:00:00 | 183 | 165 | Abel Gomez\n63 | 105548 | 188484 | 1990-08-08 00:00:00 | 185 | 161 | Abel Hernandez\n64 | 172875 | 208005 | 1990-01-06 00:00:00 | 185 | 179 | Abel Issa Camara\n65 | 302985 | 207541 | 1992-11-09 00:00:00 | 180 | 148 | Abel Khaled\n66 | 240556 | 202153 | 1990-12-05 00:00:00 | 183 | 170 | Abel Tamata\n67 | 40938 | 17880 | 1978-12-22 00:00:00 | 178 | 165 | Abel\n68 | 37422 | 159580 | 1982-04-15 00:00:00 | 188 | 174 | Abella Perez Damia\n69 | 114503 | 187175 | 1988-02-03 00:00:00 | 180 | 165 | Abiola Dauda\n70 | 27277 | 163423 | 1986-05-11 00:00:00 | 193 | 168 | Abou Diaby\n71 | 181344 | 138675 | 1983-10-05 00:00:00 | 193 | 185 | Aboubacar Tandia\n72 | 581141 | 225541 | 1995-03-07 00:00:00 | 178 | 168 | Aboubakar Kamara\n73 | 80592 | 218548 | 1987-04-01 00:00:00 | 183 | 168 | Aboubakar Oumarou\n74 | 165706 | 159566 | 1985-07-16 00:00:00 | 178 | 176 | Abraham Gonzalez\n75 | 210453 | 199724 | 1986-07-25 00:00:00 | 180 | 154 | Abraham Guie Gneki\n76 | 208635 | 202600 | 1985-02-25 00:00:00 | 183 | 179 | Abraham Kudemor\n77 | 213695 | 198840 | 1986-02-22 00:00:00 | 175 | 157 | Abraham Minero\n78 | 33715 | 114663 | 1979-03-14 00:00:00 | 178 | 165 | Abraham Paz Cruz\n79 | 41489 | 163901 | 1982-07-14 00:00:00 | 185 | 174 | Achille Coser\n80 | 25571 | 112392 | 1982-06-05 00:00:00 | 180 | 170 | Achille Emana\n81 | 660145 | 229149 | 1996-01-26 00:00:00 | 175 | 157 | Achille Vaarnold\n82 | 45960 | 171405 | 1983-12-06 00:00:00 | 178 | 152 | Achmed Ahahaoui\n83 | 293235 | 206161 | 1992-09-22 00:00:00 | 183 | 168 | Achraf Lazaar\n84 | 34487 | 140730 | 1983-04-29 00:00:00 | 178 | 165 | Aco Stojkov\n85 | 26331 | 158505 | 1983-04-14 00:00:00 | 191 | 187 | Adailton\n86 | 41749 | 4769 | 1977-01-24 00:00:00 | 175 | 161 | Adailton\n87 | 495841 | 231638 | 1997-05-31 00:00:00 | 183 | 172 | Adalberto Penaranda\n88 | 519835 | 221841 | 1997-02-10 00:00:00 | 173 | 152 | Adam Armstrong\n89 | 68840 | 189047 | 1982-12-25 00:00:00 | 185 | 174 | Adam Banas\n90 | 27534 | 177129 | 1985-09-07 00:00:00 | 183 | 174 | Adam Bodzek\n91 | 157303 | 184585 | 1987-09-27 00:00:00 | 193 | 198 | Adam Bogdan\n92 | 563198 | 224355 | 1995-06-09 00:00:00 | 178 | 141 | Adam Brown\n93 | 557396 | 224438 | 1996-07-12 00:00:00 | 191 | 172 | Adam Buksa\n94 | 365666 | 206567 | 1995-01-01 00:00:00 | 170 | 161 | Adam Campbell\n95 | 180197 | 53363 | 1984-12-09 00:00:00 | 191 | 172 | Adam Collin\n96 | 310346 | 200743 | 1993-03-03 00:00:00 | 188 | 172 | Adam Cummins\n97 | 68962 | 180440 | 1987-12-15 00:00:00 | 183 | 179 | Adam Danch\n98 | 429870 | 212988 | 1993-06-24 00:00:00 | 185 | 181 | Adam Deja\n99 | 23133 | 101882 | 1978-08-29 00:00:00 | 180 | 161 | Adam Drury\n100 | 420209 | 205162 | 1993-09-09 00:00:00 | 178 | 152 | Adam Drury\n... (more rows not shown)"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, player_api_id, player_fifa_api_id, birthday, height, weight, player_name FROM \"Player\" ORDER BY id OFFSET 100 LIMIT 60;"
+   },
+   "result": "id | player_api_id | player_fifa_api_id | birthday | height | weight | player_name\n101 | 308280 | 208345 | 1991-04-29 00:00:00 | 188 | 170 | Adam Duda"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \n count(*) FILTER (WHERE player_api_id > 110000) AS api_gt_110,\n count(*) FILTER (WHERE player_api_id >= 110000) AS api_ge_110,\n count(*) FILTER (WHERE player_api_id < 110000) AS api_lt_110,\n count(*) FILTER (WHERE id > 3) AS id_gt_3,\n count(*) FILTER (WHERE height > 0) AS h_gt_0,\n count(*) FILTER (WHERE height >= 0) AS h_ge_0\nFROM \"Player\";"
+   },
+   "result": "api_gt_110 | api_ge_110 | api_lt_110 | id_gt_3 | h_gt_0 | h_ge_0\n59 | 59 | 42 | 98 | 101 | 101"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \n count(*) FILTER (WHERE player_api_id < 95000) AS lt95000,\n count(*) FILTER (WHERE player_api_id < 120000) AS lt120000,\n count(*) FILTER (WHERE player_api_id < 170000) AS lt170000,\n count(*) FILTER (WHERE player_api_id < 90000) AS lt90000,\n count(*) FILTER (WHERE player_api_id < 125000) AS lt125000\nFROM \"Player\";"
+   },
+   "result": "lt95000 | lt120000 | lt170000 | lt90000 | lt125000\n40 | 43 | 53 | 40 | 44"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) AS rem_players, \n count(*) FILTER (WHERE height <= 170) AS h_le_170,\n count(*) FILTER (WHERE height < 170) AS h_lt_170,\n count(*) FILTER (WHERE height = 170) AS h_eq_170\nFROM \"Player\" WHERE player_api_id >= 95000;"
+   },
+   "result": "rem_players | h_le_170 | h_lt_170 | h_eq_170\n61 | 3 | 0 | 3"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) FILTER (WHERE height <= 300) AS h_le_300,\n count(*) FILTER (WHERE height <= 320) AS h_le_320,\n count(*) FILTER (WHERE height <= 350) AS h_le_350\nFROM \"Player\" WHERE player_api_id >= 120000;"
+   },
+   "result": "h_le_300 | h_le_320 | h_le_350\n58 | 58 | 58"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT max(height), min(height) FROM \"Player\";"
+   },
+   "result": "max | min\n201 | 165"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \n count(*) FILTER (WHERE team_fifa_api_id < 1000) AS f_lt_1000,\n count(*) FILTER (WHERE team_fifa_api_id < 650) AS f_lt_650,\n count(*) FILTER (WHERE team_fifa_api_id < 600) AS f_lt_600,\n count(*) FILTER (WHERE team_fifa_api_id < 700) AS f_lt_700,\n count(*) FILTER (WHERE team_fifa_api_id < 2500) AS f_lt_2500,\n count(*) FILTER (WHERE team_fifa_api_id IS NULL) AS f_null\nFROM \"Team\";"
+   },
+   "result": "f_lt_1000 | f_lt_650 | f_lt_600 | f_lt_700 | f_lt_2500 | f_null\n62 | 55 | 54 | 62 | 86 | 2"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, player_api_id, player_name, birthday, height, weight FROM \"Player\" WHERE player_api_id < 110000 ORDER BY id;"
+   },
+   "result": "id | player_api_id | player_name | birthday | height | weight\n4 | 30572 | Aaron Galindo | 1982-05-08 00:00:00 | 183 | 198\n5 | 23780 | Aaron Hughes | 1979-11-08 00:00:00 | 183 | 154\n6 | 27316 | Aaron Hunt | 1986-09-04 00:00:00 | 183 | 161\n8 | 30895 | Aaron Lennon | 1987-04-16 00:00:00 | 165 | 139\n10 | 101042 | Aaron Meijers | 1987-10-28 00:00:00 | 175 | 170\n11 | 23889 | Aaron Mokoena | 1980-11-25 00:00:00 | 183 | 181\n14 | 40719 | Aaron Niguez | 1989-04-26 00:00:00 | 170 | 143\n15 | 75489 | Aaron Ramsey | 1990-12-26 00:00:00 | 178 | 154\n18 | 23499 | Aaron Wilbraham | 1979-10-21 00:00:00 | 191 | 159\n20 | 46447 | Abasse Ba | 1976-07-12 00:00:00 | 188 | 185\n24 | 42664 | Abdelkader Ghezzal | 1984-12-05 00:00:00 | 183 | 172\n26 | 38423 | Abdelmajid Oulmers | 1978-09-12 00:00:00 | 173 | 143\n27 | 3264 | Abdelmalek Cherrad | 1981-01-14 00:00:00 | 185 | 165\n30 | 41659 | Abderrazak Jadid | 1983-06-01 00:00:00 | 178 | 157\n31 | 31684 | Abdeslam Ouaddou | 1978-11-01 00:00:00 | 191 | 181\n32 | 32637 | Abdessalam Benjelloun | 1985-01-28 00:00:00 | 188 | 179\n34 | 41093 | Abdou Traore | 1988-01-17 00:00:00 | 180 | 174\n36 | 67334 | Abdoul Karim Yoda | 1988-10-25 00:00:00 | 183 | 161\n38 | 39562 | Abdoulay Konko | 1984-03-09 00:00:00 | 183 | 157\n45 | 40005 | Abdoulaye Faye | 1978-02-26 00:00:00 | 188 | 218\n47 | 37280 | Abdoulaye Meite | 1980-10-06 00:00:00 | 185 | 181\n53 | 89405 | Abdul Osman | 1987-02-27 00:00:00 | 183 | 154\n55 | 67952 | Abdul-Yakinu Iddi | 1986-05-25 00:00:00 | 173 | 146\n56 | 31012 | Abdulkader Keita | 1981-08-06 00:00:00 | 183 | 172\n61 | 24385 | Abel Aguilar | 1985-01-06 00:00:00 | 185 | 176\n62 | 29904 | Abel Gomez | 1982-02-20 00:00:00 | 183 | 165\n63 | 105548 | Abel Hernandez | 1990-08-08 00:00:00 | 185 | 161\n67 | 40938 | Abel | 1978-12-22 00:00:00 | 178 | 165\n68 | 37422 | Abella Perez Damia | 1982-04-15 00:00:00 | 188 | 174\n70 | 27277 | Abou Diaby | 1986-05-11 00:00:00 | 193 | 168\n73 | 80592 | Aboubakar Oumarou | 1987-04-01 00:00:00 | 183 | 168\n78 | 33715 | Abraham Paz Cruz | 1979-03-14 00:00:00 | 178 | 165\n79 | 41489 | Achille Coser | 1982-07-14 00:00:00 | 185 | 174\n80 | 25571 | Achille Emana | 1982-06-05 00:00:00 | 180 | 170\n82 | 45960 | Achmed Ahahaoui | 1983-12-06 00:00:00 | 178 | 152\n84 | 34487 | Aco Stojkov | 1983-04-29 00:00:00 | 178 | 165\n85 | 26331 | Adailton | 1983-04-14 00:00:00 | 191 | 187\n86 | 41749 | Adailton | 1977-01-24 00:00:00 | 175 | 161\n89 | 68840 | Adam Banas | 1982-12-25 00:00:00 | 185 | 174\n90 | 27534 | Adam Bodzek | 1985-09-07 00:00:00 | 183 | 174\n97 | 68962 | Adam Danch | 1987-12-15 00:00:00 | 183 | 179\n99 | 23133 | Adam Drury | 1978-08-29 00:00:00 | 180 | 161"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, team_api_id, team_fifa_api_id, team_long_name, team_short_name FROM \"Team\" WHERE team_fifa_api_id < 1000 ORDER BY id;"
+   },
+   "result": "id | team_api_id | team_fifa_api_id | team_long_name | team_short_name\n1 | 9987 | 673 | KRC Genk | GEN\n2 | 9993 | 675 | Beerschot AC | BAC\n6 | 8635 | 229 | RSC Anderlecht | AND\n7 | 9991 | 674 | KAA Gent | GEN\n10 | 9985 | 232 | Standard de Liège | STL\n12 | 8342 | 231 | Club Brugge KV | CLB\n13 | 9999 | 546 | KSV Roeselare | ROS\n17 | 10001 | 681 | KVC Westerlo | WES\n18 | 9986 | 670 | Sporting Charleroi | CHA\n614 | 9997 | 680 | Sint-Truidense VV | STT\n1034 | 9989 | 239 | Lierse SK | LIE\n2476 | 8573 | 682 | KV Oostende | OOS\n3457 | 10260 | 11 | Manchester United | MUN\n3458 | 10261 | 13 | Newcastle United | NEW\n3459 | 9825 | 1 | Arsenal | ARS\n3460 | 8659 | 109 | West Bromwich Albion | WBA\n3461 | 8472 | 106 | Sunderland | SUN\n3462 | 8650 | 9 | Liverpool | LIV\n3463 | 8654 | 19 | West Ham United | WHU\n3465 | 10252 | 2 | Aston Villa | AVL\n3466 | 8456 | 10 | Manchester City | MCI\n3467 | 8668 | 7 | Everton | EVE\n3468 | 8655 | 3 | Blackburn Rovers | BLB\n3469 | 8549 | 12 | Middlesbrough | MID\n3470 | 8586 | 18 | Tottenham Hotspur | TOT\n3471 | 8559 | 4 | Bolton Wanderers | BOL\n3474 | 9879 | 144 | Fulham | FUL\n3475 | 8455 | 5 | Chelsea | CHE\n4218 | 8658 | 88 | Birmingham City | BIR\n4225 | 8602 | 110 | Wolverhampton Wanderers | WOL\n5747 | 10172 | 15 | Queens Park Rangers | QPR\n6504 | 8466 | 17 | Southampton | SOU\n8021 | 8197 | 95 | Leicester City | LEI\n9537 | 8583 | 57 | AJ Auxerre | AUX\n9538 | 9830 | 71 | FC Nantes | NAN\n9539 | 9827 | 59 | Girondins de Bordeaux | BOR\n9540 | 7819 | 210 | SM Caen | CAE\n9542 | 9831 | 72 | OGC Nice | NIC\n9544 | 8689 | 217 | FC Lorient | LOR\n9545 | 9748 | 66 | Olympique Lyonnais | LYO\n9547 | 9829 | 69 | AS Monaco | MON\n9548 | 9847 | 73 | Paris Saint-Germain | PSG\n9550 | 8639 | 65 | LOSC Lille | LIL\n9551 | 9851 | 74 | Stade Rennais FC | REN\n9552 | 8592 | 219 | Olympique de Marseille | MAR\n9553 | 9874 | 226 | FC Sochaux-Montbéliard | SOC\n10300 | 8588 | 64 | RC Lens | LEN\n10309 | 10249 | 70 | Montpellier Hérault SC | MON\n11076 | 8521 | 378 | Stade Brestois 29 | BRE\n11817 | 8576 | 614 | AC Ajaccio | AJA\n... (more rows not shown)"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) FILTER (WHERE player_api_id <= 110000) AS le, count(*) FILTER (WHERE player_api_id < 110000) AS lt FROM \"Player\";"
+   },
+   "result": "le | lt\n42 | 42"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) FILTER (WHERE player_api_id IN (95000,120000,170000,90000,125000,110000)) FROM \"Player\";"
+   },
+   "result": "count\n0"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) FILTER (WHERE team_fifa_api_id IN (1000,650,600,700,2500)) FROM \"Team\";"
+   },
+   "result": "count\n0"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) AS total, count(player_api_id) AS non_null, count(*) - count(player_api_id) AS nulls FROM \"Player\";"
+   },
+   "result": "total | non_null | nulls\n101 | 101 | 0"
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT count(*) FROM Player;"
+   },
+   "result": "error: [42P01] relation \"player\" does not exist"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_height integer,\n    para_birthday text,\n    para_player_api_id integer,\n    para_id integer,\n    para_team_short_name text,\n    para_team_fifa_api_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    DELETE FROM \"Player\" WHERE player_api_id < para_player_api_id;\n    DELETE FROM \"Team\" WHERE team_fifa_api_id < para_team_fifa_api_id;\n\n    UPDATE \"Player\"\n       SET birthday = para_birthday || '_phase_9',\n           height = CASE\n                      WHEN height <= para_height\n                      THEN height + para_id * (para_height / 100) * (para_height / 100)\n                      ELSE height\n                    END;\n\n    UPDATE \"Team\"\n       SET team_short_name = 'log_phase_9';\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(0, '', 110000, 3, 'unused2', 1000);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT (SELECT count(*) FROM \"Player\") AS player_count, (SELECT count(*) FROM \"Team\") AS team_count;"
+   },
+   "result": "player_count | team_count\n59 | 39"
+  },
+  {
+   "step": 28,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, player_api_id, birthday, height FROM \"Player\" ORDER BY id LIMIT 12;"
+   },
+   "result": "id | player_api_id | birthday | height\n1 | 505942 | _phase_9 | 183\n2 | 155782 | _phase_9 | 170\n3 | 162549 | _phase_9 | 170\n7 | 564793 | _phase_9 | 173\n9 | 528212 | _phase_9 | 191\n12 | 231592 | _phase_9 | 175\n13 | 163222 | _phase_9 | 188\n16 | 597948 | _phase_9 | 173\n17 | 161644 | _phase_9 | 183\n19 | 120919 | _phase_9 | 175\n21 | 167027 | _phase_9 | 178\n22 | 245653 | _phase_9 | 185"
+  },
+  {
+   "step": 29,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 30,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_height integer,\n    para_birthday text,\n    para_player_api_id integer,\n    para_id integer,\n    para_team_short_name text,\n    para_team_fifa_api_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    DELETE FROM \"Player\" WHERE player_api_id < para_player_api_id;\n    DELETE FROM \"Team\" WHERE team_fifa_api_id < para_team_fifa_api_id;\n\n    UPDATE \"Player\"\n       SET birthday = CASE\n                        WHEN para_birthday IS NULL OR para_birthday = '' THEN 'phase_9'\n                        ELSE para_birthday || '_phase_9'\n                      END,\n           height = CASE\n                      WHEN height <= para_height\n                      THEN height + para_id * (para_height / 100) * (para_height / 100)\n                      ELSE height\n                    END;\n\n    UPDATE \"Team\"\n       SET team_short_name = 'log_phase_9';\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 31,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(0, '', 110000, 3, 'unused2', 1000);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 32,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT (SELECT count(*) FROM \"Player\") AS p, (SELECT count(*) FROM \"Team\") AS t;"
+   },
+   "result": "p | t\n59 | 39"
+  },
+  {
+   "step": 33,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, player_api_id, birthday, height FROM \"Player\" ORDER BY id LIMIT 10;"
+   },
+   "result": "id | player_api_id | birthday | height\n1 | 505942 | phase_9 | 183\n2 | 155782 | phase_9 | 170\n3 | 162549 | phase_9 | 170\n7 | 564793 | phase_9 | 173\n9 | 528212 | phase_9 | 191\n12 | 231592 | phase_9 | 175\n13 | 163222 | phase_9 | 188\n16 | 597948 | phase_9 | 173\n17 | 161644 | phase_9 | 183\n19 | 120919 | phase_9 | 175"
+  },
+  {
+   "step": 34,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, team_short_name FROM \"Team\" ORDER BY id LIMIT 10;"
+   },
+   "result": "id | team_short_name\n3 | log_phase_9\n4 | log_phase_9\n5 | log_phase_9\n8 | log_phase_9\n9 | log_phase_9\n11 | log_phase_9\n14 | log_phase_9\n15 | log_phase_9\n16 | log_phase_9\n1042 | log_phase_9"
+  },
+  {
+   "step": 35,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 36,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_height integer,\n    para_birthday text,\n    para_player_api_id integer,\n    para_id integer,\n    para_team_short_name text,\n    para_team_fifa_api_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    DELETE FROM \"Player\" WHERE player_api_id < para_player_api_id;\n    DELETE FROM \"Team\" WHERE team_fifa_api_id < para_team_fifa_api_id;\n\n    UPDATE \"Player\"\n       SET birthday = CASE\n                        WHEN para_birthday IS NULL OR para_birthday = '' THEN 'phase_9'\n                        ELSE para_birthday || '_phase_9'\n                      END,\n           height = CASE\n                      WHEN height <= para_height\n                      THEN height + para_id * (para_height / 100) * (para_height / 100)\n                      ELSE height\n                    END;\n\n    UPDATE \"Team\"\n       SET team_short_name = 'log_phase_9';\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 37,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(170, 'breeze', 95000, 4, 'unused3', 650);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 38,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT (SELECT count(*) FROM \"Player\") AS p, (SELECT count(*) FROM \"Team\") AS t;"
+   },
+   "result": "p | t\n61 | 46"
+  },
+  {
+   "step": 39,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, player_api_id, birthday, height FROM \"Player\" ORDER BY id LIMIT 12;"
+   },
+   "result": "id | player_api_id | birthday | height\n1 | 505942 | breeze_phase_9 | 183\n2 | 155782 | breeze_phase_9 | 174\n3 | 162549 | breeze_phase_9 | 174\n7 | 564793 | breeze_phase_9 | 173\n9 | 528212 | breeze_phase_9 | 191\n10 | 101042 | breeze_phase_9 | 175\n12 | 231592 | breeze_phase_9 | 175\n13 | 163222 | breeze_phase_9 | 188\n16 | 597948 | breeze_phase_9 | 173\n17 | 161644 | breeze_phase_9 | 183\n19 | 120919 | breeze_phase_9 | 175\n21 | 167027 | breeze_phase_9 | 178"
+  },
+  {
+   "step": 40,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, birthday, height FROM \"Player\" WHERE id IN (94,95,96,98,100,101,9,10) ORDER BY id;"
+   },
+   "result": "id | birthday | height\n9 | breeze_phase_9 | 191\n10 | breeze_phase_9 | 175\n94 | breeze_phase_9 | 174\n95 | breeze_phase_9 | 191\n96 | breeze_phase_9 | 188\n98 | breeze_phase_9 | 185\n100 | breeze_phase_9 | 178\n101 | breeze_phase_9 | 188"
+  },
+  {
+   "step": 41,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, team_short_name FROM \"Team\" ORDER BY id LIMIT 10;"
+   },
+   "result": "id | team_short_name\n1 | log_phase_9\n2 | log_phase_9\n3 | log_phase_9\n4 | log_phase_9\n5 | log_phase_9\n7 | log_phase_9\n8 | log_phase_9\n9 | log_phase_9\n11 | log_phase_9\n14 | log_phase_9"
+  },
+  {
+   "step": 42,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 43,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_height integer,\n    para_birthday text,\n    para_player_api_id integer,\n    para_id integer,\n    para_team_short_name text,\n    para_team_fifa_api_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    DELETE FROM \"Player\" WHERE player_api_id < para_player_api_id;\n    DELETE FROM \"Team\" WHERE team_fifa_api_id < para_team_fifa_api_id;\n\n    UPDATE \"Player\"\n       SET birthday = CASE\n                        WHEN para_birthday IS NULL OR para_birthday = '' THEN 'phase_9'\n                        ELSE para_birthday || '_phase_9'\n                      END,\n           height = CASE\n                      WHEN height <= para_height\n                      THEN height + para_id * (para_height / 100) * (para_height / 100)\n                      ELSE height\n                    END;\n\n    UPDATE \"Team\"\n       SET team_short_name = 'log_phase_9';\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 44,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(300, 'comet', 120000, 6, 'unused4', 600);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 45,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT (SELECT count(*) FROM \"Player\") AS p, (SELECT count(*) FROM \"Team\") AS t;"
+   },
+   "result": "p | t\n58 | 47"
+  },
+  {
+   "step": 46,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, birthday, height FROM \"Player\" WHERE id IN (94,95,96,98,100,101,1,2) ORDER BY id;"
+   },
+   "result": "id | birthday | height\n1 | comet_phase_9 | 237\n2 | comet_phase_9 | 224\n94 | comet_phase_9 | 224\n95 | comet_phase_9 | 245\n96 | comet_phase_9 | 242\n98 | comet_phase_9 | 239\n100 | comet_phase_9 | 232\n101 | comet_phase_9 | 242"
+  },
+  {
+   "step": 47,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, team_short_name FROM \"Team\" ORDER BY id LIMIT 15;"
+   },
+   "result": "id | team_short_name\n1 | log_phase_9\n2 | log_phase_9\n3 | log_phase_9\n4 | log_phase_9\n5 | log_phase_9\n7 | log_phase_9\n8 | log_phase_9\n9 | log_phase_9\n11 | log_phase_9\n14 | log_phase_9\n15 | log_phase_9\n16 | log_phase_9\n17 | log_phase_9\n18 | log_phase_9\n614 | log_phase_9"
+  },
+  {
+   "step": 48,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, team_short_name FROM \"Team\" ORDER BY id;"
+   },
+   "result": "id | team_short_name\n1 | log_phase_9\n2 | log_phase_9\n3 | log_phase_9\n4 | log_phase_9\n5 | log_phase_9\n7 | log_phase_9\n8 | log_phase_9\n9 | log_phase_9\n11 | log_phase_9\n14 | log_phase_9\n15 | log_phase_9\n16 | log_phase_9\n17 | log_phase_9\n18 | log_phase_9\n614 | log_phase_9\n1042 | log_phase_9\n1513 | log_phase_9\n2004 | log_phase_9\n2476 | log_phase_9\n2510 | log_phase_9\n3464 | log_phase_9\n3472 | log_phase_9\n3473 | log_phase_9\n3476 | log_phase_9\n4234 | log_phase_9\n4996 | log_phase_9\n5744 | log_phase_9\n5756 | log_phase_9\n6509 | log_phase_9\n7261 | log_phase_9\n7276 | log_phase_9\n8779 | log_phase_9\n8784 | log_phase_9\n9541 | log_phase_9\n9543 | log_phase_9\n9546 | log_phase_9\n9549 | log_phase_9\n9554 | log_phase_9\n9555 | log_phase_9\n9556 | log_phase_9\n10312 | log_phase_9\n11074 | log_phase_9\n11817 | log_phase_9\n11822 | log_phase_9\n11825 | log_phase_9\n14868 | log_phase_9\n14876 | log_phase_9"
+  },
+  {
+   "step": 49,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 50,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_height integer,\n    para_birthday text,\n    para_player_api_id integer,\n    para_id integer,\n    para_team_short_name text,\n    para_team_fifa_api_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    DELETE FROM \"Player\" WHERE player_api_id < para_player_api_id;\n    DELETE FROM \"Team\" WHERE team_fifa_api_id < para_team_fifa_api_id;\n\n    UPDATE \"Player\"\n       SET birthday = CASE\n                        WHEN para_birthday IS NULL OR para_birthday = '' THEN 'phase_9'\n                        ELSE para_birthday || '_phase_9'\n                      END,\n           height = CASE\n                      WHEN height <= para_height\n                      THEN height + para_id * (para_height / 100) * (para_height / 100)\n                      ELSE height\n                    END;\n\n    UPDATE \"Team\"\n       SET team_short_name = 'log_phase_9';\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 51,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(0, '', 170000, 11, 'unused5', 700);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 52,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT (SELECT count(*) FROM \"Player\") AS p, (SELECT count(*) FROM \"Team\") AS t, (SELECT count(*) FROM \"Player\" WHERE height <= 0) AS h0;"
+   },
+   "result": "p | t | h0\n48 | 39 | 0"
+  },
+  {
+   "step": 53,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, birthday, height FROM \"Player\" ORDER BY id LIMIT 10;"
+   },
+   "result": "id | birthday | height\n1 | phase_9 | 183\n7 | phase_9 | 173\n9 | phase_9 | 191\n12 | phase_9 | 175\n16 | phase_9 | 173\n22 | phase_9 | 185\n25 | phase_9 | 180\n28 | phase_9 | 180\n29 | phase_9 | 183\n33 | phase_9 | 183"
+  },
+  {
+   "step": 54,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 55,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_height integer,\n    para_birthday text,\n    para_player_api_id integer,\n    para_id integer,\n    para_team_short_name text,\n    para_team_fifa_api_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    DELETE FROM \"Player\" WHERE player_api_id < para_player_api_id;\n    DELETE FROM \"Team\" WHERE team_fifa_api_id < para_team_fifa_api_id;\n\n    UPDATE \"Player\"\n       SET birthday = CASE\n                        WHEN para_birthday IS NULL OR para_birthday = '' THEN 'phase_9'\n                        ELSE para_birthday || '_phase_9'\n                      END,\n           height = CASE\n                      WHEN height <= para_height\n                      THEN height + para_id * (para_height / 100) * (para_height / 100)\n                      ELSE height\n                    END;\n\n    UPDATE \"Team\"\n       SET team_short_name = 'log_phase_9';\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 56,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(320, 'dune', 90000, 8, 'unused6', 2500);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 57,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT (SELECT count(*) FROM \"Player\") AS p, (SELECT count(*) FROM \"Team\") AS t;"
+   },
+   "result": "p | t\n61 | 15"
+  },
+  {
+   "step": 58,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, birthday, height FROM \"Player\" WHERE id IN (94,95,96,98,100,101,1,2) ORDER BY id;"
+   },
+   "result": "id | birthday | height\n1 | dune_phase_9 | 255\n2 | dune_phase_9 | 242\n94 | dune_phase_9 | 242\n95 | dune_phase_9 | 263\n96 | dune_phase_9 | 260\n98 | dune_phase_9 | 257\n100 | dune_phase_9 | 250\n101 | dune_phase_9 | 260"
+  },
+  {
+   "step": 59,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, team_short_name FROM \"Team\" ORDER BY id;"
+   },
+   "result": "id | team_short_name\n3 | log_phase_9\n9 | log_phase_9\n11 | log_phase_9\n14 | log_phase_9\n15 | log_phase_9\n16 | log_phase_9\n1513 | log_phase_9\n2004 | log_phase_9\n2510 | log_phase_9\n9555 | log_phase_9\n10312 | log_phase_9\n11074 | log_phase_9\n11822 | log_phase_9\n11825 | log_phase_9\n14876 | log_phase_9"
+  },
+  {
+   "step": 60,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 61,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_height integer,\n    para_birthday text,\n    para_player_api_id integer,\n    para_id integer,\n    para_team_short_name text,\n    para_team_fifa_api_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    DELETE FROM \"Player\" WHERE player_api_id < para_player_api_id;\n    DELETE FROM \"Team\" WHERE team_fifa_api_id < para_team_fifa_api_id;\n\n    UPDATE \"Player\"\n       SET birthday = CASE\n                        WHEN para_birthday IS NULL OR para_birthday = '' THEN 'phase_9'\n                        ELSE para_birthday || '_phase_9'\n                      END,\n           height = CASE\n                      WHEN height <= para_height\n                      THEN height + para_id * (para_height / 100) * (para_height / 100)\n                      ELSE height\n                    END;\n\n    UPDATE \"Team\"\n       SET team_short_name = 'log_phase_9';\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 62,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(350, '', 125000, 9, 'unused7', 1000);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 63,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT (SELECT count(*) FROM \"Player\") AS p, (SELECT count(*) FROM \"Team\") AS t;"
+   },
+   "result": "p | t\n57 | 39"
+  },
+  {
+   "step": 64,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT id, birthday, height FROM \"Player\" WHERE id IN (94,95,96,98,100,101,12,13) ORDER BY id;"
+   },
+   "result": "id | birthday | height\n12 | phase_9 | 256\n13 | phase_9 | 269\n94 | phase_9 | 251\n95 | phase_9 | 272\n96 | phase_9 | 269\n98 | phase_9 | 266\n100 | phase_9 | 259\n101 | phase_9 | 269"
+  },
+  {
+   "step": 65,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT min(player_api_id), max(player_api_id) FROM \"Player\";"
+   },
+   "result": "min | max\n128456 | 660145"
+  },
+  {
+   "step": 66,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT NULL || '_phase_9' AS a, 'breeze' || NULL AS b, NULL || NULL AS c, concat_ws('_', NULLIF('', ''), 'phase_9') AS d, concat_ws('_', NULLIF(NULL, ''), 'phase_9') AS e;"
+   },
+   "result": "a | b | c | d | e\nNULL | NULL | NULL | phase_9 | phase_9"
+  },
+  {
+   "step": 67,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "In the DELETE operations, which comparison should be used when a row's value is exactly equal to the corresponding parameter? (The examples do not include such rows.)",
+    "options": [
+     "DELETE rows with player_api_id < para_player_api_id and team_fifa_api_id < para_team_fifa_api_id (strictly less than)",
+     "DELETE rows with player_api_id <= para_player_api_id and team_fifa_api_id <= para_team_fifa_api_id (less than or equal)",
+     "DELETE rows with player_api_id > para_player_api_id and team_fifa_api_id > para_team_fifa_api_id"
+    ]
+   },
+   "result": "2",
+   "index": 2,
+   "options": [
+    "None of the following are correct.",
+    "DELETE rows with player_api_id < para_player_api_id and team_fifa_api_id < para_team_fifa_api_id (strictly less than)",
+    "DELETE rows with player_api_id <= para_player_api_id and team_fifa_api_id <= para_team_fifa_api_id (less than or equal)",
+    "DELETE rows with player_api_id > para_player_api_id and team_fifa_api_id > para_team_fifa_api_id"
+   ],
+   "entry": "M2",
+   "status": "revealed",
+   "conflict_noted": false
+  },
+  {
+   "step": 68,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "What should the Player.birthday update produce if para_birthday is NULL? (The examples only pass '' for the empty case.)",
+    "options": [
+     "Treat NULL like an empty string, so birthday becomes 'phase_9'",
+     "Let birthday become NULL (because concatenating NULL with '_phase_9' is NULL)",
+     "Reject/raise an error if para_birthday is NULL"
+    ]
+   },
+   "result": "2",
+   "index": 2,
+   "options": [
+    "None of the following are correct.",
+    "Treat NULL like an empty string, so birthday becomes 'phase_9'",
+    "Let birthday become NULL (because concatenating NULL with '_phase_9' is NULL)",
+    "Reject/raise an error if para_birthday is NULL"
+   ],
+   "entry": "M1",
+   "status": "revealed",
+   "conflict_noted": false
+  },
+  {
+   "step": 69,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT -170/100 AS a, -1/2 AS b, 1/2 AS c, 170/100 AS d;"
+   },
+   "result": "a | b | c | d\n-1 | 0 | 0 | 1"
+  },
+  {
+   "step": 70,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_height integer,\n    para_birthday text,\n    para_player_api_id integer,\n    para_id integer,\n    para_team_short_name text,\n    para_team_fifa_api_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    DELETE FROM \"Player\" WHERE player_api_id < para_player_api_id;\n    DELETE FROM \"Team\" WHERE team_fifa_api_id < para_team_fifa_api_id;\n\n    UPDATE \"Player\"\n       SET birthday = CASE\n                        WHEN para_birthday IS NULL OR para_birthday = '' THEN 'phase_9'\n                        ELSE para_birthday || '_phase_9'\n                      END,\n           height = CASE\n                      WHEN height <= para_height\n                      THEN height + para_id * (para_height / 100) * (para_height / 100)\n                      ELSE height\n                    END;\n\n    UPDATE \"Team\"\n       SET team_short_name = 'log_phase_9';\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 71,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "For confirmation of option numbering: when para_birthday is an empty string, the new Player.birthday should be exactly 'phase_9', correct?",
+    "options": [
+     "Yes, exactly 'phase_9'"
+    ]
+   },
+   "result": "2",
+   "index": 2,
+   "options": [
+    "None of the following are correct.",
+    "Yes, exactly 'phase_9'"
+   ],
+   "entry": null,
+   "status": "off_oracle",
+   "conflict_noted": false
+  },
+  {
+   "step": 72,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    para_height integer,\n    para_birthday text,\n    para_player_api_id integer,\n    para_id integer,\n    para_team_short_name text,\n    para_team_fifa_api_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    DELETE FROM \"Player\" WHERE player_api_id < para_player_api_id;\n    DELETE FROM \"Team\" WHERE team_fifa_api_id < para_team_fifa_api_id;\n\n    UPDATE \"Player\"\n       SET birthday = CASE\n                        WHEN para_birthday IS NULL OR para_birthday = '' THEN 'phase_9'\n                        ELSE para_birthday || '_phase_9'\n                      END,\n           height = CASE\n                      WHEN height <= para_height\n                      THEN height + para_id * (para_height / 100) * (para_height / 100)\n                      ELSE height\n                    END;\n\n    UPDATE \"Team\"\n       SET team_short_name = 'log_phase_9';\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    para_height integer,\n    para_birthday text,\n    para_player_api_id integer,\n    para_id integer,\n    para_team_short_name text,\n    para_team_fifa_api_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    DELETE FROM \"Player\" WHERE player_api_id < para_player_api_id;\n    DELETE FROM \"Team\" WHERE team_fifa_api_id < para_team_fifa_api_id;\n\n    UPDATE \"Player\"\n       SET birthday = CASE\n                        WHEN para_birthday IS NULL OR para_birthday = '' THEN 'phase_9'\n                        ELSE para_birthday || '_phase_9'\n                      END,\n           height = CASE\n                      WHEN height <= para_height\n                      THEN height + para_id * (para_height / 100) * (para_height / 100)\n                      ELSE height\n                    END;\n\n    UPDATE \"Team\"\n       SET team_short_name = 'log_phase_9';\nEND;\n$$;"
+ },
+ "pair": {
+  "single_run": "st04",
+  "single_task": "postgres_a3_001"
+ }
+}

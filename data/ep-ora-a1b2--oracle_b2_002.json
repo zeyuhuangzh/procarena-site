@@ -1,0 +1,385 @@
+{
+ "id": "ep-ora-a1b2--oracle_b2_002",
+ "run": "ep-ora-a1b2",
+ "task_id": "oracle_b2_002",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "full",
+ "scenario": "b2",
+ "dialect": "oracle",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true,
+   "performance": true
+  },
+  "metrics": {
+   "criterion": "work",
+   "min_speedup": 1.1,
+   "scale_rows": 2000,
+   "repeats": 4,
+   "measure": "executions",
+   "seconds": {
+    "gold": 2.527558,
+    "baseline": 2.768448,
+    "candidate": 1.114003
+   },
+   "work": {
+    "gold": {
+     "executions": 12039,
+     "logical_reads": 44618
+    },
+    "baseline": {
+     "executions": 36039,
+     "logical_reads": 83506
+    },
+    "candidate": {
+     "executions": 32,
+     "logical_reads": 15923
+    }
+   },
+   "speedup_vs_baseline": 2.4851,
+   "work_ratio_vs_baseline": 1126.2188,
+   "ratio_vs_gold": 0.4407,
+   "score_v1": 0.7984,
+   "scaled": {
+    "basketball_match": 500,
+    "university": 400
+   },
+   "same_state_as_gold": true
+  },
+  "attribution": null,
+  "recovered": 2,
+  "oracle_size": 2
+ },
+ "summary": {
+  "steps": 27,
+  "seconds": 182.1,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 2,
+  "oracle_size": 2,
+  "entries_per_question": 2.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 2,
+   "ask_user": 1,
+   "execute_scratch": 19,
+   "reset_scratch": 2,
+   "compile_plsql": 1,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Performance ticket: rewrite current_procedure.sql\n\nThe attached file current_procedure.sql is the current implementation. It is functionally correct, and it is the specification of the required behavior. It has been observed to run too slowly on real data volumes.\n\nFor rows fetched in the first cursor loop, the procedure updates basketball_match and sets School_ID to para_School_ID + 200 where Team_ID matches the fetched row.\n\nPlease rewrite the stored procedure so that it does exactly the same thing with less database work:\n- For every input, the final database state must be identical to what the attached procedure produces.\n- The parameter list must not change. The procedure signature must remain:\n  sp(para_Team_ID NUMBER, para_School_ID NUMBER, para_Founded NUMBER)\n\nReturn the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "current_procedure.sql",
+    "kind": "current procedure (correct but slow)",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_Team_ID NUMBER, para_School_ID NUMBER, para_Founded NUMBER) IS\n  CURSOR all_rows IS SELECT * FROM \"basketball_match\";\n  all_rec \"basketball_match\"%ROWTYPE;\n  CURSOR ref_cursor IS SELECT * FROM \"basketball_match\" FOR UPDATE;\n  rec \"basketball_match\"%ROWTYPE;\n  v_count NUMBER;\nBEGIN\n  OPEN all_rows;\n  LOOP\n    FETCH all_rows INTO all_rec;\n    EXIT WHEN all_rows%NOTFOUND;\n\n    IF all_rec.\"School_ID\" <= para_School_ID THEN\n      UPDATE \"basketball_match\"\n         SET \"School_ID\" = para_School_ID + 100\n       WHERE \"Team_ID\" = all_rec.\"Team_ID\";\n    END IF;\n  END LOOP;\n  CLOSE all_rows;\n\n  OPEN ref_cursor;\n  LOOP\n    FETCH ref_cursor INTO rec;\n    EXIT WHEN ref_cursor%NOTFOUND;\n\n    SELECT COUNT(*)\n      INTO v_count\n      FROM \"basketball_match\"\n     WHERE \"Team_ID\" = rec.\"Team_ID\"\n       AND \"Team_ID\" > para_Team_ID;\n\n    IF v_count > 0 THEN\n    -- <<< region omitted from the export >>>\n    ELSE\n      UPDATE \"basketball_match\"\n         SET \"School_ID\" = para_School_ID - 20\n       WHERE CURRENT OF ref_cursor;\n    END IF;\n  END LOOP;\n  CLOSE ref_cursor;\n\n  UPDATE \"university\"\n     SET \"Founded\" = para_Founded;\nEND;\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 4,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what did the omitted region of the current procedure (lines 32-36) contain?",
+   "answer": "UPDATE \"basketball_match\"\n         SET \"School_ID\" = para_School_ID - 10\n       WHERE CURRENT OF ref_cursor;"
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": 4,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Which offset is correct for the School_ID update in the first cursor loop?",
+   "answer": "The procedure text is correct: the first cursor loop sets School_ID to para_School_ID + 100, not para_School_ID + 200."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable basketball_match , columns = [ Team_ID ( NUMBER | primary key | values : 2 , 3 ) , School_ID ( NUMBER | values : 5 , 1 ) , Team_Name ( VARCHAR2 | values : North Carolina , North Carolina ) , ACC_Regular_Season ( VARCHAR2 | values : 14–2 , 14–2 ) , ACC_Percent ( VARCHAR2 | values : .563 , .625 ) , ACC_Home ( VARCHAR2 | values : 7–1 , 6–2 ) , ACC_Road ( VARCHAR2 | values : 6–2 , 3–5 ) , All_Games ( VARCHAR2 | values : 28–6 , 21–14 ) , All_Games_Percent ( NUMBER | values : 0.946 , 0.824 ) , All_Home ( VARCHAR2 | values : 15–1 , 15–1 ) , All_Road ( VARCHAR2 | values : 13–0 , 4–8 ) , All_Neutral ( VARCHAR2 | values : 4–3 , 5–3 ) ]\ntable university , columns = [ School_ID ( NUMBER | primary key | values : 2 , 2 ) , School ( VARCHAR2 | values : Stony Brook University , University of Delaware ) , Location ( VARCHAR2 | values : Stony Brook, NY , Kingston, RI ) , Founded ( NUMBER | values : 1957 , 1766 ) , Affiliation ( VARCHAR2 | values : Public , Public ) , Enrollment ( NUMBER | values : 56868 , 2100 ) , Nickname ( VARCHAR2 | values : Scarlet Knights , Scarlet Knights ) , Primary_conference ( VARCHAR2 | values : Colonial Athletic Association ( D-I ) , Atlantic 10 Conference ( D-I ) ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "basketball_match"
+   },
+   "result": "Team_ID | School_ID | Team_Name | ACC_Regular_Season | ACC_Percent | ACC_Home | ACC_Road | All_Games | All_Games_Percent | All_Home | All_Road | All_Neutral\n1 | 1 | North Carolina | 14–2 | .875 | 6–2 | 8–0 | 35–2 | 0.946 | 14–2 | 13–0 | 9–1\n2 | 2 | Duke | 13–3 | .813 | 7–1 | 6–2 | 28–6 | 0.824 | 15–1 | 8–2 | 5–3\n3 | 4 | Clemson | 10–6 | .625 | 7–1 | 3–5 | 24–10 | 0.706 | 14–2 | 6–5 | 4–3\n4 | 5 | Virginia Tech | 9–7 | .563 | 6–2 | 3–5 | 21–14 | 0.6 | 14–3 | 4–8 | 3–3"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "university"
+   },
+   "result": "School_ID | School | Location | Founded | Affiliation | Enrollment | Nickname | Primary_conference\n1 | University of Delaware | Newark, DE | 1743 | Public | 19067 | Fightin' Blue Hens | Colonial Athletic Association ( D-I )\n2 | Lebanon Valley College | Annville, PA | 1866 | Private/Methodist | 2100 | Flying Dutchmen | MAC Commonwealth Conference ( D-III )\n3 | University of Rhode Island | Kingston, RI | 1892 | Public | 19095 | Rams | Atlantic 10 Conference ( D-I )\n4 | Rutgers University | New Brunswick, NJ | 1766 | Public | 56868 | Scarlet Knights | American Athletic Conference ( D-I )\n5 | Stony Brook University | Stony Brook, NY | 1957 | Public | 23997 | Seawolves | America East Conference ( D-I )"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "The attached current_procedure.sql has a comment \"-- <<< region omitted from the export >>>\" inside the IF v_count > 0 THEN branch of the second cursor loop. What does that omitted region do exactly? Also, the task text says the first loop sets School_ID to para_School_ID + 200, but the attached file sets para_School_ID + 100. Which value is correct?"
+   },
+   "result": "UPDATE \"basketball_match\"\n         SET \"School_ID\" = para_School_ID - 10\n       WHERE CURRENT OF ref_cursor;\n\nThe procedure text is correct: the first cursor loop sets School_ID to para_School_ID + 100, not para_School_ID + 200.",
+   "revealed": [
+    "M1",
+    "C1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_orig(para_Team_ID NUMBER, para_School_ID NUMBER, para_Founded NUMBER) IS\n  CURSOR all_rows IS SELECT * FROM \"basketball_match\";\n  all_rec \"basketball_match\"%ROWTYPE;\n  CURSOR ref_cursor IS SELECT * FROM \"basketball_match\" FOR UPDATE;\n  rec \"basketball_match\"%ROWTYPE;\n  v_count NUMBER;\nBEGIN\n  OPEN all_rows;\n  LOOP\n    FETCH all_rows INTO all_rec;\n    EXIT WHEN all_rows%NOTFOUND;\n\n    IF all_rec.\"School_ID\" <= para_School_ID THEN\n      UPDATE \"basketball_match\"\n         SET \"School_ID\" = para_School_ID + 100\n       WHERE \"Team_ID\" = all_rec.\"Team_ID\";\n    END IF;\n  END LOOP;\n  CLOSE all_rows;\n\n  OPEN ref_cursor;\n  LOOP\n    FETCH ref_cursor INTO rec;\n    EXIT WHEN ref_cursor%NOTFOUND;\n\n    SELECT COUNT(*)\n      INTO v_count\n      FROM \"basketball_match\"\n     WHERE \"Team_ID\" = rec.\"Team_ID\"\n       AND \"Team_ID\" > para_Team_ID;\n\n    IF v_count > 0 THEN\n      UPDATE \"basketball_match\"\n         SET \"School_ID\" = para_School_ID - 10\n       WHERE CURRENT OF ref_cursor;\n    ELSE\n      UPDATE \"basketball_match\"\n         SET \"School_ID\" = para_School_ID - 20\n       WHERE CURRENT OF ref_cursor;\n    END IF;\n  END LOOP;\n  CLOSE ref_cursor;\n\n  UPDATE \"university\"\n     SET \"Founded\" = para_Founded;\nEND;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_orig(2,3,2000)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM basketball_match ORDER BY Team_ID"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM university ORDER BY School_ID"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"basketball_match\" ORDER BY \"Team_ID\""
+   },
+   "result": "Team_ID | School_ID | Team_Name | ACC_Regular_Season | ACC_Percent | ACC_Home | ACC_Road | All_Games | All_Games_Percent | All_Home | All_Road | All_Neutral\n1 | -17 | North Carolina | 14–2 | .875 | 6–2 | 8–0 | 35–2 | 0.946 | 14–2 | 13–0 | 9–1\n2 | -17 | Duke | 13–3 | .813 | 7–1 | 6–2 | 28–6 | 0.824 | 15–1 | 8–2 | 5–3\n3 | -7 | Clemson | 10–6 | .625 | 7–1 | 3–5 | 24–10 | 0.706 | 14–2 | 6–5 | 4–3\n4 | -7 | Virginia Tech | 9–7 | .563 | 6–2 | 3–5 | 21–14 | 0.6 | 14–3 | 4–8 | 3–3"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"university\" ORDER BY \"School_ID\""
+   },
+   "result": "School_ID | School | Location | Founded | Affiliation | Enrollment | Nickname | Primary_conference\n1 | University of Delaware | Newark, DE | 2000 | Public | 19067 | Fightin' Blue Hens | Colonial Athletic Association ( D-I )\n2 | Lebanon Valley College | Annville, PA | 2000 | Private/Methodist | 2100 | Flying Dutchmen | MAC Commonwealth Conference ( D-III )\n3 | University of Rhode Island | Kingston, RI | 2000 | Public | 19095 | Rams | Atlantic 10 Conference ( D-I )\n4 | Rutgers University | New Brunswick, NJ | 2000 | Public | 56868 | Scarlet Knights | American Athletic Conference ( D-I )\n5 | Stony Brook University | Stony Brook, NY | 2000 | Public | 23997 | Seawolves | America East Conference ( D-I )"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_simple(para_Team_ID NUMBER, para_School_ID NUMBER, para_Founded NUMBER) IS\nBEGIN\n  UPDATE \"basketball_match\"\n     SET \"School_ID\" = CASE WHEN \"Team_ID\" > para_Team_ID THEN para_School_ID - 10 ELSE para_School_ID - 20 END;\n  UPDATE \"university\"\n     SET \"Founded\" = para_Founded;\nEND;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_simple(2,3,2000)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"basketball_match\" ORDER BY \"Team_ID\""
+   },
+   "result": "Team_ID | School_ID | Team_Name | ACC_Regular_Season | ACC_Percent | ACC_Home | ACC_Road | All_Games | All_Games_Percent | All_Home | All_Road | All_Neutral\n1 | -17 | North Carolina | 14–2 | .875 | 6–2 | 8–0 | 35–2 | 0.946 | 14–2 | 13–0 | 9–1\n2 | -17 | Duke | 13–3 | .813 | 7–1 | 6–2 | 28–6 | 0.824 | 15–1 | 8–2 | 5–3\n3 | -7 | Clemson | 10–6 | .625 | 7–1 | 3–5 | 24–10 | 0.706 | 14–2 | 6–5 | 4–3\n4 | -7 | Virginia Tech | 9–7 | .563 | 6–2 | 3–5 | 21–14 | 0.6 | 14–3 | 4–8 | 3–3"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"university\" ORDER BY \"School_ID\""
+   },
+   "result": "School_ID | School | Location | Founded | Affiliation | Enrollment | Nickname | Primary_conference\n1 | University of Delaware | Newark, DE | 2000 | Public | 19067 | Fightin' Blue Hens | Colonial Athletic Association ( D-I )\n2 | Lebanon Valley College | Annville, PA | 2000 | Private/Methodist | 2100 | Flying Dutchmen | MAC Commonwealth Conference ( D-III )\n3 | University of Rhode Island | Kingston, RI | 2000 | Public | 19095 | Rams | Atlantic 10 Conference ( D-I )\n4 | Rutgers University | New Brunswick, NJ | 2000 | Public | 56868 | Scarlet Knights | American Athletic Conference ( D-I )\n5 | Stony Brook University | Stony Brook, NY | 2000 | Public | 23997 | Seawolves | America East Conference ( D-I )"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_orig(para_Team_ID NUMBER, para_School_ID NUMBER, para_Founded NUMBER) IS\n  CURSOR all_rows IS SELECT * FROM \"basketball_match\";\n  all_rec \"basketball_match\"%ROWTYPE;\n  CURSOR ref_cursor IS SELECT * FROM \"basketball_match\" FOR UPDATE;\n  rec \"basketball_match\"%ROWTYPE;\n  v_count NUMBER;\nBEGIN\n  OPEN all_rows;\n  LOOP\n    FETCH all_rows INTO all_rec;\n    EXIT WHEN all_rows%NOTFOUND;\n    IF all_rec.\"School_ID\" <= para_School_ID THEN\n      UPDATE \"basketball_match\" SET \"School_ID\" = para_School_ID + 100 WHERE \"Team_ID\" = all_rec.\"Team_ID\";\n    END IF;\n  END LOOP;\n  CLOSE all_rows;\n  OPEN ref_cursor;\n  LOOP\n    FETCH ref_cursor INTO rec;\n    EXIT WHEN ref_cursor%NOTFOUND;\n    SELECT COUNT(*) INTO v_count FROM \"basketball_match\" WHERE \"Team_ID\" = rec.\"Team_ID\" AND \"Team_ID\" > para_Team_ID;\n    IF v_count > 0 THEN\n      UPDATE \"basketball_match\" SET \"School_ID\" = para_School_ID - 10 WHERE CURRENT OF ref_cursor;\n    ELSE\n      UPDATE \"basketball_match\" SET \"School_ID\" = para_School_ID - 20 WHERE CURRENT OF ref_cursor;\n    END IF;\n  END LOOP;\n  CLOSE ref_cursor;\n  UPDATE \"university\" SET \"Founded\" = para_Founded;\nEND;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_orig(NULL,NULL,NULL)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"basketball_match\" ORDER BY \"Team_ID\""
+   },
+   "result": "Team_ID | School_ID | Team_Name | ACC_Regular_Season | ACC_Percent | ACC_Home | ACC_Road | All_Games | All_Games_Percent | All_Home | All_Road | All_Neutral\n1 | NULL | North Carolina | 14–2 | .875 | 6–2 | 8–0 | 35–2 | 0.946 | 14–2 | 13–0 | 9–1\n2 | NULL | Duke | 13–3 | .813 | 7–1 | 6–2 | 28–6 | 0.824 | 15–1 | 8–2 | 5–3\n3 | NULL | Clemson | 10–6 | .625 | 7–1 | 3–5 | 24–10 | 0.706 | 14–2 | 6–5 | 4–3\n4 | NULL | Virginia Tech | 9–7 | .563 | 6–2 | 3–5 | 21–14 | 0.6 | 14–3 | 4–8 | 3–3"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"university\" ORDER BY \"School_ID\""
+   },
+   "result": "School_ID | School | Location | Founded | Affiliation | Enrollment | Nickname | Primary_conference\n1 | University of Delaware | Newark, DE | NULL | Public | 19067 | Fightin' Blue Hens | Colonial Athletic Association ( D-I )\n2 | Lebanon Valley College | Annville, PA | NULL | Private/Methodist | 2100 | Flying Dutchmen | MAC Commonwealth Conference ( D-III )\n3 | University of Rhode Island | Kingston, RI | NULL | Public | 19095 | Rams | Atlantic 10 Conference ( D-I )\n4 | Rutgers University | New Brunswick, NJ | NULL | Public | 56868 | Scarlet Knights | American Athletic Conference ( D-I )\n5 | Stony Brook University | Stony Brook, NY | NULL | Public | 23997 | Seawolves | America East Conference ( D-I )"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_simple(para_Team_ID NUMBER, para_School_ID NUMBER, para_Founded NUMBER) IS\nBEGIN\n  UPDATE \"basketball_match\"\n     SET \"School_ID\" = CASE WHEN \"Team_ID\" > para_Team_ID THEN para_School_ID - 10 ELSE para_School_ID - 20 END;\n  UPDATE \"university\"\n     SET \"Founded\" = para_Founded;\nEND;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp_simple(NULL,NULL,NULL)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"basketball_match\" ORDER BY \"Team_ID\""
+   },
+   "result": "Team_ID | School_ID | Team_Name | ACC_Regular_Season | ACC_Percent | ACC_Home | ACC_Road | All_Games | All_Games_Percent | All_Home | All_Road | All_Neutral\n1 | NULL | North Carolina | 14–2 | .875 | 6–2 | 8–0 | 35–2 | 0.946 | 14–2 | 13–0 | 9–1\n2 | NULL | Duke | 13–3 | .813 | 7–1 | 6–2 | 28–6 | 0.824 | 15–1 | 8–2 | 5–3\n3 | NULL | Clemson | 10–6 | .625 | 7–1 | 3–5 | 24–10 | 0.706 | 14–2 | 6–5 | 4–3\n4 | NULL | Virginia Tech | 9–7 | .563 | 6–2 | 3–5 | 21–14 | 0.6 | 14–3 | 4–8 | 3–3"
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"university\" ORDER BY \"School_ID\""
+   },
+   "result": "School_ID | School | Location | Founded | Affiliation | Enrollment | Nickname | Primary_conference\n1 | University of Delaware | Newark, DE | NULL | Public | 19067 | Fightin' Blue Hens | Colonial Athletic Association ( D-I )\n2 | Lebanon Valley College | Annville, PA | NULL | Private/Methodist | 2100 | Flying Dutchmen | MAC Commonwealth Conference ( D-III )\n3 | University of Rhode Island | Kingston, RI | NULL | Public | 19095 | Rams | Atlantic 10 Conference ( D-I )\n4 | Rutgers University | New Brunswick, NJ | NULL | Public | 56868 | Scarlet Knights | American Athletic Conference ( D-I )\n5 | Stony Brook University | Stony Brook, NY | NULL | Public | 23997 | Seawolves | America East Conference ( D-I )"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Team_ID NUMBER, para_School_ID NUMBER, para_Founded NUMBER) IS\nBEGIN\n  UPDATE \"basketball_match\"\n     SET \"School_ID\" = CASE\n                          WHEN \"Team_ID\" > para_Team_ID THEN para_School_ID - 10\n                          ELSE para_School_ID - 20\n                        END;\n\n  UPDATE \"university\"\n     SET \"Founded\" = para_Founded;\nEND;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT trigger_name, table_name FROM user_triggers"
+   },
+   "result": "(TRIGGER_NAME | TABLE_NAME)\n(no rows)"
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_Team_ID NUMBER, para_School_ID NUMBER, para_Founded NUMBER) IS\nBEGIN\n  UPDATE \"basketball_match\"\n     SET \"School_ID\" = CASE\n                          WHEN \"Team_ID\" > para_Team_ID THEN para_School_ID - 10\n                          ELSE para_School_ID - 20\n                        END;\n\n  UPDATE \"university\"\n     SET \"Founded\" = para_Founded;\nEND;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_Team_ID NUMBER, para_School_ID NUMBER, para_Founded NUMBER) IS\nBEGIN\n  UPDATE \"basketball_match\"\n     SET \"School_ID\" = CASE\n                          WHEN \"Team_ID\" > para_Team_ID THEN para_School_ID - 10\n                          ELSE para_School_ID - 20\n                        END;\n\n  UPDATE \"university\"\n     SET \"Founded\" = para_Founded;\nEND;"
+ },
+ "pair": {
+  "single_run": "st-oracle-a1b2",
+  "single_task": "oracle_b2_002"
+ }
+}

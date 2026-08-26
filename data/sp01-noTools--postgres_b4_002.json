@@ -1,0 +1,91 @@
+{
+ "id": "sp01-noTools--postgres_b4_002",
+ "run": "sp01-noTools",
+ "task_id": "postgres_b4_002",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "b4",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 6,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "database state differs after call 1",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": null,
+  "attribution": "impl",
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 2,
+  "seconds": 139.3,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Implement the missing block at the TODO comment in the attached incomplete procedure. Do not change anything outside that block.\n\nThe procedure signature must remain exactly:\nsp(para_Height real, para_Country text, para_mountain_id integer, para_camera_lens_id integer, para_max_aperture real, para_focal_length_mm real)\n\nInside the TODO block, perform the following in this order:\n\n1. Update every mountain row: set its Height column to para_Height + 76 and its Country column to para_Country.\n2. Delete every photos row whose mountain_id column is strictly less than para_mountain_id.\n3. Open the already-declared mountain cursor and loop over every mountain row. For each mountain row:\n   a. Open the already-declared photos cursor and loop over every photo row that remains after step 2.\n   b. For the current photo row, compare its mountain_id column to para_max_aperture.\n      - If the photo mountain_id is strictly greater than para_max_aperture, then:\n         * update every camera_lens row so its focal_length_mm column becomes focal_length_mm - para_focal_length_mm + 33;\n         * increment the existing v_affected_photos counter by 1.\n      - Otherwise, do nothing for that photo row.\n   c. Close the photos cursor after each mountain row inner loop.\n4. Do not close the mountain cursor inside this block.\n\nThe photo rows are not modified inside these loops, so every mountain row inner loop sees the same remaining photo rows.\n\nReturn only the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "incomplete_procedure.sql",
+    "kind": "incomplete procedure",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_Height real, para_Country text, para_mountain_id integer, para_camera_lens_id integer, para_max_aperture real, para_focal_length_mm real) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"mountain\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"photos\";\n    rec RECORD;\n    rec2 RECORD;\n    v_affected_photos INTEGER := 0;\nBEGIN-- TODO: update the mountain height and country, delete photos whose mountain id is before the supplied mountain id, then run the nested cursor loop over mountains and photos to adjust camera lens focal length and add to the affected photo count\n\n    CLOSE ref_cursor;\n    IF para_camera_lens_id <> -1000 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height;\n        UPDATE \"camera_lens\" SET \"max_aperture\" = para_max_aperture WHERE \"id\" = para_camera_lens_id;\n    END IF;\n    IF v_affected_photos > 0 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height + v_affected_photos;\n    END IF;\nEND;\n$$;"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "CREATE OR REPLACE PROCEDURE sp(para_Height real, para_Country text, para_mountain_id integer, para_camera_lens_id integer, para_max_aperture real, para_focal_length_mm real) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"mountain\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"photos\";\n    rec RECORD;\n    rec2 RECORD;\n    v_affected_photos INTEGER := 0;\nBEGIN\n    UPDATE \"mountain\" SET \"Height\" = para_Height + 76, \"Country\" = para_Country;\n    DELETE FROM \"photos\" WHERE \"mountain_id\" < para_mountain_id;\n\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n\n            IF rec2.\"mountain_id\" > para_max_aperture THEN\n                UPDATE \"camera_lens\" SET \"focal_length_mm\" = \"focal_length_mm\" - para_focal_length_mm + 33;\n                v_affected_photos := v_affected_photos + 1;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n\n    CLOSE ref_cursor;\n    IF para_camera_lens_id <> -1000 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height;\n        UPDATE \"camera_lens\" SET \"max_aperture\" = para_max_aperture WHERE \"id\" = para_camera_lens_id;\n    END IF;\n    IF v_affected_photos > 0 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height + v_affected_photos;\n    END IF;\nEND;\n$$;"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_Height real, para_Country text, para_mountain_id integer, para_camera_lens_id integer, para_max_aperture real, para_focal_length_mm real) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"mountain\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"photos\";\n    rec RECORD;\n    rec2 RECORD;\n    v_affected_photos INTEGER := 0;\nBEGIN\n    UPDATE \"mountain\" SET \"Height\" = para_Height + 76, \"Country\" = para_Country;\n    DELETE FROM \"photos\" WHERE \"mountain_id\" < para_mountain_id;\n\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n\n            IF rec2.\"mountain_id\" > para_max_aperture THEN\n                UPDATE \"camera_lens\" SET \"focal_length_mm\" = \"focal_length_mm\" - para_focal_length_mm + 33;\n                v_affected_photos := v_affected_photos + 1;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n\n    CLOSE ref_cursor;\n    IF para_camera_lens_id <> -1000 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height;\n        UPDATE \"camera_lens\" SET \"max_aperture\" = para_max_aperture WHERE \"id\" = para_camera_lens_id;\n    END IF;\n    IF v_affected_photos > 0 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height + v_affected_photos;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_Height real, para_Country text, para_mountain_id integer, para_camera_lens_id integer, para_max_aperture real, para_focal_length_mm real) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"mountain\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"photos\";\n    rec RECORD;\n    rec2 RECORD;\n    v_affected_photos INTEGER := 0;\nBEGIN\n    UPDATE \"mountain\" SET \"Height\" = para_Height + 76, \"Country\" = para_Country;\n    DELETE FROM \"photos\" WHERE \"mountain_id\" < para_mountain_id;\n\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n\n            IF rec2.\"mountain_id\" > para_max_aperture THEN\n                UPDATE \"camera_lens\" SET \"focal_length_mm\" = \"focal_length_mm\" - para_focal_length_mm + 33;\n                v_affected_photos := v_affected_photos + 1;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n\n    CLOSE ref_cursor;\n    IF para_camera_lens_id <> -1000 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height;\n        UPDATE \"camera_lens\" SET \"max_aperture\" = para_max_aperture WHERE \"id\" = para_camera_lens_id;\n    END IF;\n    IF v_affected_photos > 0 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height + v_affected_photos;\n    END IF;\nEND;\n$$;"
+ },
+ "pair": null
+}

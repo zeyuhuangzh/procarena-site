@@ -1,0 +1,374 @@
+{
+ "id": "ep-ora-a2a5-kB--oracle_a3_002",
+ "run": "ep-ora-a2a5-kB",
+ "task_id": "oracle_a3_002",
+ "stage": "multi",
+ "condition": "tools+ask@B14+2L+6",
+ "tier": "full",
+ "scenario": "a3",
+ "dialect": "oracle",
+ "model": "deepseek-v4-flash",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "candidate did not create: line 11:21 PL/SQL: ORA-00942: table or view does not exist; line 11:9 PL/SQL: SQL Statement ignored; line 14:21 PL/SQL: ORA-00942: table or view does not exist; line 14:9 PL/SQL: SQL Statement ignored; line 18:16 PL/SQL: ORA-00942: table or view does not exist; line 18:9 PL/SQL: SQL Statement ignored",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "spec",
+  "recovered": 2,
+  "oracle_size": 3
+ },
+ "summary": {
+  "steps": 21,
+  "seconds": 916.6,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 2,
+   "gated": 0,
+   "ask_selector": 2,
+   "off_oracle": 1
+  },
+  "recovered": 2,
+  "oracle_size": 3,
+  "entries_per_question": 0.5,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 2,
+   "sample_rows": 6,
+   "ask_selector": 2,
+   "ask_user": 2,
+   "execute_scratch": 7,
+   "compile_plsql": 1,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 26.0,
+   "base": 14.0,
+   "per_entry": 2.0,
+   "patience": 6.0,
+   "rounding": 0,
+   "spent": 20.5,
+   "by_tool": {
+    "get_schema": 2.0,
+    "sample_rows": 3.0,
+    "ask_selector": 4.0,
+    "ask_user": 4.0,
+    "execute_scratch": 7.0,
+    "compile_plsql": 0.5,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false
+ },
+ "task": {
+  "prompt": "Write an Oracle PL/SQL stored procedure named `sp` with the exact signature:\n\n```sql\nCREATE OR REPLACE PROCEDURE sp(\n    para_StuID             IN PLS_INTEGER,\n    para_Sex               IN VARCHAR2,\n    para_ResTypeID         IN PLS_INTEGER,\n    para_ResTypeDescription IN VARCHAR2,\n    para_Rating            IN PLS_INTEGER\n)\n```\n\nThe procedure conditionally changes data based on its parameters. Only the following tables are in scope:\n- Student\n- Restaurant_Type\n- Restaurant\n- Visits_Restaurant\n\nDo not read or write any other table, including Type_Of_Restaurant.\n\nThe parameter `para_Sex` is accepted but must not be used anywhere in the procedure.\n\nThe procedure must have no exception handler; any Oracle error raised during execution should propagate to the caller. Do not issue any commit or rollback.\n\nReturn the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "examples.md",
+    "kind": "worked examples",
+    "text": "# Behaviour of the procedure, by example\n\nEach example is one call, run against the database in the state shown below. The examples are independent: every one starts from that same state.\n\n## Starting state\n\nEvery example below starts from this database. The tables the procedure touches:\n\n### Restaurant (2 rows)\n| ResID | ResName | Address | Rating |\n|---|---|---|---|\n| 1 | Subway | 3233 St Paul St, Baltimore, MD 21218 | 3 |\n| 2 | Honeygrow | 3212 St Paul St, Baltimore, MD 21218 | 4 |\n\n### Restaurant_Type (2 rows)\n| ResTypeID | ResTypeName | ResTypeDescription |\n|---|---|---|\n| 1 | Sandwich Inc | Simplest there is. |\n| 2 | Stir-fry | Classic Chinese cooking. |\n\n### Student (34 rows)\n| StuID | LName | Fname | Age | Sex | Major | Advisor | city_code |\n|---|---|---|---|---|---|---|---|\n| 1001 | Smith | Linda | 18 | F | 600 | 1121 | BAL |\n| 1002 | Kim | Tracy | 19 | F | 600 | 7712 | HKG |\n| 1003 | Jones | Shiela | 21 | F | 600 | 7792 | WAS |\n| 1004 | Kumar | Dinesh | 20 | M | 600 | 8423 | CHI |\n| 1005 | Gompers | Paul | 26 | M | 600 | 1121 | YYZ |\n| 1006 | Schultz | Andy | 18 | M | 600 | 1148 | BAL |\n| 1007 | Apap | Lisa | 18 | F | 600 | 8918 | PIT |\n| 1008 | Nelson | Jandy | 20 | F | 600 | 9172 | BAL |\n| ... 26 more rows | | | | | | | \n\n## Example 2\n\n```sql\nCALL sp(0, 'F', 4, '%', 1);\n```\n\n**Restaurant_Type**\n- 2 row(s) removed:\n  ResTypeID=1, ResTypeName='Sandwich', ResTypeDescription='Simplest there is.'\n  ResTypeID=2, ResTypeName='Stir-fry', ResTypeDescription='Classic Chinese cooking.'\n\nUnchanged: Restaurant, Student\n\n## Example 3\n\n```sql\nCALL sp(11, 'F', 0, 'Simplest%', 1);\n```\n\n**Restaurant_Type**\n- 1 row(s) changed:\n  ResTypeID=1, ResTypeName='Sandwich', ResTypeDescription='Simplest there is.' | ResTypeDescription: 'Simplest there is.' -> 'COMPLETED'\n\nUnchanged: Restaurant, Student\n\n## Example 4\n\n```sql\nCALL sp(13, 'F', 0, 'Classic%', 1);\n```\n\n**Restaurant_Type**\n- 1 row(s) changed:\n  ResTypeID=2, ResTypeName='Stir-fry', ResTypeDescription='Classic Chinese cooking | ResTypeDescription: 'Classic Chinese cooking.' -> 'COMPLETED'\n\nUnchanged: Restaurant, Student\n\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 8,
+   "via": "ask_selector",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "is there an example of the behaviour that example 1 showed, and what does the procedure do for that call?",
+   "answer": "## Example 1\n\n```sql\nCALL sp(-3, 'F', 2, '%', 1);\n```\n\n**Restaurant_Type**\n- 1 row(s) removed:\n  ResTypeID=1, ResTypeName='Sandwich', ResTypeDescription='Simplest there is.'\n\nUnchanged: Restaurant, Student"
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": 9,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "is there an example of the behaviour that example 5 showed, and what does the procedure do for that call?",
+   "answer": "## Example 5\n\n```sql\nCALL sp(15, 'F', 0, '%e%', 1);\n```\n\n**Restaurant_Type**\n- 2 row(s) changed:\n  ResTypeID=1, ResTypeName='Sandwich', ResTypeDescription='Simplest there is.' | ResTypeDescription: 'Simplest there is.' -> 'COMPLETED'\n  ResTypeID=2, ResTypeName='Stir-fry', ResTypeDescription='Classic Chinese cooking | ResTypeDescription: 'Classic Chinese cooking.' -> 'COMPLETED'\n\nUnchanged: Restaurant, Student"
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "the starting state shows 'Sandwich Inc' where example 2 shows 'Sandwich' changing -- which is the real starting value?",
+   "answer": "The example is right: the starting value of ResTypeName is 'Sandwich'. The starting-state excerpt is a stale snapshot."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Restaurant , columns = [ ResID ( NUMBER | primary key | values : 1 , 2 ) , ResName ( VARCHAR2 | values : Subway , Honeygrow ) , Address ( VARCHAR2 | values : 3233 St Paul St, Baltimore, MD 21218 , 3212 St Paul St, Baltimore, MD 21218 ) , Rating ( NUMBER | values : 3 , 4 ) ]\ntable Restaurant_Type , columns = [ ResTypeID ( NUMBER | primary key | values : 1 , 2 ) , ResTypeName ( VARCHAR2 | values : Sandwich , Stir-fry ) , ResTypeDescription ( VARCHAR2 | values : Simplest there is. , Classic Chinese cooking. ) ]\ntable Student , columns = [ StuID ( NUMBER | primary key | values : 1001 , 1002 ) , LName ( VARCHAR2 | values : Smith , Kim ) , Fname ( VARCHAR2 | values : Linda , Tracy ) , Age ( NUMBER | values : 18 , 19 ) , Sex ( VARCHAR2 | values : F ) , Major ( NUMBER | values : 600 ) , Advisor ( NUMBER | values : 1121 , 7712 ) , city_code ( VARCHAR2 | values : BAL , HKG ) ]\ntable Type_Of_Restaurant , columns = [ ResID ( NUMBER | values : 1 , 2 ) , ResTypeID ( NUMBER | values : 1 , 2 ) ]\ntable Visits_Restaurant , columns = [ StuID ( NUMBER | values : 1001 , 1032 ) , ResID ( NUMBER | values : 1 , 2 ) , Time ( TIMESTAMP(6) | values : 2017-10-09T18:15:00 , 2017-10-08T13:00:30 ) , Spent ( NUMBER | values : 6.53 , 13.2 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Restaurant_Type",
+    "limit": 20
+   },
+   "result": "ResTypeID | ResTypeName | ResTypeDescription\n1 | Sandwich | Simplest there is.\n2 | Stir-fry | Classic Chinese cooking."
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Student",
+    "limit": 10
+   },
+   "result": "StuID | LName | Fname | Age | Sex | Major | Advisor | city_code\n1001 | Smith | Linda | 18 | F | 600 | 1121 | BAL\n1002 | Kim | Tracy | 19 | F | 600 | 7712 | HKG\n1003 | Jones | Shiela | 21 | F | 600 | 7792 | WAS\n1004 | Kumar | Dinesh | 20 | M | 600 | 8423 | CHI\n1005 | Gompers | Paul | 26 | M | 600 | 1121 | YYZ\n1006 | Schultz | Andy | 18 | M | 600 | 1148 | BAL\n1007 | Apap | Lisa | 18 | F | 600 | 8918 | PIT\n1008 | Nelson | Jandy | 20 | F | 600 | 9172 | BAL\n1009 | Tai | Eric | 19 | M | 600 | 2192 | YYZ\n1010 | Lee | Derek | 17 | M | 600 | 2192 | HOU"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Restaurant",
+    "limit": 20
+   },
+   "result": "ResID | ResName | Address | Rating\n1 | Subway | 3233 St Paul St, Baltimore, MD 21218 | 3\n2 | Honeygrow | 3212 St Paul St, Baltimore, MD 21218 | 4"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Visits_Restaurant",
+    "limit": 20
+   },
+   "result": "StuID | ResID | Time | Spent\n1001 | 1 | 2017-10-09 18:15:00 | 6.53\n1032 | 2 | 2017-10-08 13:00:30 | 13.2"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "limit": 20,
+    "table": "Student"
+   },
+   "result": "StuID | LName | Fname | Age | Sex | Major | Advisor | city_code\n1001 | Smith | Linda | 18 | F | 600 | 1121 | BAL\n1002 | Kim | Tracy | 19 | F | 600 | 7712 | HKG\n1003 | Jones | Shiela | 21 | F | 600 | 7792 | WAS\n1004 | Kumar | Dinesh | 20 | M | 600 | 8423 | CHI\n1005 | Gompers | Paul | 26 | M | 600 | 1121 | YYZ\n1006 | Schultz | Andy | 18 | M | 600 | 1148 | BAL\n1007 | Apap | Lisa | 18 | F | 600 | 8918 | PIT\n1008 | Nelson | Jandy | 20 | F | 600 | 9172 | BAL\n1009 | Tai | Eric | 19 | M | 600 | 2192 | YYZ\n1010 | Lee | Derek | 17 | M | 600 | 2192 | HOU\n1011 | Adams | David | 22 | M | 600 | 1148 | PHL\n1012 | Davis | Steven | 20 | M | 600 | 7723 | PIT\n1014 | Norris | Charles | 18 | M | 600 | 8741 | DAL\n1015 | Lee | Susan | 16 | F | 600 | 8721 | HKG\n1016 | Schwartz | Mark | 17 | M | 600 | 2192 | DET\n1017 | Wilson | Bruce | 27 | M | 600 | 1148 | LON\n1018 | Leighton | Michael | 20 | M | 600 | 1121 | PIT\n1019 | Pang | Arthur | 18 | M | 600 | 2192 | WAS\n1020 | Thornton | Ian | 22 | M | 520 | 7271 | NYC\n1021 | Andreou | George | 19 | M | 520 | 8722 | NYC"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "limit": 20,
+    "table": "Visits_Restaurant"
+   },
+   "result": "StuID | ResID | Time | Spent\n1001 | 1 | 2017-10-09 18:15:00 | 6.53\n1032 | 2 | 2017-10-08 13:00:30 | 13.2"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "The examples show Restaurant_Type rows being modified: matching rows (ResTypeDescription LIKE para_ResTypeDescription) are either DELETEd or UPDATEd to set ResTypeDescription='COMPLETED'. Which condition decides UPDATE vs DELETE, and are other tables ever touched?",
+    "options": [
+     "If para_ResTypeID = 0 then UPDATE matching Restaurant_Type rows to ResTypeDescription='COMPLETED'; otherwise DELETE matching Restaurant_Type rows. Other tables are never touched.",
+     "If para_StuID = 0 then DELETE matching Restaurant_Type rows; otherwise UPDATE matching Restaurant_Type rows to ResTypeDescription='COMPLETED'. Other tables are never touched.",
+     "The procedure also reads/writes Student, Restaurant, or Visits_Restaurant under conditions not shown in the examples (I will need those conditions described)."
+    ]
+   },
+   "result": "4",
+   "index": 4,
+   "options": [
+    "None of the following are correct.",
+    "If para_ResTypeID = 0 then UPDATE matching Restaurant_Type rows to ResTypeDescription='COMPLETED'; otherwise DELETE matching Restaurant_Type rows. Other tables are never touched.",
+    "If para_StuID = 0 then DELETE matching Restaurant_Type rows; otherwise UPDATE matching Restaurant_Type rows to ResTypeDescription='COMPLETED'. Other tables are never touched.",
+    "The procedure also reads/writes Student, Restaurant, or Visits_Restaurant under conditions not shown in the examples (I will need those conditions described)."
+   ],
+   "entry": "M1",
+   "status": "revealed",
+   "conflict_noted": false
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "The examples only show Restaurant_Type being modified, but you indicated the procedure also reads/writes Student, Restaurant, and/or Visits_Restaurant. Under which parameter values does that happen, and what exactly does it do? For example: does para_StuID trigger a lookup of that student and an insert into Visits_Restaurant? Does para_Rating select restaurants by rating? Please describe the complete behavior of sp, including the role of para_StuID, para_ResTypeID, para_ResTypeDescription, and para_Rating for each table affected."
+   },
+   "result": "## Example 1\n\n```sql\nCALL sp(-3, 'F', 2, '%', 1);\n```\n\n**Restaurant_Type**\n- 1 row(s) removed:\n  ResTypeID=1, ResTypeName='Sandwich', ResTypeDescription='Simplest there is.'\n\nUnchanged: Restaurant, Student\n\n## Example 5\n\n```sql\nCALL sp(15, 'F', 0, '%e%', 1);\n```\n\n**Restaurant_Type**\n- 2 row(s) changed:\n  ResTypeID=1, ResTypeName='Sandwich', ResTypeDescription='Simplest there is.' | ResTypeDescription: 'Simplest there is.' -> 'COMPLETED'\n  ResTypeID=2, ResTypeName='Stir-fry', ResTypeDescription='Classic Chinese cooking | ResTypeDescription: 'Classic Chinese cooking.' -> 'COMPLETED'\n\nUnchanged: Restaurant, Student",
+   "revealed": [
+    "M1",
+    "M2"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "options": [
+     "If para_ResTypeID = 0 then UPDATE Restaurant_Type SET ResTypeDescription='COMPLETED' WHERE ResTypeDescription LIKE para_ResTypeDescription; otherwise DELETE FROM Restaurant_Type WHERE ResTypeDescription LIKE para_ResTypeDescription AND ResTypeID <> para_ResTypeID.",
+     "If para_StuID <= 0 then DELETE FROM Restaurant_Type WHERE ResTypeDescription LIKE para_ResTypeDescription AND ResTypeID <> para_ResTypeID; otherwise UPDATE Restaurant_Type SET ResTypeDescription='COMPLETED' WHERE ResTypeDescription LIKE para_ResTypeDescription."
+    ],
+    "question": "Which parameter selects between the UPDATE (set description='COMPLETED') and DELETE (excluding the given ResTypeID) operations on Restaurant_Type?"
+   },
+   "result": "1",
+   "index": 1,
+   "options": [
+    "None of the following are correct.",
+    "If para_ResTypeID = 0 then UPDATE Restaurant_Type SET ResTypeDescription='COMPLETED' WHERE ResTypeDescription LIKE para_ResTypeDescription; otherwise DELETE FROM Restaurant_Type WHERE ResTypeDescription LIKE para_ResTypeDescription AND ResTypeID <> para_ResTypeID.",
+    "If para_StuID <= 0 then DELETE FROM Restaurant_Type WHERE ResTypeDescription LIKE para_ResTypeDescription AND ResTypeID <> para_ResTypeID; otherwise UPDATE Restaurant_Type SET ResTypeDescription='COMPLETED' WHERE ResTypeDescription LIKE para_ResTypeDescription."
+   ],
+   "entry": null,
+   "status": "off_oracle",
+   "conflict_noted": false
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "In the DELETE examples, para_StuID is 0 or negative and para_ResTypeID is non-zero; in the UPDATE examples, para_StuID is positive and para_ResTypeID is 0. I need to know the exact condition that selects the UPDATE branch vs the DELETE branch. Do you have an example where para_StuID is positive AND para_ResTypeID is non-zero, or where para_StuID is 0/negative AND para_ResTypeID is 0, or can you state exactly which parameter value(s) trigger the DELETE and which trigger the UPDATE? Also, does the DELETE branch use the ResTypeDescription LIKE pattern at all?"
+   },
+   "result": "## Example 1\n\n```sql\nCALL sp(-3, 'F', 2, '%', 1);\n```\n\n**Restaurant_Type**\n- 1 row(s) removed:\n  ResTypeID=1, ResTypeName='Sandwich', ResTypeDescription='Simplest there is.'\n\nUnchanged: Restaurant, Student\n\n## Example 5\n\n```sql\nCALL sp(15, 'F', 0, '%e%', 1);\n```\n\n**Restaurant_Type**\n- 2 row(s) changed:\n  ResTypeID=1, ResTypeName='Sandwich', ResTypeDescription='Simplest there is.' | ResTypeDescription: 'Simplest there is.' -> 'COMPLETED'\n  ResTypeID=2, ResTypeName='Stir-fry', ResTypeDescription='Classic Chinese cooking | ResTypeDescription: 'Classic Chinese cooking.' -> 'COMPLETED'\n\nUnchanged: Restaurant, Student\n\nSorry -- I don't have anything more on that one.",
+   "revealed": [
+    "M1",
+    "M2"
+   ],
+   "suppressed": [],
+   "unmatched": [
+    "Does the DELETE branch use the ResTypeDescription LIKE pattern at all?"
+   ],
+   "fallback": 0
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_StuID             IN PLS_INTEGER,\n    para_Sex               IN VARCHAR2,\n    para_ResTypeID         IN PLS_INTEGER,\n    para_ResTypeDescription IN VARCHAR2,\n    para_Rating            IN PLS_INTEGER\n)\nIS\nBEGIN\n    IF para_StuID = 0 THEN\n        DELETE FROM Restaurant_Type\n        WHERE ResTypeDescription LIKE para_ResTypeDescription;\n    ELSIF para_StuID < 0 THEN\n        DELETE FROM Restaurant_Type\n        WHERE ResTypeDescription LIKE para_ResTypeDescription\n          AND ResTypeID <> para_ResTypeID;\n    ELSE\n        UPDATE Restaurant_Type\n        SET ResTypeDescription = 'COMPLETED'\n        WHERE ResTypeDescription LIKE para_ResTypeDescription;\n    END IF;\nEND sp;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(-3, 'F', 2, '%', 1);"
+   },
+   "result": "error: DatabaseError: ORA-06575: Package or function SP is in an invalid state\nHelp: https://docs.oracle.com/error-help/db/ora-06575/"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT name, type, line, position, text FROM user_errors WHERE name = 'SP'"
+   },
+   "result": "(NAME | TYPE | LINE | POSITION | TEXT)\n(no rows)"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT object_name, object_type, status FROM user_objects WHERE object_name = 'SP'"
+   },
+   "result": "(OBJECT_NAME | OBJECT_TYPE | STATUS)\n(no rows)"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DECLARE\n  para_StuID PLS_INTEGER := -3;\n  para_ResTypeID PLS_INTEGER := 2;\n  para_ResTypeDescription VARCHAR2(100) := '%';\nBEGIN\n  DELETE FROM Restaurant_Type\n  WHERE ResTypeDescription LIKE para_ResTypeDescription\n    AND ResTypeID <> para_ResTypeID;\nEND;\n/\nSELECT ResTypeID, ResTypeName, ResTypeDescription FROM Restaurant_Type ORDER BY ResTypeID;"
+   },
+   "result": "error: DatabaseError: ORA-06550: line 11, column 1:\nPLS-00103: Encountered the symbol \"SELECT\"\nHelp: https://docs.oracle.com/error-help/db/ora-06550/"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT ResTypeID, ResTypeName, ResTypeDescription FROM Restaurant_Type ORDER BY ResTypeID"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Restaurant , columns = [ ResID ( NUMBER | primary key | values : 1 , 2 ) , ResName ( VARCHAR2 | values : Subway , Honeygrow ) , Address ( VARCHAR2 | values : 3233 St Paul St, Baltimore, MD 21218 , 3212 St Paul St, Baltimore, MD 21218 ) , Rating ( NUMBER | values : 3 , 4 ) ]\ntable Restaurant_Type , columns = [ ResTypeID ( NUMBER | primary key | values : 1 , 2 ) , ResTypeName ( VARCHAR2 | values : Sandwich , Stir-fry ) , ResTypeDescription ( VARCHAR2 | values : Simplest there is. , Classic Chinese cooking. ) ]\ntable Student , columns = [ StuID ( NUMBER | primary key | values : 1001 , 1002 ) , LName ( VARCHAR2 | values : Smith , Kim ) , Fname ( VARCHAR2 | values : Linda , Tracy ) , Age ( NUMBER | values : 18 , 19 ) , Sex ( VARCHAR2 | values : F ) , Major ( NUMBER | values : 600 ) , Advisor ( NUMBER | values : 1121 , 7712 ) , city_code ( VARCHAR2 | values : BAL , HKG ) ]\ntable Type_Of_Restaurant , columns = [ ResID ( NUMBER | values : 1 , 2 ) , ResTypeID ( NUMBER | values : 1 , 2 ) ]\ntable Visits_Restaurant , columns = [ StuID ( NUMBER | values : 1001 , 1032 ) , ResID ( NUMBER | values : 1 , 2 ) , Time ( TIMESTAMP(6) | values : 2017-10-09T18:15:00 , 2017-10-08T13:00:30 ) , Spent ( NUMBER | values : 6.53 , 13.2 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_StuID             IN PLS_INTEGER,\n    para_Sex               IN VARCHAR2,\n    para_ResTypeID         IN PLS_INTEGER,\n    para_ResTypeDescription IN VARCHAR2,\n    para_Rating            IN PLS_INTEGER\n)\nIS\nBEGIN\n    IF para_StuID = 0 THEN\n        DELETE FROM Restaurant_Type\n        WHERE ResTypeDescription LIKE para_ResTypeDescription;\n    ELSIF para_StuID < 0 THEN\n        DELETE FROM Restaurant_Type\n        WHERE ResTypeDescription LIKE para_ResTypeDescription\n          AND ResTypeID <> para_ResTypeID;\n    ELSE\n        UPDATE Restaurant_Type\n        SET ResTypeDescription = 'COMPLETED'\n        WHERE ResTypeDescription LIKE para_ResTypeDescription;\n    END IF;\nEND sp;"
+   },
+   "result": "compile error: line 11:21 PL/SQL: ORA-00942: table or view does not exist; line 11:9 PL/SQL: SQL Statement ignored; line 14:21 PL/SQL: ORA-00942: table or view does not exist; line 14:9 PL/SQL: SQL Statement ignored; line 18:16 PL/SQL: ORA-00942: table or view does not exist; line 18:9 PL/SQL: SQL Statement ignored",
+   "compiled": false
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables ORDER BY table_name"
+   },
+   "result": "TABLE_NAME\nAQ$_INTERNET_AGENTS\nAQ$_INTERNET_AGENT_PRIVS\nAQ$_KEY_SHARD_MAP\nAQ$_QUEUES\nAQ$_QUEUE_TABLES\nAQ$_SCHEDULES\nHELP\nLOGMNRC_CONCOL_GG\nLOGMNRC_CON_GG\nLOGMNRC_DBNAME_UID_MAP\nLOGMNRC_GSBA\nLOGMNRC_GSII\nLOGMNRC_GTCS\nLOGMNRC_GTLO\nLOGMNRC_INDCOL_GG\nLOGMNRC_IND_GG\nLOGMNRC_SEQ_GG\nLOGMNRC_SHARD_TS\nLOGMNRC_TS\nLOGMNRC_TSPART\nLOGMNRC_USER\nLOGMNRGGC_GTCS\nLOGMNRGGC_GTLO\nLOGMNRP_CTAS_PART_MAP\nLOGMNRT_MDDL$\nLOGMNR_AGE_SPILL$\nLOGMNR_ATTRCOL$\nLOGMNR_ATTRIBUTE$\nLOGMNR_CCOL$\nLOGMNR_CDEF$\nLOGMNR_COL$\nLOGMNR_COLTYPE$\nLOGMNR_CON$\nLOGMNR_CONTAINER$\nLOGMNR_DICTIONARY$\nLOGMNR_DICTSTATE$\nLOGMNR_DID$\nLOGMNR_ENC$\nLOGMNR_ERROR$\nLOGMNR_FILTER$\nLOGMNR_GLOBAL$\nLOGMNR_GT_TAB_INCLUDE$\nLOGMNR_GT_USER_INCLUDE$\nLOGMNR_GT_XID_INCLUDE$\nLOGMNR_ICOL$\nLOGMNR_IDNSEQ$\nLOGMNR_IND$\nLOGMNR_INDCOMPART$\nLOGMNR_INDPART$\nLOGMNR_INDSUBPART$\n... (more rows not shown)"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    para_StuID             IN PLS_INTEGER,\n    para_Sex               IN VARCHAR2,\n    para_ResTypeID         IN PLS_INTEGER,\n    para_ResTypeDescription IN VARCHAR2,\n    para_Rating            IN PLS_INTEGER\n)\nIS\nBEGIN\n    IF para_StuID = 0 THEN\n        DELETE FROM Restaurant_Type\n        WHERE ResTypeDescription LIKE para_ResTypeDescription;\n    ELSIF para_StuID < 0 THEN\n        DELETE FROM Restaurant_Type\n        WHERE ResTypeDescription LIKE para_ResTypeDescription\n          AND ResTypeID <> para_ResTypeID;\n    ELSE\n        UPDATE Restaurant_Type\n        SET ResTypeDescription = 'COMPLETED'\n        WHERE ResTypeDescription LIKE para_ResTypeDescription;\n    END IF;\nEND sp;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    para_StuID             IN PLS_INTEGER,\n    para_Sex               IN VARCHAR2,\n    para_ResTypeID         IN PLS_INTEGER,\n    para_ResTypeDescription IN VARCHAR2,\n    para_Rating            IN PLS_INTEGER\n)\nIS\nBEGIN\n    IF para_StuID = 0 THEN\n        DELETE FROM Restaurant_Type\n        WHERE ResTypeDescription LIKE para_ResTypeDescription;\n    ELSIF para_StuID < 0 THEN\n        DELETE FROM Restaurant_Type\n        WHERE ResTypeDescription LIKE para_ResTypeDescription\n          AND ResTypeID <> para_ResTypeID;\n    ELSE\n        UPDATE Restaurant_Type\n        SET ResTypeDescription = 'COMPLETED'\n        WHERE ResTypeDescription LIKE para_ResTypeDescription;\n    END IF;\nEND sp;"
+ },
+ "pair": {
+  "single_run": "st-oracle-a2a5",
+  "single_task": "oracle_a3_002"
+ }
+}

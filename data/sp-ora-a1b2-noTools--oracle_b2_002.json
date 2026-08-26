@@ -1,0 +1,126 @@
+{
+ "id": "sp-ora-a1b2-noTools--oracle_b2_002",
+ "run": "sp-ora-a1b2-noTools",
+ "task_id": "oracle_b2_002",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "b2",
+ "dialect": "oracle",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true,
+   "performance": true
+  },
+  "metrics": {
+   "criterion": "work",
+   "min_speedup": 1.1,
+   "scale_rows": 2000,
+   "repeats": 4,
+   "measure": "executions",
+   "seconds": {
+    "gold": 1.16614,
+    "baseline": 2.479145,
+    "candidate": 1.128622
+   },
+   "work": {
+    "gold": {
+     "executions": 12039,
+     "logical_reads": 37483
+    },
+    "baseline": {
+     "executions": 36039,
+     "logical_reads": 83506
+    },
+    "candidate": {
+     "executions": 32,
+     "logical_reads": 18132
+    }
+   },
+   "speedup_vs_baseline": 2.1966,
+   "work_ratio_vs_baseline": 1126.2188,
+   "ratio_vs_gold": 0.9678,
+   "score_v1": 0.6099,
+   "scaled": {
+    "basketball_match": 500,
+    "university": 400
+   },
+   "same_state_as_gold": true
+  },
+  "attribution": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 2,
+  "seconds": 227.0,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Performance ticket: rewrite current_procedure.sql\n\nThe attached file current_procedure.sql is the current implementation. It is functionally correct, and it is the specification of the required behavior. It has been observed to run too slowly on real data volumes.\n\nPlease rewrite the stored procedure so that it does exactly the same thing with less database work:\n- For every input, the final database state must be identical to what the attached procedure produces.\n- The parameter list must not change. The procedure signature must remain:\n  sp(para_Team_ID NUMBER, para_School_ID NUMBER, para_Founded NUMBER)\n\nReturn the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "current_procedure.sql",
+    "kind": "current procedure (correct but slow)",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_Team_ID NUMBER, para_School_ID NUMBER, para_Founded NUMBER) IS\n  CURSOR all_rows IS SELECT * FROM \"basketball_match\";\n  all_rec \"basketball_match\"%ROWTYPE;\n  CURSOR ref_cursor IS SELECT * FROM \"basketball_match\" FOR UPDATE;\n  rec \"basketball_match\"%ROWTYPE;\n  v_count NUMBER;\nBEGIN\n  OPEN all_rows;\n  LOOP\n    FETCH all_rows INTO all_rec;\n    EXIT WHEN all_rows%NOTFOUND;\n\n    IF all_rec.\"School_ID\" <= para_School_ID THEN\n      UPDATE \"basketball_match\"\n         SET \"School_ID\" = para_School_ID + 100\n       WHERE \"Team_ID\" = all_rec.\"Team_ID\";\n    END IF;\n  END LOOP;\n  CLOSE all_rows;\n\n  OPEN ref_cursor;\n  LOOP\n    FETCH ref_cursor INTO rec;\n    EXIT WHEN ref_cursor%NOTFOUND;\n\n    SELECT COUNT(*)\n      INTO v_count\n      FROM \"basketball_match\"\n     WHERE \"Team_ID\" = rec.\"Team_ID\"\n       AND \"Team_ID\" > para_Team_ID;\n\n    IF v_count > 0 THEN\n      UPDATE \"basketball_match\"\n         SET \"School_ID\" = para_School_ID - 10\n       WHERE CURRENT OF ref_cursor;\n    ELSE\n      UPDATE \"basketball_match\"\n         SET \"School_ID\" = para_School_ID - 20\n       WHERE CURRENT OF ref_cursor;\n    END IF;\n  END LOOP;\n  CLOSE ref_cursor;\n\n  UPDATE \"university\"\n     SET \"Founded\" = para_Founded;\nEND;\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "CREATE OR REPLACE PROCEDURE sp(para_Team_ID NUMBER, para_School_ID NUMBER, para_Founded NUMBER) IS\nBEGIN\n  UPDATE \"basketball_match\"\n     SET \"School_ID\" = CASE\n                         WHEN \"Team_ID\" > para_Team_ID THEN para_School_ID - 10\n                         ELSE para_School_ID - 20\n                       END;\n\n  UPDATE \"university\"\n     SET \"Founded\" = para_Founded;\nEND;"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_Team_ID NUMBER, para_School_ID NUMBER, para_Founded NUMBER) IS\nBEGIN\n  UPDATE \"basketball_match\"\n     SET \"School_ID\" = CASE\n                         WHEN \"Team_ID\" > para_Team_ID THEN para_School_ID - 10\n                         ELSE para_School_ID - 20\n                       END;\n\n  UPDATE \"university\"\n     SET \"Founded\" = para_Founded;\nEND;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_Team_ID NUMBER, para_School_ID NUMBER, para_Founded NUMBER) IS\nBEGIN\n  UPDATE \"basketball_match\"\n     SET \"School_ID\" = CASE\n                         WHEN \"Team_ID\" > para_Team_ID THEN para_School_ID - 10\n                         ELSE para_School_ID - 20\n                       END;\n\n  UPDATE \"university\"\n     SET \"Founded\" = para_Founded;\nEND;"
+ },
+ "pair": null
+}

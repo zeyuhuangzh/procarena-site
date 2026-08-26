@@ -1,0 +1,84 @@
+{
+ "id": "sp01-noTools--postgres_b4_001",
+ "run": "sp01-noTools",
+ "task_id": "postgres_b4_001",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "b4",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 6,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": null,
+  "attribution": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 115.1,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "The attached incomplete procedure contains a TODO comment. Replace only that TODO comment with the PL/pgSQL block that completes the procedure, and return the complete stored procedure. Do not change anything outside that TODO comment.\n\nThe procedure signature is exactly:\nsp(para_Year_of_Founded real, para_Major_Record_Format text, para_Conductor_ID integer, para_Age integer, para_Attendance real, para_Show_ID integer)\n\nAfter the existing statements before the TODO have executed, perform the following.\n\nOpen the outer cursor and loop over its rows one at a time. For each outer row, open the inner cursor and loop over its rows one at a time, starting from the first remaining inner row each time. If there are no outer rows, the loops do not run. If there are no inner rows, no show or performance updates happen during the loops.\n\nFor each pairing of one outer row and one inner row, evaluate this condition:\n- the inner row's Conductor_ID is strictly greater than para_Attendance\n- the inner row's Age is strictly less than para_Age\nBoth comparisons must be true. If either comparison is false or unknown because a value is null, the condition is not true.\n\nIf the condition is true, update every row of the show table by setting Show_ID to Show_ID - para_Show_ID - 33. Do not update performance for that pairing.\n\nIf the condition is not true, update every row of the performance table whose Orchestra_ID equals the current outer row's Orchestra_ID by subtracting exactly 1 from Official_ratings_(millions). If no performance rows match that Orchestra_ID, do nothing for that pairing.\n\nContinue until every inner row has been processed for the current outer row. Then move to the next outer row and repeat the inner loop from the beginning over the same remaining inner rows. The inner body is evaluated once for every outer-row/inner-row pairing.\n\nAfter all loops are complete, if para_Age is not equal to -1000 and para_Age is not null, update every row of the orchestra table by setting Year_of_Founded to exactly para_Year_of_Founded. Do not add 76 in this final update. If para_Age is exactly -1000 or para_Age is null, skip this final update. Do not change Major_Record_Format in this final update.\n\nDo not include explicit error handling. If any statement raises an error, let it propagate to the caller.\n\nReturn the complete stored procedure and nothing else.",
+  "materials": [
+   {
+    "file": "incomplete_procedure.sql",
+    "kind": "incomplete procedure",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_Year_of_Founded real, para_Major_Record_Format text, para_Conductor_ID integer, para_Age integer, para_Attendance real, para_Show_ID integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"orchestra\"; ref_cursor2 CURSOR FOR SELECT * FROM \"conductor\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded + 76, \"Major_Record_Format\" = para_Major_Record_Format; DELETE FROM \"conductor\" WHERE \"Conductor_ID\" < para_Conductor_ID;-- TODO: loop over the orchestra and conductor cursors, apply the conditional show/performance updates based on conductor age and attendance, then do the final founding-year correction when the age parameter is not the sentinel\n END; $$;"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_Year_of_Founded real, para_Major_Record_Format text, para_Conductor_ID integer, para_Age integer, para_Attendance real, para_Show_ID integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"orchestra\"; ref_cursor2 CURSOR FOR SELECT * FROM \"conductor\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded + 76, \"Major_Record_Format\" = para_Major_Record_Format; DELETE FROM \"conductor\" WHERE \"Conductor_ID\" < para_Conductor_ID;\nOPEN ref_cursor;\nLOOP\n    FETCH ref_cursor INTO rec;\n    EXIT WHEN NOT FOUND;\n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        IF rec2.\"Conductor_ID\" > para_Attendance AND rec2.\"Age\" < para_Age THEN\n            UPDATE \"show\" SET \"Show_ID\" = \"Show_ID\" - para_Show_ID - 33;\n        ELSE\n            UPDATE \"performance\" SET \"Official_ratings_(millions)\" = \"Official_ratings_(millions)\" - 1 WHERE \"Orchestra_ID\" = rec.\"Orchestra_ID\";\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\nEND LOOP;\nCLOSE ref_cursor;\nIF para_Age IS NOT NULL AND para_Age <> -1000 THEN\n    UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded;\nEND IF;\n END; $$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_Year_of_Founded real, para_Major_Record_Format text, para_Conductor_ID integer, para_Age integer, para_Attendance real, para_Show_ID integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"orchestra\"; ref_cursor2 CURSOR FOR SELECT * FROM \"conductor\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded + 76, \"Major_Record_Format\" = para_Major_Record_Format; DELETE FROM \"conductor\" WHERE \"Conductor_ID\" < para_Conductor_ID;\nOPEN ref_cursor;\nLOOP\n    FETCH ref_cursor INTO rec;\n    EXIT WHEN NOT FOUND;\n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        IF rec2.\"Conductor_ID\" > para_Attendance AND rec2.\"Age\" < para_Age THEN\n            UPDATE \"show\" SET \"Show_ID\" = \"Show_ID\" - para_Show_ID - 33;\n        ELSE\n            UPDATE \"performance\" SET \"Official_ratings_(millions)\" = \"Official_ratings_(millions)\" - 1 WHERE \"Orchestra_ID\" = rec.\"Orchestra_ID\";\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\nEND LOOP;\nCLOSE ref_cursor;\nIF para_Age IS NOT NULL AND para_Age <> -1000 THEN\n    UPDATE \"orchestra\" SET \"Year_of_Founded\" = para_Year_of_Founded;\nEND IF;\n END; $$;"
+ },
+ "pair": null
+}

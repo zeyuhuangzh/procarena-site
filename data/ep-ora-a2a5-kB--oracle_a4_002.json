@@ -1,0 +1,323 @@
+{
+ "id": "ep-ora-a2a5-kB--oracle_a4_002",
+ "run": "ep-ora-a2a5-kB",
+ "task_id": "oracle_a4_002",
+ "stage": "multi",
+ "condition": "tools+ask@B14+2L+6",
+ "tier": "full",
+ "scenario": "a4",
+ "dialect": "oracle",
+ "model": "deepseek-v4-flash",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "recovered": 3,
+  "oracle_size": 3
+ },
+ "summary": {
+  "steps": 19,
+  "seconds": 108.9,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 3,
+  "oracle_size": 3,
+  "entries_per_question": 3.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 3,
+   "ask_user": 1,
+   "compile_plsql": 2,
+   "execute_scratch": 10,
+   "reset_scratch": 1,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 26.0,
+   "base": 14.0,
+   "per_entry": 2.0,
+   "patience": 6.0,
+   "rounding": 0,
+   "spent": 16.0,
+   "by_tool": {
+    "get_schema": 1.0,
+    "sample_rows": 1.5,
+    "ask_user": 2.0,
+    "compile_plsql": 1.0,
+    "execute_scratch": 10.0,
+    "reset_scratch": 0.5,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false
+ },
+ "task": {
+  "prompt": "Fill in the attached template to implement a stored procedure. The procedure is for the database operations described by the attached template and slot dictionary. Its exact signature is sp(para_enr NUMBER, para_pID NUMBER, para_cName VARCHAR2, para_yCard VARCHAR2). Fill in every slot in the attached template using the attached slot dictionary. Do not alter the template's structure: no statement may be added, removed, or reordered, and the code outside the slots must stay exactly as it is. Return the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "template.sql",
+    "kind": "template",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_enr NUMBER, para_pID NUMBER, para_cName VARCHAR2, para_yCard VARCHAR2) IS\n CURSOR ref_cursor1 IS SELECT * FROM \"College\" WHERE \"enr\" = para_enr FOR UPDATE;\n CURSOR ref_cursor2 IS SELECT * FROM \"Tryout\" WHERE \"pID\" > para_pID FOR UPDATE;\n rec1 ref_cursor1%ROWTYPE;\n rec2 ref_cursor2%ROWTYPE;\n counter INTEGER := 0;\n new_pID NUMBER;\n max_tryout_pID NUMBER := 0;\nBEGIN\n OPEN ref_cursor1;\n LOOP\n  FETCH ref_cursor1 INTO rec1;\n  EXIT WHEN ref_cursor1%NOTFOUND;\n  DELETE FROM \"College\" WHERE CURRENT OF ref_cursor1;\n END LOOP;\n CLOSE ref_cursor1;\n OPEN ref_cursor2;\n LOOP\n  FETCH ref_cursor2 INTO rec2;\n  EXIT WHEN ref_cursor2%NOTFOUND;\n  UPDATE \"Tryout\" SET \"cName\" = {SLOT_1} WHERE CURRENT OF ref_cursor2;\n  counter := {SLOT_2};\n  IF {SLOT_3} THEN\n   max_tryout_pID := {SLOT_4};\n  END IF;\n END LOOP;\n CLOSE ref_cursor2;\n IF {SLOT_5} THEN\n  SELECT GREATEST(NVL(MAX(\"pID\"), 0), max_tryout_pID) + 1 INTO new_pID FROM \"Player\";\n  INSERT INTO \"Player\" (\"pID\", \"yCard\") VALUES (new_pID, para_yCard);\n END IF;\nEND;"
+   },
+   {
+    "file": "slots.md",
+    "kind": "slot dictionary",
+    "text": "## Slots\n\n### {SLOT_1}\nKind: value.\n\nFill this slot with the procedure input parameter named para_cName under the bluegate rule for the Tryout column cName in the update.\n\n### {SLOT_2}\nKind: assignment.\n\nFill this slot with an expression that produces the current value of the variable named counter plus the integer literal 1. This increments the counter by one when assigned back to counter.\n\n### {SLOT_4}\nKind: assignment.\n\nFill this slot with the pID value of the currently fetched Tryout row stored in rec2. This assigns that row's pID to max_tryout_pID when the condition is true.\n\n### {SLOT_5}\nKind: condition.\n\nFill this slot with a boolean condition that is true when the variable named counter satisfies the bluegate rule.\n\n### Note\n\nFor {SLOT_4}, fill this slot with the pID value of the currently fetched Tryout row stored in rec2, assigning that row's pID to max_tryout_pID when the condition is false."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": 5,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the bluegate rule?",
+   "answer": "For {SLOT_1}, the bluegate rule is that the procedure input parameter para_cName is the exact value assigned to the Tryout column cName in the update, with no comparison, arithmetic, or literal involved. For {SLOT_5}, the bluegate rule is that the variable counter is strictly greater than the integer literal 5."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 5,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the condition that fills SLOT_3?",
+   "answer": "### {SLOT_3}\nKind: condition.\n\nFill this slot with a boolean condition that is true when the pID value of the currently fetched Tryout row, stored in rec2, is strictly greater than the current value of the variable named max_tryout_pID. Use the column pID from rec2 and the variable max_tryout_pID."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": 5,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Should {SLOT_4} assign max_tryout_pID when the condition is true or false?",
+   "answer": "The {SLOT_4} entry is correct: assign the pID value of the currently fetched Tryout row stored in rec2 to max_tryout_pID when the condition is true."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable College , columns = [ cName ( VARCHAR2 | primary key | values : FSU , FSU ) , state ( VARCHAR2 | values : AZ , FL ) , enr ( NUMBER | values : 12000 , 12000 ) ]\ntable Player , columns = [ pID ( NUMBER | primary key | values : 40002 , 50005 ) , pName ( VARCHAR2 | values : David , Drago ) , yCard ( VARCHAR2 | values : no , yes ) , HS ( NUMBER | values : 1600 , 1600 ) ]\ntable Tryout , columns = [ pID ( NUMBER | primary key | values : 10001 , 20002 ) , cName ( VARCHAR2 | values : OU , FSU ) , pPos ( VARCHAR2 | values : striker , goalie ) , decision ( VARCHAR2 | values : no , no ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Tryout",
+    "limit": 20
+   },
+   "result": "pID | cName | pPos | decision\n10001 | ASU | goalie | yes\n10001 | LSU | goalie | no\n20002 | FSU | striker | yes\n30003 | OU | mid | no\n40004 | ASU | goalie | no\n50005 | LSU | mid | no"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Player",
+    "limit": 20
+   },
+   "result": "pID | pName | yCard | HS\n10001 | Andrew | no | 1200\n20002 | Blake | no | 1600\n30003 | Charles | no | 300\n40002 | Drago | yes | 1600\n40004 | David | yes | 1600\n50005 | Eddie | yes | 600"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "College",
+    "limit": 20
+   },
+   "result": "cName | state | enr\nASU | AZ | 12000\nFSU | FL | 19000\nLSU | LA | 18000\nOU | OK | 22000"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "I'm filling in a stored-procedure template and a few things aren't specified in the slot dictionary. Could you clarify: (1) SLOT_5 is a boolean condition on the variable \"counter\" that is true when counter \"satisfies the bluegate rule\" — what exactly makes counter satisfy the bluegate rule (e.g., counter = 1, counter > 0, counter is even, counter = 2)? (2) SLOT_3 is the IF condition inside the loop that guards \"max_tryout_pID := rec2.pID\" — what should that condition be (e.g., rec2.pID > max_tryout_pID)? (3) The note on SLOT_4 says the assignment happens \"when the condition is false\" but the main text says \"when the condition is true\" — which is correct?"
+   },
+   "result": "For {SLOT_1}, the bluegate rule is that the procedure input parameter para_cName is the exact value assigned to the Tryout column cName in the update, with no comparison, arithmetic, or literal involved. For {SLOT_5}, the bluegate rule is that the variable counter is strictly greater than the integer literal 5.\n\n### {SLOT_3}\nKind: condition.\n\nFill this slot with a boolean condition that is true when the pID value of the currently fetched Tryout row, stored in rec2, is strictly greater than the current value of the variable named max_tryout_pID. Use the column pID from rec2 and the variable max_tryout_pID.\n\nThe {SLOT_4} entry is correct: assign the pID value of the currently fetched Tryout row stored in rec2 to max_tryout_pID when the condition is true.",
+   "revealed": [
+    "J1",
+    "M1",
+    "C1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_enr NUMBER, para_pID NUMBER, para_cName VARCHAR2, para_yCard VARCHAR2) IS\n CURSOR ref_cursor1 IS SELECT * FROM \"College\" WHERE \"enr\" = para_enr FOR UPDATE;\n CURSOR ref_cursor2 IS SELECT * FROM \"Tryout\" WHERE \"pID\" > para_pID FOR UPDATE;\n rec1 ref_cursor1%ROWTYPE;\n rec2 ref_cursor2%ROWTYPE;\n counter INTEGER := 0;\n new_pID NUMBER;\n max_tryout_pID NUMBER := 0;\nBEGIN\n OPEN ref_cursor1;\n LOOP\n  FETCH ref_cursor1 INTO rec1;\n  EXIT WHEN ref_cursor1%NOTFOUND;\n  DELETE FROM \"College\" WHERE CURRENT OF ref_cursor1;\n END LOOP;\n CLOSE ref_cursor1;\n OPEN ref_cursor2;\n LOOP\n  FETCH ref_cursor2 INTO rec2;\n  EXIT WHEN ref_cursor2%NOTFOUND;\n  UPDATE \"Tryout\" SET \"cName\" = para_cName WHERE CURRENT OF ref_cursor2;\n  counter := counter + 1;\n  IF rec2.pID > max_tryout_pID THEN\n   max_tryout_pID := rec2.pID;\n  END IF;\n END LOOP;\n CLOSE ref_cursor2;\n IF counter > 5 THEN\n  SELECT GREATEST(NVL(MAX(\"pID\"), 0), max_tryout_pID) + 1 INTO new_pID FROM \"Player\";\n  INSERT INTO \"Player\" (\"pID\", \"yCard\") VALUES (new_pID, para_yCard);\n END IF;\nEND;"
+   },
+   "result": "compile error: line 23:11 PLS-00302: component 'PID' must be declared; line 23:3 PL/SQL: Statement ignored",
+   "compiled": false
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_enr NUMBER, para_pID NUMBER, para_cName VARCHAR2, para_yCard VARCHAR2) IS\n CURSOR ref_cursor1 IS SELECT * FROM \"College\" WHERE \"enr\" = para_enr FOR UPDATE;\n CURSOR ref_cursor2 IS SELECT * FROM \"Tryout\" WHERE \"pID\" > para_pID FOR UPDATE;\n rec1 ref_cursor1%ROWTYPE;\n rec2 ref_cursor2%ROWTYPE;\n counter INTEGER := 0;\n new_pID NUMBER;\n max_tryout_pID NUMBER := 0;\nBEGIN\n OPEN ref_cursor1;\n LOOP\n  FETCH ref_cursor1 INTO rec1;\n  EXIT WHEN ref_cursor1%NOTFOUND;\n  DELETE FROM \"College\" WHERE CURRENT OF ref_cursor1;\n END LOOP;\n CLOSE ref_cursor1;\n OPEN ref_cursor2;\n LOOP\n  FETCH ref_cursor2 INTO rec2;\n  EXIT WHEN ref_cursor2%NOTFOUND;\n  UPDATE \"Tryout\" SET \"cName\" = para_cName WHERE CURRENT OF ref_cursor2;\n  counter := counter + 1;\n  IF rec2.\"pID\" > max_tryout_pID THEN\n   max_tryout_pID := rec2.\"pID\";\n  END IF;\n END LOOP;\n CLOSE ref_cursor2;\n IF counter > 5 THEN\n  SELECT GREATEST(NVL(MAX(\"pID\"), 0), max_tryout_pID) + 1 INTO new_pID FROM \"Player\";\n  INSERT INTO \"Player\" (\"pID\", \"yCard\") VALUES (new_pID, para_yCard);\n END IF;\nEND;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_enr NUMBER, para_pID NUMBER, para_cName VARCHAR2, para_yCard VARCHAR2) IS\n CURSOR ref_cursor1 IS SELECT * FROM \"College\" WHERE \"enr\" = para_enr FOR UPDATE;\n CURSOR ref_cursor2 IS SELECT * FROM \"Tryout\" WHERE \"pID\" > para_pID FOR UPDATE;\n rec1 ref_cursor1%ROWTYPE;\n rec2 ref_cursor2%ROWTYPE;\n counter INTEGER := 0;\n new_pID NUMBER;\n max_tryout_pID NUMBER := 0;\nBEGIN\n OPEN ref_cursor1;\n LOOP\n  FETCH ref_cursor1 INTO rec1;\n  EXIT WHEN ref_cursor1%NOTFOUND;\n  DELETE FROM \"College\" WHERE CURRENT OF ref_cursor1;\n END LOOP;\n CLOSE ref_cursor1;\n OPEN ref_cursor2;\n LOOP\n  FETCH ref_cursor2 INTO rec2;\n  EXIT WHEN ref_cursor2%NOTFOUND;\n  UPDATE \"Tryout\" SET \"cName\" = para_cName WHERE CURRENT OF ref_cursor2;\n  counter := counter + 1;\n  IF rec2.\"pID\" > max_tryout_pID THEN\n   max_tryout_pID := rec2.\"pID\";\n  END IF;\n END LOOP;\n CLOSE ref_cursor2;\n IF counter > 5 THEN\n  SELECT GREATEST(NVL(MAX(\"pID\"), 0), max_tryout_pID) + 1 INTO new_pID FROM \"Player\";\n  INSERT INTO \"Player\" (\"pID\", \"yCard\") VALUES (new_pID, para_yCard);\n END IF;\nEND;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(18000, 10000, 'OU', 'yes')"
+   },
+   "result": "error: IntegrityError: ORA-00001: unique constraint (SOCCER_2_EP125C8AC6.SYS_C0099946) violated\nORA-06512: at \"SOCCER_2_EP125C8AC6.SP\", line 21\nHelp: https://docs.oracle.com/error-help/db/ora-00001/"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT c.table_name, c.constraint_name, c.constraint_type, cc.column_name FROM user_constraints c JOIN user_cons_columns cc ON c.constraint_name = cc.constraint_name WHERE c.constraint_name = 'SYS_C0099946'"
+   },
+   "result": "(TABLE_NAME | CONSTRAINT_NAME | CONSTRAINT_TYPE | COLUMN_NAME)\n(no rows)"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name, constraint_name, constraint_type, search_condition_vc FROM all_constraints WHERE constraint_name = 'SYS_C0099946'"
+   },
+   "result": "OWNER | TABLE_NAME | CONSTRAINT_NAME | CONSTRAINT_TYPE | SEARCH_CONDITION_VC\nSOCCER_2_EP125C8AC6 | Tryout | SYS_C0099946 | P | NULL"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name, constraint_name, column_name, position FROM all_cons_columns WHERE constraint_name = 'SYS_C0099946' ORDER BY position"
+   },
+   "result": "OWNER | TABLE_NAME | CONSTRAINT_NAME | COLUMN_NAME | POSITION\nSOCCER_2_EP125C8AC6 | Tryout | SYS_C0099946 | pID | 1\nSOCCER_2_EP125C8AC6 | Tryout | SYS_C0099946 | cName | 2"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_enr NUMBER, para_pID NUMBER, para_cName VARCHAR2, para_yCard VARCHAR2) IS\n CURSOR ref_cursor1 IS SELECT * FROM \"College\" WHERE \"enr\" = para_enr FOR UPDATE;\n CURSOR ref_cursor2 IS SELECT * FROM \"Tryout\" WHERE \"pID\" > para_pID FOR UPDATE;\n rec1 ref_cursor1%ROWTYPE;\n rec2 ref_cursor2%ROWTYPE;\n counter INTEGER := 0;\n new_pID NUMBER;\n max_tryout_pID NUMBER := 0;\nBEGIN\n OPEN ref_cursor1;\n LOOP\n  FETCH ref_cursor1 INTO rec1;\n  EXIT WHEN ref_cursor1%NOTFOUND;\n  DELETE FROM \"College\" WHERE CURRENT OF ref_cursor1;\n END LOOP;\n CLOSE ref_cursor1;\n OPEN ref_cursor2;\n LOOP\n  FETCH ref_cursor2 INTO rec2;\n  EXIT WHEN ref_cursor2%NOTFOUND;\n  UPDATE \"Tryout\" SET \"cName\" = para_cName WHERE CURRENT OF ref_cursor2;\n  counter := counter + 1;\n  IF rec2.\"pID\" > max_tryout_pID THEN\n   max_tryout_pID := rec2.\"pID\";\n  END IF;\n END LOOP;\n CLOSE ref_cursor2;\n IF counter > 5 THEN\n  SELECT GREATEST(NVL(MAX(\"pID\"), 0), max_tryout_pID) + 1 INTO new_pID FROM \"Player\";\n  INSERT INTO \"Player\" (\"pID\", \"yCard\") VALUES (new_pID, para_yCard);\n END IF;\nEND;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(18000, 10001, 'FSU', 'yes')"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"College\" ORDER BY \"cName\""
+   },
+   "result": "cName | state | enr\nASU | AZ | 12000\nFSU | FL | 19000\nOU | OK | 22000"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Tryout\" ORDER BY \"pID\", \"cName\""
+   },
+   "result": "pID | cName | pPos | decision\n10001 | ASU | goalie | yes\n10001 | LSU | goalie | no\n20002 | FSU | striker | yes\n30003 | FSU | mid | no\n40004 | FSU | goalie | no\n50005 | FSU | mid | no"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Player\" ORDER BY \"pID\""
+   },
+   "result": "pID | pName | yCard | HS\n10001 | Andrew | no | 1200\n20002 | Blake | no | 1600\n30003 | Charles | no | 300\n40002 | Drago | yes | 1600\n40004 | David | yes | 1600\n50005 | Eddie | yes | 600"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_enr NUMBER, para_pID NUMBER, para_cName VARCHAR2, para_yCard VARCHAR2) IS\n CURSOR ref_cursor1 IS SELECT * FROM \"College\" WHERE \"enr\" = para_enr FOR UPDATE;\n CURSOR ref_cursor2 IS SELECT * FROM \"Tryout\" WHERE \"pID\" > para_pID FOR UPDATE;\n rec1 ref_cursor1%ROWTYPE;\n rec2 ref_cursor2%ROWTYPE;\n counter INTEGER := 0;\n new_pID NUMBER;\n max_tryout_pID NUMBER := 0;\nBEGIN\n OPEN ref_cursor1;\n LOOP\n  FETCH ref_cursor1 INTO rec1;\n  EXIT WHEN ref_cursor1%NOTFOUND;\n  DELETE FROM \"College\" WHERE CURRENT OF ref_cursor1;\n END LOOP;\n CLOSE ref_cursor1;\n OPEN ref_cursor2;\n LOOP\n  FETCH ref_cursor2 INTO rec2;\n  EXIT WHEN ref_cursor2%NOTFOUND;\n  UPDATE \"Tryout\" SET \"cName\" = para_cName WHERE CURRENT OF ref_cursor2;\n  counter := counter + 1;\n  IF rec2.\"pID\" > max_tryout_pID THEN\n   max_tryout_pID := rec2.\"pID\";\n  END IF;\n END LOOP;\n CLOSE ref_cursor2;\n IF counter > 5 THEN\n  SELECT GREATEST(NVL(MAX(\"pID\"), 0), max_tryout_pID) + 1 INTO new_pID FROM \"Player\";\n  INSERT INTO \"Player\" (\"pID\", \"yCard\") VALUES (new_pID, para_yCard);\n END IF;\nEND;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_enr NUMBER, para_pID NUMBER, para_cName VARCHAR2, para_yCard VARCHAR2) IS\n CURSOR ref_cursor1 IS SELECT * FROM \"College\" WHERE \"enr\" = para_enr FOR UPDATE;\n CURSOR ref_cursor2 IS SELECT * FROM \"Tryout\" WHERE \"pID\" > para_pID FOR UPDATE;\n rec1 ref_cursor1%ROWTYPE;\n rec2 ref_cursor2%ROWTYPE;\n counter INTEGER := 0;\n new_pID NUMBER;\n max_tryout_pID NUMBER := 0;\nBEGIN\n OPEN ref_cursor1;\n LOOP\n  FETCH ref_cursor1 INTO rec1;\n  EXIT WHEN ref_cursor1%NOTFOUND;\n  DELETE FROM \"College\" WHERE CURRENT OF ref_cursor1;\n END LOOP;\n CLOSE ref_cursor1;\n OPEN ref_cursor2;\n LOOP\n  FETCH ref_cursor2 INTO rec2;\n  EXIT WHEN ref_cursor2%NOTFOUND;\n  UPDATE \"Tryout\" SET \"cName\" = para_cName WHERE CURRENT OF ref_cursor2;\n  counter := counter + 1;\n  IF rec2.\"pID\" > max_tryout_pID THEN\n   max_tryout_pID := rec2.\"pID\";\n  END IF;\n END LOOP;\n CLOSE ref_cursor2;\n IF counter > 5 THEN\n  SELECT GREATEST(NVL(MAX(\"pID\"), 0), max_tryout_pID) + 1 INTO new_pID FROM \"Player\";\n  INSERT INTO \"Player\" (\"pID\", \"yCard\") VALUES (new_pID, para_yCard);\n END IF;\nEND;"
+ },
+ "pair": {
+  "single_run": "st-oracle-a2a5",
+  "single_task": "oracle_a4_002"
+ }
+}

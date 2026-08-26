@@ -1,0 +1,660 @@
+{
+ "id": "ep-ora-a2a5-k--oracle_a5_001",
+ "run": "ep-ora-a2a5-k",
+ "task_id": "oracle_a5_001",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "full",
+ "scenario": "a5",
+ "dialect": "oracle",
+ "model": "deepseek-v4-flash",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "candidate did not create: line 8:23 PL/SQL: ORA-00942: table or view does not exist; line 8:9 PL/SQL: SQL Statement ignored; line 15:12 PLS-00364: loop index variable 'REC' use is invalid; line 15:9 PL/SQL: Statement ignored; line 20:18 PLS-00364: loop index variable 'REC' use is invalid; line 20:9 PL/SQL: Statement ignored; line 33:17 PL/SQL: ORA-00942: table or view does not exist; line 33:5 PL/SQL: SQL Statement ignored; line 36:17 PL/SQL: ORA-00942: table or view does not exist; line 36:5 PL/SQL: SQL Statement ignored",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "spec",
+  "recovered": 2,
+  "oracle_size": 3
+ },
+ "summary": {
+  "steps": 58,
+  "seconds": 272.9,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 2,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 2,
+  "oracle_size": 3,
+  "entries_per_question": 1.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "describe_table": 1,
+   "execute_scratch": 49,
+   "sample_rows": 2,
+   "ask_user": 2,
+   "reset_scratch": 1,
+   "compile_plsql": 1,
+   "submit": 1
+  },
+  "final_warning": false
+ },
+ "task": {
+  "prompt": "Write an Oracle PL/SQL stored procedure named sp with this exact signature:\n\nsp(para_Vice_President_Vote NUMBER, para_Registration_integer VARCHAR2, para_President_Vote NUMBER, para_Class_President_Vote NUMBER)\n\nIt must operate only on the Election_record table; it must not use Student. Use the built-in function listed in the attached builtins.md for the prefix check; it already exists in the database and must be called, not reimplemented or modified.\n\nThe procedure must not include an exception handler and must not issue any commit or rollback. If any operation raises an error, the procedure stops and the error propagates to the caller.\n\nFirst, open a row-locking loop over all rows of Election_record whose Vice_President_Vote is greater than or equal to para_Vice_President_Vote. The selected rows are locked while the loop is open. Fetch whole rows from Election_record in the loop. Process those qualifying rows one at a time in the order the loop provides.\n\nBefore changing the current row, maintain a running maximum of the Class_Senator_Vote values as they are read from the loop before any update or delete of that current row. If the running maximum is empty or the current row's Class_Senator_Vote is greater than the running maximum, set the running maximum to that current value. Null Class_Senator_Vote values never increase the running maximum; if there is no non-null Class_Senator_Vote among the qualifying rows, the running maximum remains empty.\n\nAfter maintaining that maximum, apply these rules in order to the current row:\n\n1. If the current row's Registration_integer starts with the literal prefix_, which you determine by calling the built-in function from builtins.md with the current row's Registration_integer as the first argument and the literal prefix_ as the second argument, then set that same row's President_Vote to para_President_Vote.\n\n2. Otherwise, if the same current row's Class_President_Vote is strictly less than para_Class_President_Vote, delete that row.\n\n3. Otherwise, for any remaining row, set that same row's President_Vote to para_President_Vote multiplied by 2.\n\nThe first rule takes precedence over the second and third. The third rule applies when Registration_integer does not start with prefix_ and Class_President_Vote is not strictly less than para_Class_President_Vote, including equal, greater, or null.\n\nAfter the loop is closed, delete every existing row from Election_record whose Registration_integer is exactly the value formed by concatenating the literal prefix_ immediately followed by para_Registration_integer. This is an exact equality match, not a prefix or pattern match. If no such row exists, nothing is deleted.\n\nFinally, insert one new row into Election_record. Supply exactly these four columns and no others:\n- Vice_President_Vote = the ascension tally\n- Registration_integer = the literal prefix_ immediately followed by para_Registration_integer\n- President_Vote = para_President_Vote\n- Class_Senator_Vote = the running maximum + 1, treating an empty running maximum as 0. Therefore, if there were no qualifying rows or all qualifying rows had null Class_Senator_Vote, the inserted Class_Senator_Vote is 1.\n\nDo not supply values for any other Election_record columns; those are handled by database defaults and constraints.\n\nReturn the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "builtins.md",
+    "kind": "built-in function signatures",
+    "text": "# Built-in functions you may rely on\n\n- `instr`\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": 10,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the ascension tally?",
+   "answer": "The value assigned to Vice_President_Vote for the inserted row, computed as para_Vice_President_Vote plus one."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What return value from the built-in function indicates that the Registration_integer starts with the literal prefix_?",
+   "answer": "The built-in function must return exactly 1."
+  },
+  {
+   "id": "E1",
+   "op": "env_contradiction",
+   "revealed_at": 9,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What does Election_record refer to?",
+   "answer": "No such object exists; it refers to Voting_record."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Student , columns = [ StuID ( NUMBER | primary key | values : 1006 , 1021 ) , LName ( VARCHAR2 | values : Kumar , Norris ) , Fname ( VARCHAR2 | values : Jandy , Linda ) , Age ( NUMBER | values : 16 , 17 ) , Sex ( VARCHAR2 | values : M , F ) , Major ( NUMBER | values : 600 , 520 ) , Advisor ( NUMBER | values : 7792 , 7723 ) , city_code ( VARCHAR2 | values : YYZ , PIT ) ]\ntable Voting_record , columns = [ StuID ( NUMBER | primary key | values : 1002 , 1002 ) , Registration_integer ( VARCHAR2 | values : 08/30/2015 , 08/30/2014 ) , Election_Cycle ( VARCHAR2 | values : Fall , Spring ) , President_Vote ( NUMBER | values : 1004 , 1024 ) , Vice_President_Vote ( NUMBER | values : 1017 , 1017 ) , Secretary_Vote ( NUMBER | values : 1020 , 1020 ) , Treasurer_Vote ( NUMBER | values : 1025 , 1035 ) , Class_President_Vote ( NUMBER | values : 1021 , 1011 ) , Class_Senator_Vote ( NUMBER | values : 1028 , 1028 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Election_record"
+   },
+   "result": "error: no such table: 'Election_record'. Tables: Student, Voting_record"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables"
+   },
+   "result": "TABLE_NAME\nLOGMNR_SESSION_EVOLVE$\nLOGMNR_GLOBAL$\nLOGMNR_PDB_INFO$\nLOGMNR_DID$\nLOGMNR_UID$\nLOGMNRGGC_GTLO\nLOGMNRGGC_GTCS\nLOGMNRC_DBNAME_UID_MAP\nLOGMNR_LOG$\nLOGMNR_PROCESSED_LOG$\nLOGMNR_SPILL$\nLOGMNR_AGE_SPILL$\nLOGMNR_RESTART_CKPT_TXINFO$\nLOGMNR_ERROR$\nLOGMNR_RESTART_CKPT$\nLOGMNR_FILTER$\nLOGMNR_SESSION_ACTIONS$\nLOGMNR_PARAMETER$\nLOGMNR_SESSION$\nLOGMNR_PROFILE_TABLE_STATS$\nLOGMNR_PROFILE_PLSQL_STATS$\nREDO_DB\nREDO_LOG\nROLLING$CONNECTIONS\nROLLING$DATABASES\nROLLING$DIRECTIVES\nROLLING$EVENTS\nROLLING$PARAMETERS\nROLLING$PLAN\nROLLING$STATISTICS\nROLLING$STATUS\nMVIEW$_ADV_WORKLOAD\nMVIEW$_ADV_BASETABLE\nMVIEW$_ADV_SQLDEPEND\nMVIEW$_ADV_PRETTY\nMVIEW$_ADV_TEMP\nMVIEW$_ADV_FILTER\nMVIEW$_ADV_LOG\nMVIEW$_ADV_FILTERINSTANCE\nMVIEW$_ADV_LEVEL\nMVIEW$_ADV_ROLLUP\nMVIEW$_ADV_AJG\nMVIEW$_ADV_FJG\nMVIEW$_ADV_GC\nMVIEW$_ADV_CLIQUE\nMVIEW$_ADV_ELIGIBLE\nMVIEW$_ADV_OUTPUT\nMVIEW$_ADV_EXCEPTIONS\nMVIEW$_ADV_PARAMETERS\nMVIEW$_ADV_INFO\n... (more rows not shown)"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Voting_record",
+    "limit": 20
+   },
+   "result": "StuID | Registration_integer | Election_Cycle | President_Vote | Vice_President_Vote | Secretary_Vote | Treasurer_Vote | Class_President_Vote | Class_Senator_Vote\n1001 | 08/30/2015 | Spring | 1004 | 1007 | 1010 | 1035 | 1001 | 1028\n1002 | 08/30/2014 | Spring | 1014 | 1007 | 1020 | 1025 | 1021 | 1028\n1003 | 08/30/2013 | Spring | 1004 | 1017 | 1030 | 1035 | 1031 | 1028\n1004 | 08/30/2013 | Spring | 1024 | 1017 | 1020 | 1035 | 1011 | 1028\n1005 | 08/30/2012 | Spring | 1024 | 1017 | 1010 | 1035 | 1021 | 1028\n1001 | 08/30/2015 | Fall | 1004 | 1007 | 1010 | 1035 | 1021 | 1028\n1002 | 08/30/2014 | Fall | 1004 | 1007 | 1020 | 1035 | 1021 | 1028\n1003 | 08/30/2013 | Fall | 1004 | 1017 | 1020 | 1035 | 1031 | 1028\n1004 | 08/30/2013 | Fall | 1024 | 1017 | 1020 | 1035 | 1011 | 1018\n1005 | 08/30/2012 | Fall | 1024 | 1017 | 1010 | 1035 | 1021 | 1028"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name FROM all_tables WHERE table_name LIKE '%ELECTION%' OR table_name LIKE '%VOTING%'"
+   },
+   "result": "(OWNER | TABLE_NAME)\n(no rows)"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM all_synonyms WHERE table_name LIKE '%ELECTION%' OR synonym_name LIKE '%ELECTION%'"
+   },
+   "result": "(OWNER | SYNONYM_NAME | TABLE_OWNER | TABLE_NAME | DB_LINK | ORIGIN_CON_ID)\n(no rows)"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables WHERE table_name NOT LIKE 'LOGMNR%' AND table_name NOT LIKE 'REDO%' AND table_name NOT LIKE 'ROLLING%' AND table_name NOT LIKE 'MVIEW%'"
+   },
+   "result": "TABLE_NAME\nAQ$_QUEUES\nLOGSTDBY$SKIP_SUPPORT\nREPL_VALID_COMPAT\nREPL_SUPPORT_MATRIX\nAQ$_QUEUE_TABLES\nAQ$_INTERNET_AGENTS\nAQ$_INTERNET_AGENT_PRIVS\nHELP\nLOGSTDBY$APPLY_MILESTONE\nLOGSTDBY$EDS_TABLES\nLOGSTDBY$EVENTS\nLOGSTDBY$FLASHBACK_SCN\nLOGSTDBY$HISTORY\nLOGSTDBY$PLSQL\nLOGSTDBY$SCN\nLOGSTDBY$SKIP\nLOGSTDBY$SKIP_TRANSACTION\nAQ$_KEY_SHARD_MAP\nAQ$_SCHEDULES\nLOGSTDBY$APPLY_PROGRESS\nLOGSTDBY$PARAMETERS\nOL$\nOL$HINTS\nOL$NODES\nSCHEDULER_JOB_ARGS_TBL\nSCHEDULER_PROGRAM_ARGS_TBL\nSQLPLUS_PRODUCT_PROFILE"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM Election_record"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "The specification repeatedly says the procedure must operate on the \"Election_record\" table, but the database has no table by that name — the only table with the exact columns named in the spec (Registration_integer, President_Vote, Vice_President_Vote, Class_President_Vote, Class_Senator_Vote) is \"Voting_record\". Which table should the stored procedure actually reference in its SQL?",
+    "options": [
+     "Use Voting_record (the only existing table with those columns)",
+     "Use a table literally named Election_record (which doesn't exist here)",
+     "Something else"
+    ]
+   },
+   "result": "No such object exists; it refers to Voting_record.",
+   "revealed": [
+    "E1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "In the final INSERT, the spec says the new row's Vice_President_Vote should equal \"the ascension tally\". What exactly is that value?",
+    "options": [
+     "The number of rows that qualified for the row-locking loop (a count incremented once per processed row)",
+     "The running maximum of Class_Senator_Vote maintained during the loop",
+     "Some other value I should compute or a specific parameter"
+    ]
+   },
+   "result": "The value assigned to Vice_President_Vote for the inserted row, computed as para_Vice_President_Vote plus one.",
+   "revealed": [
+    "J1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT column_name, data_type, data_length, nullable, data_default FROM user_tab_columns WHERE table_name = 'VOTING_RECORD' ORDER BY column_id"
+   },
+   "result": "(COLUMN_NAME | DATA_TYPE | DATA_LENGTH | NULLABLE | DATA_DEFAULT)\n(no rows)"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT constraint_name, constraint_type, search_condition FROM user_constraints WHERE table_name = 'VOTING_RECORD'"
+   },
+   "result": "(CONSTRAINT_NAME | CONSTRAINT_TYPE | SEARCH_CONDITION)\n(no rows)"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name FROM all_tables WHERE table_name = 'VOTING_RECORD'"
+   },
+   "result": "(OWNER | TABLE_NAME)\n(no rows)"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT synonym_name, table_owner, table_name FROM all_synonyms WHERE table_name = 'VOTING_RECORD' OR synonym_name = 'VOTING_RECORD'"
+   },
+   "result": "(SYNONYM_NAME | TABLE_OWNER | TABLE_NAME)\n(no rows)"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT column_name, data_type, nullable, data_default FROM all_tab_columns WHERE table_name = 'VOTING_RECORD' ORDER BY column_id"
+   },
+   "result": "(COLUMN_NAME | DATA_TYPE | NULLABLE | DATA_DEFAULT)\n(no rows)"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT DBMS_METADATA.GET_DDL('TABLE','VOTING_RECORD') FROM dual"
+   },
+   "result": "error: DatabaseError: ORA-31603: object \"VOTING_RECORD\" of type TABLE not found in schema \"SYSTEM\"\nORA-06512: at \"SYS.DBMS_METADATA\", line 6781\nORA-06512: at \"SYS.DBMS_SYS_ERROR\", line 105\nORA-06512: at \"SYS.DBMS_METADATA\", line 2596\nORA-06512: at \"SYS.DBMS_METADATA\", line 2835\nORA-06512: at \"SYS.DBMS_METADATA\", line 3616\nORA-06512: at \"SYS.DBMS_METADATA\", line 5058\nORA-06512: at \"SYS.DBMS_METADATA\", line 5386\nORA-06512: at \"SYS.DBMS_METADATA\", line 6752\nORA-06512: at \"SYS.DBMS_METADATA\", line 9815\nORA-06512: at line 1\nHelp: https://docs.oracle.com/error-help/db/ora-31603/"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_Vice_President_Vote NUMBER,\n    para_Registration_integer VARCHAR2,\n    para_President_Vote NUMBER,\n    para_Class_President_Vote NUMBER\n) IS\n    CURSOR c_sel IS\n        SELECT * FROM Voting_record\n        WHERE Vice_President_Vote >= para_Vice_President_Vote\n        FOR UPDATE;\n    running_max NUMBER := NULL;\nBEGIN\n    FOR rec IN c_sel LOOP\n        IF rec.Class_Senator_Vote IS NOT NULL AND\n           (running_max IS NULL OR rec.Class_Senator_Vote > running_max) THEN\n            running_max := rec.Class_Senator_Vote;\n        END IF;\n\n        IF instr(rec.Registration_integer, 'prefix_') = 1 THEN\n            UPDATE Voting_record\n               SET President_Vote = para_President_Vote\n             WHERE CURRENT OF c_sel;\n        ELSIF rec.Class_President_Vote < para_Class_President_Vote THEN\n            DELETE FROM Voting_record WHERE CURRENT OF c_sel;\n        ELSE\n            UPDATE Voting_record\n               SET President_Vote = para_President_Vote * 2\n             WHERE CURRENT OF c_sel;\n        END IF;\n    END LOOP;\n\n    DELETE FROM Voting_record\n     WHERE Registration_integer = 'prefix_' || para_Registration_integer;\n\n    INSERT INTO Voting_record (\n        Vice_President_Vote,\n        Registration_integer,\n        President_Vote,\n        Class_Senator_Vote\n    ) VALUES (\n        para_Vice_President_Vote + 1,\n        'prefix_' || para_Registration_integer,\n        para_President_Vote,\n        NVL(running_max, 0) + 1\n    );\nEND sp;\n/"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DELETE FROM Voting_record"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM Voting_record"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables WHERE table_name IN ('VOTING_RECORD','STUDENT','VOTING_RECORD')"
+   },
+   "result": "(TABLE_NAME)\n(no rows)"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT user, sys_context('USERENV','CURRENT_SCHEMA') FROM dual"
+   },
+   "result": "USER | SYS_CONTEXT('USERENV','CURRENT_SCHEMA')\nSYSTEM | VOTER_2_EP903F7879"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT object_name, object_type, owner FROM all_objects WHERE object_name IN ('VOTING_RECORD','STUDENT')"
+   },
+   "result": "OBJECT_NAME | OBJECT_TYPE | OWNER\nSTUDENT | TABLE | COLLEGE_1"
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables WHERE table_name NOT LIKE 'LOGMNR%' AND table_name NOT LIKE 'REDO%' AND table_name NOT LIKE 'ROLLING%' AND table_name NOT LIKE 'MVIEW%' AND table_name NOT LIKE 'AQ$%'"
+   },
+   "result": "TABLE_NAME\nLOGSTDBY$SKIP_SUPPORT\nREPL_VALID_COMPAT\nREPL_SUPPORT_MATRIX\nHELP\nLOGSTDBY$APPLY_MILESTONE\nLOGSTDBY$EDS_TABLES\nLOGSTDBY$EVENTS\nLOGSTDBY$FLASHBACK_SCN\nLOGSTDBY$HISTORY\nLOGSTDBY$PLSQL\nLOGSTDBY$SCN\nLOGSTDBY$SKIP\nLOGSTDBY$SKIP_TRANSACTION\nLOGSTDBY$APPLY_PROGRESS\nLOGSTDBY$PARAMETERS\nOL$\nOL$HINTS\nOL$NODES\nSCHEDULER_JOB_ARGS_TBL\nSCHEDULER_PROGRAM_ARGS_TBL\nSQLPLUS_PRODUCT_PROFILE"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp_test AS\n    CURSOR c IS SELECT * FROM Voting_record FOR UPDATE;\nBEGIN\n    NULL;\nEND sp_test;\n/"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TABLE scratch_probe (id NUMBER)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM scratch_probe"
+   },
+   "result": "(ID)\n(no rows)"
+  },
+  {
+   "step": 28,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables WHERE table_name = 'SCRATCH_PROBE'"
+   },
+   "result": "(TABLE_NAME)\n(no rows)"
+  },
+  {
+   "step": 29,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp_probe AS\n    CURSOR c IS SELECT * FROM Voting_record FOR UPDATE;\nBEGIN\n    NULL;\nEND sp_probe;\n/"
+   },
+   "result": "compile error: line 2:31 PL/SQL: ORA-00942: table or view does not exist; line 2:17 PL/SQL: SQL Statement ignored",
+   "compiled": false
+  },
+  {
+   "step": 30,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, object_name, object_type FROM all_objects WHERE object_type='TABLE' AND (owner LIKE 'VOTER%' OR owner LIKE 'COLLEGE%')"
+   },
+   "result": "OWNER | OBJECT_NAME | OBJECT_TYPE\nVOTER_2_ORW6298_1 | Student | TABLE\nVOTER_2_ORW6298_1 | Voting_record | TABLE\nVOTER_2_ORW0E36_1 | Student | TABLE\nVOTER_2_ORW0E36_1 | Voting_record | TABLE\nVOTER_2_ORWBE19_0 | Student | TABLE\nVOTER_2_ORWBE19_0 | Voting_record | TABLE\nVOTER_2_ORWBE19_1 | Student | TABLE\nVOTER_2_ORWBE19_1 | Voting_record | TABLE\nCOLLEGE_3 | Gradeconversion | TABLE\nCOLLEGE_1 | CLASS | TABLE\nCOLLEGE_1 | COURSE | TABLE\nCOLLEGE_1 | DEPARTMENT | TABLE\nCOLLEGE_1 | EMPLOYEE | TABLE\nCOLLEGE_1 | ENROLL | TABLE\nCOLLEGE_1 | PROFESSOR | TABLE\nCOLLEGE_1 | STUDENT | TABLE\nCOLLEGE_2 | classroom | TABLE\nCOLLEGE_2 | department | TABLE\nCOLLEGE_2 | course | TABLE\nCOLLEGE_2 | instructor | TABLE\nCOLLEGE_2 | section | TABLE\nCOLLEGE_2 | teaches | TABLE\nCOLLEGE_2 | student | TABLE\nCOLLEGE_2 | takes | TABLE\nCOLLEGE_2 | advisor | TABLE\nCOLLEGE_2 | time_slot | TABLE\nCOLLEGE_2 | prereq | TABLE\nCOLLEGE_3 | Student | TABLE\nCOLLEGE_3 | Faculty | TABLE\nCOLLEGE_3 | Department | TABLE\nCOLLEGE_3 | Member_of | TABLE\nCOLLEGE_3 | Course | TABLE\nCOLLEGE_3 | Minor_in | TABLE\nCOLLEGE_3 | Enrolled_in | TABLE\nVOTER_2_BTWF525_0 | Student | TABLE\nVOTER_2_BTWF525_0 | Voting_record | TABLE\nVOTER_2_ORWD44B_1 | Student | TABLE\nVOTER_2_ORWD44B_1 | Voting_record | TABLE\nVOTER_2_ORWC5CD_0 | Student | TABLE\nVOTER_2_ORWC5CD_0 | Voting_record | TABLE\nVOTER_2_ORWE476_0 | Student | TABLE\nVOTER_2_ORWE476_0 | Voting_record | TABLE\nVOTER_2_EP903F7879 | Student | TABLE\nVOTER_2_EP903F7879 | Voting_record | TABLE\nVOTER_2_EP903F7879 | SCRATCH_PROBE | TABLE\nVOTER_1_BTWF525_0 | AREA_CODE_STATE | TABLE\nVOTER_1_BTWF525_0 | CONTESTANTS | TABLE\nVOTER_1_BTWF525_0 | VOTES | TABLE\nVOTER_2_E3D070 | Student | TABLE\nVOTER_2_E3D070 | Voting_record | TABLE\n... (more rows not shown)"
+  },
+  {
+   "step": 31,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_owner, table_name, synonym_name FROM all_synonyms WHERE table_owner LIKE 'VOTER%' OR table_owner LIKE 'COLLEGE%'"
+   },
+   "result": "(TABLE_OWNER | TABLE_NAME | SYNONYM_NAME)\n(no rows)"
+  },
+  {
+   "step": 32,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT COUNT(*) FROM Voting_record"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 33,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT COUNT(*) FROM VOTER_2_EP903F7879.Voting_record"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 34,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT COUNT(*) FROM VOTER_2_EP903F7879.Student"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 35,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TABLE probe2 (x NUMBER); SELECT owner, object_name, object_type FROM all_objects WHERE object_name='PROBE2'"
+   },
+   "result": "error: DatabaseError: ORA-00922: missing or invalid option\nHelp: https://docs.oracle.com/error-help/db/ora-00922/"
+  },
+  {
+   "step": 36,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TABLE probe2 (x NUMBER)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 37,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, object_name, object_type FROM all_objects WHERE object_name='PROBE2'"
+   },
+   "result": "OWNER | OBJECT_NAME | OBJECT_TYPE\nVOTER_2_EP903F7879 | PROBE2 | TABLE"
+  },
+  {
+   "step": 38,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "limit": 20,
+    "table": "Voting_record"
+   },
+   "result": "StuID | Registration_integer | Election_Cycle | President_Vote | Vice_President_Vote | Secretary_Vote | Treasurer_Vote | Class_President_Vote | Class_Senator_Vote\n1001 | 08/30/2015 | Spring | 1004 | 1007 | 1010 | 1035 | 1001 | 1028\n1002 | 08/30/2014 | Spring | 1014 | 1007 | 1020 | 1025 | 1021 | 1028\n1003 | 08/30/2013 | Spring | 1004 | 1017 | 1030 | 1035 | 1031 | 1028\n1004 | 08/30/2013 | Spring | 1024 | 1017 | 1020 | 1035 | 1011 | 1028\n1005 | 08/30/2012 | Spring | 1024 | 1017 | 1010 | 1035 | 1021 | 1028\n1001 | 08/30/2015 | Fall | 1004 | 1007 | 1010 | 1035 | 1021 | 1028\n1002 | 08/30/2014 | Fall | 1004 | 1007 | 1020 | 1035 | 1021 | 1028\n1003 | 08/30/2013 | Fall | 1004 | 1017 | 1020 | 1035 | 1031 | 1028\n1004 | 08/30/2013 | Fall | 1024 | 1017 | 1020 | 1035 | 1011 | 1018\n1005 | 08/30/2012 | Fall | 1024 | 1017 | 1010 | 1035 | 1021 | 1028"
+  },
+  {
+   "step": 39,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TABLE Voting_record (\n    StuID NUMBER,\n    Registration_integer VARCHAR2(50),\n    Election_Cycle VARCHAR2(20),\n    President_Vote NUMBER,\n    Vice_President_Vote NUMBER,\n    Secretary_Vote NUMBER,\n    Treasurer_Vote NUMBER,\n    Class_President_Vote NUMBER,\n    Class_Senator_Vote NUMBER\n)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 40,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO Voting_record VALUES (1,'prefix_1','F',0,20,0,0,40,5);\nINSERT INTO Voting_record VALUES (2,'abc','F',0,30,0,0,30,7);\nINSERT INTO Voting_record VALUES (3,'xyz','F',0,40,0,0,60,NULL);\nINSERT INTO Voting_record VALUES (4,'prefix_2','F',0,5,0,0,10,3);\nINSERT INTO Voting_record VALUES (5,'notprefix_','F',0,50,0,0,NULL,9);\nINSERT INTO Voting_record VALUES (6,'prefix_A','F',0,60,0,0,70,2);"
+   },
+   "result": "error: DatabaseError: ORA-00933: SQL command not properly ended\nHelp: https://docs.oracle.com/error-help/db/ora-00933/"
+  },
+  {
+   "step": 41,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT ALL\nINTO Voting_record VALUES (1,'prefix_1','F',0,20,0,0,40,5)\nINTO Voting_record VALUES (2,'abc','F',0,30,0,0,30,7)\nINTO Voting_record VALUES (3,'xyz','F',0,40,0,0,60,NULL)\nINTO Voting_record VALUES (4,'prefix_2','F',0,5,0,0,10,3)\nINTO Voting_record VALUES (5,'notprefix_','F',0,50,0,0,NULL,9)\nINTO Voting_record VALUES (6,'prefix_A','F',0,60,0,0,70,2)\nSELECT * FROM dual"
+   },
+   "result": "ok, 6 row(s) affected"
+  },
+  {
+   "step": 42,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_Vice_President_Vote NUMBER,\n    para_Registration_integer VARCHAR2,\n    para_President_Vote NUMBER,\n    para_Class_President_Vote NUMBER\n) IS\n    CURSOR c_sel IS\n        SELECT * FROM Voting_record\n        WHERE Vice_President_Vote >= para_Vice_President_Vote\n        FOR UPDATE;\n    running_max NUMBER := NULL;\nBEGIN\n    FOR rec IN c_sel LOOP\n        IF rec.Class_Senator_Vote IS NOT NULL AND\n           (running_max IS NULL OR rec.Class_Senator_Vote > running_max) THEN\n            running_max := rec.Class_Senator_Vote;\n        END IF;\n\n        IF instr(rec.Registration_integer, 'prefix_') = 1 THEN\n            UPDATE Voting_record\n               SET President_Vote = para_President_Vote\n             WHERE CURRENT OF c_sel;\n        ELSIF rec.Class_President_Vote < para_Class_President_Vote THEN\n            DELETE FROM Voting_record WHERE CURRENT OF c_sel;\n        ELSE\n            UPDATE Voting_record\n               SET President_Vote = para_President_Vote * 2\n             WHERE CURRENT OF c_sel;\n        END IF;\n    END LOOP;\n\n    DELETE FROM Voting_record\n     WHERE Registration_integer = 'prefix_' || para_Registration_integer;\n\n    INSERT INTO Voting_record (\n        Vice_President_Vote,\n        Registration_integer,\n        President_Vote,\n        Class_Senator_Vote\n    ) VALUES (\n        para_Vice_President_Vote + 1,\n        'prefix_' || para_Registration_integer,\n        para_President_Vote,\n        NVL(running_max, 0) + 1\n    );\nEND sp;\n/"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 43,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT name, type, line, position, text FROM user_errors WHERE name='SP'"
+   },
+   "result": "(NAME | TYPE | LINE | POSITION | TEXT)\n(no rows)"
+  },
+  {
+   "step": 44,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(10, 'A', 100, 50)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 45,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT StuID, Registration_integer, Election_Cycle, President_Vote, Vice_President_Vote, Class_President_Vote, Class_Senator_Vote FROM Voting_record ORDER BY StuID"
+   },
+   "result": "STUID | REGISTRATION_INTEGER | ELECTION_CYCLE | PRESIDENT_VOTE | VICE_PRESIDENT_VOTE | CLASS_PRESIDENT_VOTE | CLASS_SENATOR_VOTE\n1 | prefix_1 | F | 100 | 20 | 40 | 5\n3 | xyz | F | 200 | 40 | 60 | NULL\n4 | prefix_2 | F | 0 | 5 | 10 | 3\n5 | notprefix_ | F | 200 | 50 | NULL | 9\nNULL | prefix_A | NULL | 100 | 11 | NULL | 10"
+  },
+  {
+   "step": 46,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DELETE FROM Voting_record"
+   },
+   "result": "ok, 5 row(s) affected"
+  },
+  {
+   "step": 47,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT ALL\nINTO Voting_record VALUES (101,'x','F',0,5,0,0,10,NULL)\nINTO Voting_record VALUES (102,'prefix_Y','F',0,7,0,0,10,NULL)\nSELECT * FROM dual"
+   },
+   "result": "ok, 2 row(s) affected"
+  },
+  {
+   "step": 48,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(10, 'Z', 200, 50)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 49,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT StuID, Registration_integer, Election_Cycle, President_Vote, Vice_President_Vote, Class_President_Vote, Class_Senator_Vote FROM Voting_record ORDER BY StuID"
+   },
+   "result": "STUID | REGISTRATION_INTEGER | ELECTION_CYCLE | PRESIDENT_VOTE | VICE_PRESIDENT_VOTE | CLASS_PRESIDENT_VOTE | CLASS_SENATOR_VOTE\n101 | x | F | 0 | 5 | 10 | NULL\n102 | prefix_Y | F | 0 | 7 | 10 | NULL\nNULL | prefix_Z | NULL | 200 | 11 | NULL | 1"
+  },
+  {
+   "step": 50,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DELETE FROM Voting_record"
+   },
+   "result": "ok, 3 row(s) affected"
+  },
+  {
+   "step": 51,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT ALL\nINTO Voting_record VALUES (201,'aaa','F',0,20,0,0,100,NULL)\nINTO Voting_record VALUES (202,'bbb','F',0,30,0,0,5,NULL)\nSELECT * FROM dual"
+   },
+   "result": "ok, 2 row(s) affected"
+  },
+  {
+   "step": 52,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(10, 'W', 300, 50)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 53,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT StuID, Registration_integer, President_Vote, Vice_President_Vote, Class_President_Vote, Class_Senator_Vote FROM Voting_record ORDER BY StuID"
+   },
+   "result": "STUID | REGISTRATION_INTEGER | PRESIDENT_VOTE | VICE_PRESIDENT_VOTE | CLASS_PRESIDENT_VOTE | CLASS_SENATOR_VOTE\n201 | aaa | 600 | 20 | 100 | NULL\nNULL | prefix_W | 300 | 11 | NULL | 1"
+  },
+  {
+   "step": 54,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DELETE FROM Voting_record"
+   },
+   "result": "ok, 2 row(s) affected"
+  },
+  {
+   "step": 55,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO Voting_record VALUES (301,'prefix_X','F',0,5,0,0,5,5)"
+   },
+   "result": "ok, 1 row(s) affected"
+  },
+  {
+   "step": 56,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(10, 'X', 400, 50)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 57,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT StuID, Registration_integer, President_Vote, Vice_President_Vote, Class_Senator_Vote FROM Voting_record ORDER BY StuID"
+   },
+   "result": "STUID | REGISTRATION_INTEGER | PRESIDENT_VOTE | VICE_PRESIDENT_VOTE | CLASS_SENATOR_VOTE\nNULL | prefix_X | 400 | 11 | 1"
+  },
+  {
+   "step": 58,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    para_Vice_President_Vote NUMBER,\n    para_Registration_integer VARCHAR2,\n    para_President_Vote NUMBER,\n    para_Class_President_Vote NUMBER\n) IS\n    CURSOR c_sel IS\n        SELECT * FROM Voting_record\n        WHERE Vice_President_Vote >= para_Vice_President_Vote\n        FOR UPDATE;\n    running_max NUMBER := NULL;\nBEGIN\n    FOR rec IN c_sel LOOP\n        -- Maintain running maximum from the row as read, before modifying it.\n        IF rec.Class_Senator_Vote IS NOT NULL AND\n           (running_max IS NULL OR rec.Class_Senator_Vote > running_max) THEN\n            running_max := rec.Class_Senator_Vote;\n        END IF;\n\n        IF instr(rec.Registration_integer, 'prefix_') = 1 THEN\n            UPDATE Voting_record\n               SET President_Vote = para_President_Vote\n             WHERE CURRENT OF c_sel;\n        ELSIF rec.Class_President_Vote < para_Class_President_Vote THEN\n            DELETE FROM Voting_record WHERE CURRENT OF c_sel;\n        ELSE\n            UPDATE Voting_record\n               SET President_Vote = para_President_Vote * 2\n             WHERE CURRENT OF c_sel;\n        END IF;\n    END LOOP;\n\n    DELETE FROM Voting_record\n     WHERE Registration_integer = 'prefix_' || para_Registration_integer;\n\n    INSERT INTO Voting_record (\n        Vice_President_Vote,\n        Registration_integer,\n        President_Vote,\n        Class_Senator_Vote\n    ) VALUES (\n        para_Vice_President_Vote + 1,\n        'prefix_' || para_Registration_integer,\n        para_President_Vote,\n        NVL(running_max, 0) + 1\n    );\nEND sp;\n/"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    para_Vice_President_Vote NUMBER,\n    para_Registration_integer VARCHAR2,\n    para_President_Vote NUMBER,\n    para_Class_President_Vote NUMBER\n) IS\n    CURSOR c_sel IS\n        SELECT * FROM Voting_record\n        WHERE Vice_President_Vote >= para_Vice_President_Vote\n        FOR UPDATE;\n    running_max NUMBER := NULL;\nBEGIN\n    FOR rec IN c_sel LOOP\n        -- Maintain running maximum from the row as read, before modifying it.\n        IF rec.Class_Senator_Vote IS NOT NULL AND\n           (running_max IS NULL OR rec.Class_Senator_Vote > running_max) THEN\n            running_max := rec.Class_Senator_Vote;\n        END IF;\n\n        IF instr(rec.Registration_integer, 'prefix_') = 1 THEN\n            UPDATE Voting_record\n               SET President_Vote = para_President_Vote\n             WHERE CURRENT OF c_sel;\n        ELSIF rec.Class_President_Vote < para_Class_President_Vote THEN\n            DELETE FROM Voting_record WHERE CURRENT OF c_sel;\n        ELSE\n            UPDATE Voting_record\n               SET President_Vote = para_President_Vote * 2\n             WHERE CURRENT OF c_sel;\n        END IF;\n    END LOOP;\n\n    DELETE FROM Voting_record\n     WHERE Registration_integer = 'prefix_' || para_Registration_integer;\n\n    INSERT INTO Voting_record (\n        Vice_President_Vote,\n        Registration_integer,\n        President_Vote,\n        Class_Senator_Vote\n    ) VALUES (\n        para_Vice_President_Vote + 1,\n        'prefix_' || para_Registration_integer,\n        para_President_Vote,\n        NVL(running_max, 0) + 1\n    );\nEND sp;\n/"
+ },
+ "pair": {
+  "single_run": "st-oracle-a2a5",
+  "single_task": "oracle_a5_001"
+ }
+}

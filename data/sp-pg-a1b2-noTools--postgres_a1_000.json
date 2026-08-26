@@ -1,0 +1,78 @@
+{
+ "id": "sp-pg-a1b2-noTools--postgres_a1_000",
+ "run": "sp-pg-a1b2-noTools",
+ "task_id": "postgres_a1_000",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "a1",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "candidate failed on call 1: [42P01] relation \"invoice_line_items\" does not exist",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "impl",
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 75.0,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Implement a PL/pgSQL procedure named sp. The procedure must accept exactly three parameters in this order: para_product_title of type text, para_product_id of type integer, and para_transaction_id of type integer. The procedure uses only the following tables and columns: Invoice_Line_Items.product_title, Invoice_Line_Items.product_id, and Invoice_Line_Items.invoice_number; Financial_Transactions.transaction_id, Financial_Transactions.transaction_amount, and Financial_Transactions.invoice_number. All comparisons use SQL equality semantics, so null is not considered equal to any value.\n\nFirst, look at Invoice_Line_Items. If at least one row has product_title equal to para_product_title, update every row with that product_title by setting its product_id to the result of multiplying para_product_id by 2. Do not modify any other columns in those rows, and do not insert a new row in this case. If no row has product_title equal to para_product_title, insert a new row into Invoice_Line_Items with product_title set to para_product_title and product_id set to para_product_id. No other columns are explicitly assigned in the inserted row, so they receive whatever default or null values the database would normally apply. The update and insert are mutually exclusive: exactly one of them occurs.\n\nNext, delete from Financial_Transactions every row whose transaction_id is strictly less than para_transaction_id. A row whose transaction_id equals para_transaction_id is not deleted. If para_transaction_id is null, no row satisfies this deletion.\n\nNext, if para_transaction_id is strictly greater than 0, delete from Financial_Transactions every remaining row whose transaction_amount is strictly less than 0. Zero and positive transaction_amount values do not qualify. This deletion applies only to rows that remain after the previous transaction_id deletion. If para_transaction_id is 0, negative, or null, skip this amount-based deletion entirely.\n\nFinally, after all earlier operations have completed, delete from Financial_Transactions every row whose invoice_number equals any non-null invoice_number currently present in Invoice_Line_Items in rows whose product_title equals para_product_title. This final deletion uses the Invoice_Line_Items rows as they exist after the earlier insert or update. A null invoice_number in Invoice_Line_Items does not match any Financial_Transactions.invoice_number. If no Invoice_Line_Items row has product_title equal to para_product_title at that point, no Financial_Transactions rows are deleted by this final step.\n\nAll steps must be performed in this exact order. The procedure does not contain explicit exception handling; if any operation raises an error, the procedure does not catch it and the error propagates to the caller.\n\nImplement this as a PostgreSQL (PL/pgSQL) stored procedure named `sp` with the parameter list exactly `sp(para_product_title text, para_product_id integer, para_transaction_id integer)`. Return the complete stored procedure, and nothing else.\n",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    para_product_title text,\n    para_product_id integer,\n    para_transaction_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF EXISTS (\n        SELECT 1\n        FROM Invoice_Line_Items\n        WHERE product_title = para_product_title\n    ) THEN\n        UPDATE Invoice_Line_Items\n           SET product_id = para_product_id * 2\n         WHERE product_title = para_product_title;\n    ELSE\n        INSERT INTO Invoice_Line_Items (product_title, product_id)\n        VALUES (para_product_title, para_product_id);\n    END IF;\n\n    DELETE FROM Financial_Transactions\n     WHERE transaction_id < para_transaction_id;\n\n    IF para_transaction_id > 0 THEN\n        DELETE FROM Financial_Transactions\n         WHERE transaction_amount < 0;\n    END IF;\n\n    DELETE FROM Financial_Transactions\n     WHERE invoice_number IN (\n           SELECT ili.invoice_number\n             FROM Invoice_Line_Items AS ili\n            WHERE ili.product_title = para_product_title\n              AND ili.invoice_number IS NOT NULL\n       );\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    para_product_title text,\n    para_product_id integer,\n    para_transaction_id integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF EXISTS (\n        SELECT 1\n        FROM Invoice_Line_Items\n        WHERE product_title = para_product_title\n    ) THEN\n        UPDATE Invoice_Line_Items\n           SET product_id = para_product_id * 2\n         WHERE product_title = para_product_title;\n    ELSE\n        INSERT INTO Invoice_Line_Items (product_title, product_id)\n        VALUES (para_product_title, para_product_id);\n    END IF;\n\n    DELETE FROM Financial_Transactions\n     WHERE transaction_id < para_transaction_id;\n\n    IF para_transaction_id > 0 THEN\n        DELETE FROM Financial_Transactions\n         WHERE transaction_amount < 0;\n    END IF;\n\n    DELETE FROM Financial_Transactions\n     WHERE invoice_number IN (\n           SELECT ili.invoice_number\n             FROM Invoice_Line_Items AS ili\n            WHERE ili.product_title = para_product_title\n              AND ili.invoice_number IS NOT NULL\n       );\nEND;\n$$;"
+ },
+ "pair": null
+}

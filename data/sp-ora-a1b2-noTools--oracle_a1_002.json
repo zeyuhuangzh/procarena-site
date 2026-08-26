@@ -1,0 +1,78 @@
+{
+ "id": "sp-ora-a1b2-noTools--oracle_a1_002",
+ "run": "sp-ora-a1b2-noTools",
+ "task_id": "oracle_a1_002",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "a1",
+ "dialect": "oracle",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "candidate did not create: DatabaseError: ORA-00900: invalid SQL statement\nHelp: https://docs.oracle.com/error-help/db/ora-00900/",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "impl",
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 1383.6,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Implement an Oracle PL/SQL procedure named `sp` with three parameters in this exact order: `para_flow_degradation_threshold NUMBER`, `para_eer_degradation_ratio NUMBER`, and `para_outdoor_heat_threshold NUMBER`. The procedure has no explicit exception handling; if any SQL operation fails, execution stops and the Oracle error is raised to the caller. It does not explicitly commit or roll back.\n\nTables and columns involved:\n- `air_conditioner_info`: the procedure processes each row, reads all columns because it reads the whole row, and may write `energy_efficiency_ratio` and `power_consumption_watts`. The behavior depends on `ac_id`, `cooling_capacity_btu`, `heating_capacity_btu`, `energy_efficiency_ratio`, `power_consumption_watts`, and `refrigerant_type`.\n- `energy_consumption`: reads `energy_id`, `ac_id`, `power_consumption_watts`, `outdoor_temperature_celsius`, and `energy_consumption_kwh`; deletes rows based on those columns.\n- `usage_records`: reads `ac_id`, `usage_duration_hours`, `mode`, `indoor_temperature_celsius`, and `outdoor_temperature_celsius`.\n- `refrigerant_properties`: reads `refrigerant_type`, `phase_change_heat_kj_per_kg`, and `refrigerant_flow_rate_kg_per_s`.\n- `carbon_emissions`: reads `id` and `emission_factor`; inserts rows with values for `id`, `emission_factor`, and `annual_emissions_tonnes`.\n\nAll literal values are: 3412.0 for converting BTU to kilowatts; 1000.0 for converting kilowatts to watts and for annual emissions; 1.15 as the rated power multiplier; 273.15 added to Celsius in the Carnot calculation; 200 as both the fallback phase-change heat value and the divisor for fallback refrigerant flow; 24.0 and 30.0 as default average indoor and outdoor Celsius temperatures; 0.5 as fallback emission factor; 0 as fallback sum or starting point; and the exact string `'Cooling'` for mode matching.\n\nBefore processing any air conditioner, determine the next carbon emissions id as one greater than the largest existing `carbon_emissions.id`, or 1 if there are no carbon emission rows. Each inserted carbon emission row uses the next integer in this same sequence, so ids increase by 1 for every carbon insert in the order inserts occur.\n\nProcess every air conditioner row in ascending `ac_id` order, locking each row for update while it is processed.\n\nFor each air conditioner row:\n1. Convert `cooling_capacity_btu` to kilowatts by dividing by 3412.0. Convert `heating_capacity_btu` to kilowatts by dividing by 3412.0.\n2. Compute the pre-delete total energy use as the sum of `energy_consumption.energy_consumption_kwh` for the unit. If no rows exist, use 0. Store this pre-delete total for use in the per-unit carbon emission calculation later.\n3. Compute total usage hours as the sum of `usage_records.usage_duration_hours` for the unit. If no rows exist, use 0.\n4. Compute average indoor temperature and average outdoor temperature from `usage_records.indoor_temperature_celsius` and `usage_records.outdoor_temperature_celsius` for the unit. Ignore null values when averaging. If no rows or no non-null values exist, use 24.0 for indoor and 30.0 for outdoor. These averages are not recomputed later.\n5. Compute total estimated output in kilowatt-hours. For each usage record for the unit, if `mode` is exactly `'Cooling'`, add cooling capacity in kilowatts multiplied by `usage_duration_hours`; otherwise add heating capacity in kilowatts multiplied by `usage_duration_hours`. If no usage records exist, output is 0. This output total is not recomputed later.\n6. Compute initial seasonal efficiency. If pre-delete total energy use is greater than 0, seasonal efficiency equals total estimated output divided by pre-delete total energy use. Otherwise seasonal efficiency equals the unit's rated `energy_efficiency_ratio`.\n7. Compute initial average power draw in kilowatts. If pre-delete total energy use is greater than 0 and total usage hours is greater than 0, average power draw equals pre-delete total energy use divided by total usage hours. Otherwise average power draw equals the unit's rated `power_consumption_watts` divided by 1000.0.\n8. Apply the initial Carnot cap. If average outdoor temperature minus average indoor temperature is greater than 0, compute a Carnot coefficient as average indoor temperature plus 273.15, divided by average outdoor temperature minus average indoor temperature. If seasonal efficiency is greater than this Carnot coefficient, reduce seasonal efficiency to the Carnot coefficient. If the temperature difference is not greater than 0, no cap is applied.\n9. For the unit's `refrigerant_type`, read `phase_change_heat_kj_per_kg` and `refrigerant_flow_rate_kg_per_s` from `refrigerant_properties`. Use the largest non-null `phase_change_heat_kj_per_kg` for that refrigerant type, or 200 if missing or null. Use the average non-null `refrigerant_flow_rate_kg_per_s` for that refrigerant type, or cooling capacity in kilowatts divided by 200 if missing or null.\n10. If the resulting phase-change heat value is not greater than 0, do nothing further for this air conditioner. It receives no deletion, no update, and no carbon emission rows.\n11. Otherwise compute required flow rate as cooling capacity in kilowatts divided by the phase-change heat value. If actual flow rate is less than required flow rate multiplied by `para_flow_degradation_threshold`, the unit is affected. If actual flow rate is not less than that value, do nothing further for this unit.\n12. For an affected unit, first select the emission factor to use for all carbon inserts for this unit. The emission factor is the largest non-null `carbon_emissions.emission_factor` at that moment, or 0.5 if there are no carbon emission rows or no non-null emission factor values. This selection may see carbon rows inserted earlier by the procedure for previous affected units.\n13. Identify every `energy_consumption` row for the affected unit where `power_consumption_watts` is strictly greater than the unit's `power_consumption_watts` multiplied by 1.15, and `outdoor_temperature_celsius` is strictly greater than `para_outdoor_heat_threshold`. Order those rows by ascending `energy_id`. Store their `energy_id` and `energy_consumption_kwh` values. If no rows match, no energy rows are deleted.\n14. Delete all identified `energy_consumption` rows in ascending `energy_id` order.\n15. After the deletions, recompute total energy use as the sum of remaining `energy_consumption.energy_consumption_kwh` for the affected unit. If no remaining rows exist, use 0.\n16. Recompute seasonal efficiency from this post-deletion total energy use. If post-deletion total energy use is greater than 0, seasonal efficiency equals the original total estimated output divided by post-deletion total energy use. Otherwise seasonal efficiency equals the unit's rated `energy_efficiency_ratio`.\n17. Recompute average power draw in kilowatts from this post-deletion total energy use. If post-deletion total energy use is greater than 0 and the original total usage hours is greater than 0, average power draw equals post-deletion total energy use divided by original total usage hours. Otherwise average power draw equals the unit's rated `power_consumption_watts` divided by 1000.0.\n18. Reapply the Carnot cap using the original average indoor and outdoor temperatures. If average outdoor temperature minus average indoor temperature is greater than 0, compute the Carnot coefficient as average indoor temperature plus 273.15, divided by average outdoor temperature minus average indoor temperature. If the recomputed seasonal efficiency is greater than this coefficient, reduce it to the coefficient. If the temperature difference is not greater than 0, no cap is applied.\n19. Check whether the recomputed and capped seasonal efficiency is strictly less than the unit's rated `energy_efficiency_ratio` multiplied by `para_eer_degradation_ratio`. If it is, update the current air conditioner row by setting `energy_efficiency_ratio` to the recomputed and capped seasonal efficiency, and setting `power_consumption_watts` to the recomputed average power draw in kilowatts multiplied by 1000.0. If it is not strictly less, do not update the air conditioner row.\n20. Insert exactly one carbon emission row for the affected unit, regardless of whether the air conditioner update happened. Give it the next carbon emission id. Set its `emission_factor` to the emission factor selected for this unit. Set its `annual_emissions_tonnes` to the stored pre-delete total energy use multiplied by that emission factor and divided by 1000.0. Use the pre-delete total, not the post-deletion total.\n21. After that per-unit carbon row, for every identified deleted energy row in ascending `energy_id` order, insert one additional carbon emission row. Give each row the next carbon emission id in the same sequence. Set its `emission_factor` to the same selected emission factor. Set its `annual_emissions_tonnes` to the deleted row's `energy_consumption_kwh`, or 0 if that value is null, multiplied by the selected emission factor and divided by 1000.0. If no energy rows were deleted, only the per-unit carbon row is inserted.\n\nContinue this process for the next air conditioner in ascending `ac_id` order. A unit that is not affected receives no deletions, no update, and no carbon inserts. An affected unit always receives a per-unit carbon emission row, and may also receive one carbon emission row per deleted energy row.\n\nImplement this as an Oracle (PL/SQL) stored procedure named `sp` with the parameter list exactly `sp(para_flow_degradation_threshold NUMBER, para_eer_degradation_ratio NUMBER, para_outdoor_heat_threshold NUMBER)`. Return the complete stored procedure, and nothing else.\n",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "line1\nline2"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "line1\nline2"
+ },
+ "pair": null
+}

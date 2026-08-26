@@ -1,0 +1,542 @@
+{
+ "id": "sp01-tools-x--postgres_a3_002",
+ "run": "sp01-tools-x",
+ "task_id": "postgres_a3_002",
+ "stage": "single",
+ "condition": "tools-only",
+ "tier": "single-turn",
+ "scenario": "a3",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 100,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "database state differs after call 1",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": null,
+  "attribution": "impl",
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 53,
+  "seconds": 455.6,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 2,
+   "compile_plsql": 2,
+   "execute_scratch": 38,
+   "describe_table": 1,
+   "reset_scratch": 8,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Implement a PostgreSQL PL/pgSQL stored procedure named `sp` with the exact signature:\n\n`sp(para_Start_year integer, para_Club_name text, para_Club_ID integer, para_Player_ID integer, para_Occupation text, para_Votes integer)`\n\nIt does not return a result set.\n\nOnly the tables `club` and `player` are in scope; no other tables may be read or written.\n\nThe attached worked examples file (`examples.md`) is exhaustive of the required behaviour. Matching those examples is the whole specification.\n\nReturn the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "examples.md",
+    "kind": "worked examples",
+    "text": "# Behaviour of the procedure, by example\n\nEach example is one call, run against the database in the state shown below. The examples are independent: every one starts from that same state.\n\n## Starting state\n\nEvery example below starts from this database. The tables the procedure touches:\n\n### club (6 rows)\n| Club_ID | Club_name | Region | Start_year |\n|---|---|---|---|\n| 1 | AIK | USA | 2009 |\n| 2 | BK Häcken | UK | 1998 |\n| 3 | Djurgårdens IF | USA | 2005 |\n| 4 | Gefle IF | Korea | 2001 |\n| 5 | Halmstads BK | Russia | 2000 |\n| 6 | Helsingborgs IF | France | 2011 |\n\n### player (14 rows)\n| Player_ID | Sponsor_name | Player_name | Gender | Residence | Occupation | Votes | Rank |\n|---|---|---|---|---|---|---|---|\n| 1 | Brandon—Souris | Jean Luc Bouché | M | Brandon | Locomotive Engineer | 6055 | 2nd |\n| 2 | Charleswood—St. James—Assiniboia | Fiona Shiells | F | Winnipeg | Ministerial Assistant | 7190 | 3rd |\n| 3 | Churchill | Niki Ashton | F | Thompson | Researcher | 8734 | 1st |\n| 4 | Dauphin—Swan River—Marquette | Ron Strynadka | M | Birtle | Retired | 4914 | 2nd |\n| 5 | Elmwood—Transcona | Jim Maloway | M | Winnipeg | Small Businessman | 14355 | 1st |\n| 6 | Kildonan—St. Paul | Ross Eadie | M | Winnipeg | Self Employed / Consultant | 12093 | 2nd |\n| 7 | Portage—Lisgar | Mohamed Alli | M | Winnipeg | Distribution Centre Associate | 2353 | 4th |\n| 8 | Provencher | Ross C. Martin | M | Oakbank | Design Coordinator | 4947 | 2nd |\n| ... 6 more rows | | | | | | | \n\n## Example 1\n\n```sql\nCALL sp(2012, 'region_all_both', -7, 2, 'sponsor_p2', 9491);\n```\n\n**club**\n- 6 row(s) changed:\n  Club_ID=1, Club_name='AIK', Region='USA', Start_year=2009 | Club_name: 'AIK' -> 'phase_9', Region: 'USA' -> 'region_all_both'\n  Club_ID=2, Club_name='BK Häcken', Region='UK', Start_year=1998 | Club_name: 'BK Häcken' -> 'phase_9', Region: 'UK' -> 'region_all_both'\n  Club_ID=3, Club_name='Djurgårdens IF', Region='USA', Start_year=2005 | Club_name: 'Djurgårdens IF' -> 'phase_9', Region: 'USA' -> 'region_all_both'\n  Club_ID=4, Club_name='Gefle IF', Region='Korea', Start_year=2001 | Club_name: 'Gefle IF' -> 'phase_9', Region: 'Korea' -> 'region_all_both'\n  Club_ID=5, Club_name='Halmstads BK', Region='Russia', Start_year=2000 | Club_name: 'Halmstads BK' -> 'phase_9', Region: 'Russia' -> 'region_all_both'\n  Club_ID=6, Club_name='Helsingborgs IF', Region='France', Start_year=2011 | Club_name: 'Helsingborgs IF' -> 'phase_9', Region: 'France' -> 'region_all_both'\n\n**player**\n- 9 row(s) removed:\n  Player_ID=1, Sponsor_name='Brandon—Souris', Player_name='Jean Luc Bouché', Gender='M', Residence='Brandon', Occupation='Locomotive Engineer', Votes=6055, Rank='2nd'\n  Player_ID=2, Sponsor_name='Charleswood—St. James—Assiniboia', Player_name='Fiona Shiells', Gender='F', Residence='Winnipeg', Occupation='Ministerial Assistant', Votes=7190, Rank='3rd'\n  Player_ID=3, Sponsor_name='Churchill', Player_name='Niki Ashton', Gender='F', Residence='Thompson', Occupation='Researcher', Votes=8734, Rank='1st'\n  Player_ID=4, Sponsor_name='Dauphin—Swan River—Marquette', Player_name='Ron Strynadka', Gender='M', Residence='Birtle', Occupation='Retired', Votes=4914, Rank='2nd'\n  Player_ID=7, Sponsor_name='Portage—Lisgar', Player_name='Mohamed Alli', Gender='M', Residence='Winnipeg', Occupation='Distribution Centre Associate', Votes=2353, Rank='4th'\n  Player_ID=8, Sponsor_name='Provencher', Player_name='Ross C. Martin', Gender='M', Residence='Oakbank', Occupation='Design Coordinator', Votes=4947, Rank='2nd'\n  Player_ID=9, Sponsor_name='Saint Boniface', Player_name='Matt Schaubroeck', Gender='M', Residence='Winnipeg', Occupation='Student', Votes=5502, Rank='3rd'\n  Player_ID=13, Sponsor_name='Winnipeg South', Player_name='Sean Robert', Gender='M', Residence='Winnipeg', Occupation='Product Consultant - MLCC', Votes=4673, Rank='3rd'\n    ... 1 more row(s) removed\n- 5 row(s) changed:\n  Player_ID=5, Sponsor_name='Elmwood—Transcona', Player_name='Jim Maloway', Gender | Sponsor_name: 'Elmwood—Transcona' -> 'region_all_both', Occupation: 'Small Businessman' -> 'log_phase_9'\n  Player_ID=6, Sponsor_name='Kildonan—St. Paul', Player_name='Ross Eadie', Gender= | Sponsor_name: 'Kildonan—St. Paul' -> 'region_all_both', Occupation: 'Self Employed / Consultant' -> 'log_phase_9'\n  Player_ID=10, Sponsor_name='Selkirk—Interlake', Player_name='Patricia Cordner',  | Sponsor_name: 'Selkirk—Interlake' -> 'region_all_both', Occupation: 'Retired' -> 'log_phase_9'\n  Player_ID=11, Sponsor_name='Winnipeg Centre', Player_name='Pat Martin', Gender=' | Sponsor_name: 'Winnipeg Centre' -> 'region_all_both', Occupation: 'Parliamentarian' -> 'log_phase_9'\n  Player_ID=12, Sponsor_name='Winnipeg North', Player_name='Judy Wasylycia-Leis',  | Sponsor_name: 'Winnipeg North' -> 'region_all_both', Occupation: 'Parliamentarian' -> 'log_phase_9'\n\n## Example 2\n\n```sql\nCALL sp(2008, 'region_c4', -4, 5, 'sponsor_p5', 9491);\n```\n\n**club**\n- 3 row(s) removed:\n  Club_ID=1, Club_name='AIK', Region='USA', Start_year=2009\n  Club_ID=2, Club_name='BK Häcken', Region='UK', Start_year=1998\n  Club_ID=3, Club_name='Djurgårdens IF', Region='USA', Start_year=2005\n- 3 row(s) changed:\n  Club_ID=6, Club_name='Helsingborgs IF', Region='France', Start_year=2011 | Club_name: 'Helsingborgs IF' -> 'phase_9'\n  Club_ID=4, Club_name='Gefle IF', Region='Korea', Start_year=2001 | Club_name: 'Gefle IF' -> 'phase_9', Region: 'Korea' -> 'region_c4'\n  Club_ID=5, Club_name='Halmstads BK', Region='Russia', Start_year=2000 | Club_name: 'Halmstads BK' -> 'phase_9', Region: 'Russia' -> 'region_c4'\n\n**player**\n- 9 row(s) removed:\n  Player_ID=1, Sponsor_name='Brandon—Souris', Player_name='Jean Luc Bouché', Gender='M', Residence='Brandon', Occupation='Locomotive Engineer', Votes=6055, Rank='2nd'\n  Player_ID=2, Sponsor_name='Charleswood—St. James—Assiniboia', Player_name='Fiona Shiells', Gender='F', Residence='Winnipeg', Occupation='Ministerial Assistant', Votes=7190, Rank='3rd'\n  Player_ID=3, Sponsor_name='Churchill', Player_name='Niki Ashton', Gender='F', Residence='Thompson', Occupation='Researcher', Votes=8734, Rank='1st'\n  Player_ID=4, Sponsor_name='Dauphin—Swan River—Marquette', Player_name='Ron Strynadka', Gender='M', Residence='Birtle', Occupation='Retired', Votes=4914, Rank='2nd'\n  Player_ID=7, Sponsor_name='Portage—Lisgar', Player_name='Mohamed Alli', Gender='M', Residence='Winnipeg', Occupation='Distribution Centre Associate', Votes=2353, Rank='4th'\n  Player_ID=8, Sponsor_name='Provencher', Player_name='Ross C. Martin', Gender='M', Residence='Oakbank', Occupation='Design Coordinator', Votes=4947, Rank='2nd'\n  Player_ID=9, Sponsor_name='Saint Boniface', Player_name='Matt Schaubroeck', Gender='M', Residence='Winnipeg', Occupation='Student', Votes=5502, Rank='3rd'\n  Player_ID=13, Sponsor_name='Winnipeg South', Player_name='Sean Robert', Gender='M', Residence='Winnipeg', Occupation='Product Consultant - MLCC', Votes=4673, Rank='3rd'\n    ... 1 more row(s) removed\n- 5 row(s) changed:\n  Player_ID=6, Sponsor_name='Kildonan—St. Paul', Player_name='Ross Eadie', Gender= | Occupation: 'Self Employed / Consultant' -> 'log_phase_9'\n  Player_ID=5, Sponsor_name='Elmwood—Transcona', Player_name='Jim Maloway', Gender | Sponsor_name: 'Elmwood—Transcona' -> 'sponsor_p5', Occupation: 'Small Businessman' -> 'log_phase_9'\n  Player_ID=10, Sponsor_name='Selkirk—Interlake', Player_name='Patricia Cordner',  | Occupation: 'Retired' -> 'log_phase_9'\n  Player_ID=11, Sponsor_name='Winnipeg Centre', Player_name='Pat Martin', Gender=' | Occupation: 'Parliamentarian' -> 'log_phase_9'\n  Player_ID=12, Sponsor_name='Winnipeg North', Player_name='Judy Wasylycia-Leis',  | Occupation: 'Parliamentarian' -> 'log_phase_9'\n\n## Example 3\n\n```sql\nCALL sp(2000, 'no_clubs_only_p5', 0, 5, 'sponsor_p5_only', 10001);\n```\n\n**club**\n- 6 row(s) removed:\n  Club_ID=1, Club_name='AIK', Region='USA', Start_year=2009\n  Club_ID=2, Club_name='BK Häcken', Region='UK', Start_year=1998\n  Club_ID=3, Club_name='Djurgårdens IF', Region='USA', Start_year=2005\n  Club_ID=4, Club_name='Gefle IF', Region='Korea', Start_year=2001\n  Club_ID=5, Club_name='Halmstads BK', Region='Russia', Start_year=2000\n  Club_ID=6, Club_name='Helsingborgs IF', Region='France', Start_year=2011\n\n**player**\n- 10 row(s) removed:\n  Player_ID=1, Sponsor_name='Brandon—Souris', Player_name='Jean Luc Bouché', Gender='M', Residence='Brandon', Occupation='Locomotive Engineer', Votes=6055, Rank='2nd'\n  Player_ID=2, Sponsor_name='Charleswood—St. James—Assiniboia', Player_name='Fiona Shiells', Gender='F', Residence='Winnipeg', Occupation='Ministerial Assistant', Votes=7190, Rank='3rd'\n  Player_ID=3, Sponsor_name='Churchill', Player_name='Niki Ashton', Gender='F', Residence='Thompson', Occupation='Researcher', Votes=8734, Rank='1st'\n  Player_ID=4, Sponsor_name='Dauphin—Swan River—Marquette', Player_name='Ron Strynadka', Gender='M', Residence='Birtle', Occupation='Retired', Votes=4914, Rank='2nd'\n  Player_ID=7, Sponsor_name='Portage—Lisgar', Player_name='Mohamed Alli', Gender='M', Residence='Winnipeg', Occupation='Distribution Centre Associate', Votes=2353, Rank='4th'\n  Player_ID=8, Sponsor_name='Provencher', Player_name='Ross C. Martin', Gender='M', Residence='Oakbank', Occupation='Design Coordinator', Votes=4947, Rank='2nd'\n  Player_ID=9, Sponsor_name='Saint Boniface', Player_name='Matt Schaubroeck', Gender='M', Residence='Winnipeg', Occupation='Student', Votes=5502, Rank='3rd'\n  Player_ID=10, Sponsor_name='Selkirk—Interlake', Player_name='Patricia Cordner', Gender='F', Residence='Selkirk', Occupation='Retired', Votes=9506, Rank='2nd'\n    ... 2 more row(s) removed\n- 4 row(s) changed:\n  Player_ID=6, Sponsor_name='Kildonan—St. Paul', Player_name='Ross Eadie', Gender= | Occupation: 'Self Employed / Consultant' -> 'log_phase_9'\n  Player_ID=11, Sponsor_name='Winnipeg Centre', Player_name='Pat Martin', Gender=' | Occupation: 'Parliamentarian' -> 'log_phase_9'\n  Player_ID=12, Sponsor_name='Winnipeg North', Player_name='Judy Wasylycia-Leis',  | Occupation: 'Parliamentarian' -> 'log_phase_9'\n  Player_ID=5, Sponsor_name='Elmwood—Transcona', Player_name='Jim Maloway', Gender | Sponsor_name: 'Elmwood—Transcona' -> 'sponsor_p5_only', Occupation: 'Small Businessman' -> 'log_phase_9'\n\n## Example 4\n\n```sql\nCALL sp(2020, 'no_clubs_both_players', 0, 999, 'unused_occ', 9491);\n```\n\n**club**\n- 6 row(s) removed:\n  Club_ID=1, Club_name='AIK', Region='USA', Start_year=2009\n  Club_ID=2, Club_name='BK Häcken', Region='UK', Start_year=1998\n  Club_ID=3, Club_name='Djurgårdens IF', Region='USA', Start_year=2005\n  Club_ID=4, Club_name='Gefle IF', Region='Korea', Start_year=2001\n  Club_ID=5, Club_name='Halmstads BK', Region='Russia', Start_year=2000\n  Club_ID=6, Club_name='Helsingborgs IF', Region='France', Start_year=2011\n\n**player**\n- 9 row(s) removed:\n  Player_ID=1, Sponsor_name='Brandon—Souris', Player_name='Jean Luc Bouché', Gender='M', Residence='Brandon', Occupation='Locomotive Engineer', Votes=6055, Rank='2nd'\n  Player_ID=2, Sponsor_name='Charleswood—St. James—Assiniboia', Player_name='Fiona Shiells', Gender='F', Residence='Winnipeg', Occupation='Ministerial Assistant', Votes=7190, Rank='3rd'\n  Player_ID=3, Sponsor_name='Churchill', Player_name='Niki Ashton', Gender='F', Residence='Thompson', Occupation='Researcher', Votes=8734, Rank='1st'\n  Player_ID=4, Sponsor_name='Dauphin—Swan River—Marquette', Player_name='Ron Strynadka', Gender='M', Residence='Birtle', Occupation='Retired', Votes=4914, Rank='2nd'\n  Player_ID=7, Sponsor_name='Portage—Lisgar', Player_name='Mohamed Alli', Gender='M', Residence='Winnipeg', Occupation='Distribution Centre Associate', Votes=2353, Rank='4th'\n  Player_ID=8, Sponsor_name='Provencher', Player_name='Ross C. Martin', Gender='M', Residence='Oakbank', Occupation='Design Coordinator', Votes=4947, Rank='2nd'\n  Player_ID=9, Sponsor_name='Saint Boniface', Player_name='Matt Schaubroeck', Gender='M', Residence='Winnipeg', Occupation='Student', Votes=5502, Rank='3rd'\n  Player_ID=13, Sponsor_name='Winnipeg South', Player_name='Sean Robert', Gender='M', Residence='Winnipeg', Occupation='Product Consultant - MLCC', Votes=4673, Rank='3rd'\n    ... 1 more row(s) removed\n- 5 row(s) changed:\n  Player_ID=5, Sponsor_name='Elmwood—Transcona', Player_name='Jim Maloway', Gender | Sponsor_name: 'Elmwood—Transcona' -> 'no_clubs_both_players', Occupation: 'Small Businessman' -> 'log_phase_9'\n  Player_ID=6, Sponsor_name='Kildonan—St. Paul', Player_name='Ross Eadie', Gender= | Sponsor_name: 'Kildonan—St. Paul' -> 'no_clubs_both_players', Occupation: 'Self Employed / Consultant' -> 'log_phase_9'\n  Player_ID=10, Sponsor_name='Selkirk—Interlake', Player_name='Patricia Cordner',  | Sponsor_name: 'Selkirk—Interlake' -> 'no_clubs_both_players', Occupation: 'Retired' -> 'log_phase_9'\n  Player_ID=11, Sponsor_name='Winnipeg Centre', Player_name='Pat Martin', Gender=' | Sponsor_name: 'Winnipeg Centre' -> 'no_clubs_both_players', Occupation: 'Parliamentarian' -> 'log_phase_9'\n  Player_ID=12, Sponsor_name='Winnipeg North', Player_name='Judy Wasylycia-Leis',  | Sponsor_name: 'Winnipeg North' -> 'no_clubs_both_players', Occupation: 'Parliamentarian' -> 'log_phase_9'\n\n## Example 5\n\n```sql\nCALL sp(2011, 'both_clubs_only_p5_false', -7, 2, 'occ_deleted_p2', 10001);\n```\n\n**club**\n- 6 row(s) changed:\n  Club_ID=6, Club_name='Helsingborgs IF', Region='France', Start_year=2011 | Club_name: 'Helsingborgs IF' -> 'phase_9'\n  Club_ID=1, Club_name='AIK', Region='USA', Start_year=2009 | Club_name: 'AIK' -> 'phase_9', Region: 'USA' -> 'both_clubs_only_p5_false'\n  Club_ID=2, Club_name='BK Häcken', Region='UK', Start_year=1998 | Club_name: 'BK Häcken' -> 'phase_9', Region: 'UK' -> 'both_clubs_only_p5_false'\n  Club_ID=3, Club_name='Djurgårdens IF', Region='USA', Start_year=2005 | Club_name: 'Djurgårdens IF' -> 'phase_9', Region: 'USA' -> 'both_clubs_only_p5_false'\n  Club_ID=4, Club_name='Gefle IF', Region='Korea', Start_year=2001 | Club_name: 'Gefle IF' -> 'phase_9', Region: 'Korea' -> 'both_clubs_only_p5_false'\n  Club_ID=5, Club_name='Halmstads BK', Region='Russia', Start_year=2000 | Club_name: 'Halmstads BK' -> 'phase_9', Region: 'Russia' -> 'both_clubs_only_p5_false'\n\n**player**\n- 10 row(s) removed:\n  Player_ID=1, Sponsor_name='Brandon—Souris', Player_name='Jean Luc Bouché', Gender='M', Residence='Brandon', Occupation='Locomotive Engineer', Votes=6055, Rank='2nd'\n  Player_ID=2, Sponsor_name='Charleswood—St. James—Assiniboia', Player_name='Fiona Shiells', Gender='F', Residence='Winnipeg', Occupation='Ministerial Assistant', Votes=7190, Rank='3rd'\n  Player_ID=3, Sponsor_name='Churchill', Player_name='Niki Ashton', Gender='F', Residence='Thompson', Occupation='Researcher', Votes=8734, Rank='1st'\n  Player_ID=4, Sponsor_name='Dauphin—Swan River—Marquette', Player_name='Ron Strynadka', Gender='M', Residence='Birtle', Occupation='Retired', Votes=4914, Rank='2nd'\n  Player_ID=7, Sponsor_name='Portage—Lisgar', Player_name='Mohamed Alli', Gender='M', Residence='Winnipeg', Occupation='Distribution Centre Associate', Votes=2353, Rank='4th'\n  Player_ID=8, Sponsor_name='Provencher', Player_name='Ross C. Martin', Gender='M', Residence='Oakbank', Occupation='Design Coordinator', Votes=4947, Rank='2nd'\n  Player_ID=9, Sponsor_name='Saint Boniface', Player_name='Matt Schaubroeck', Gender='M', Residence='Winnipeg', Occupation='Student', Votes=5502, Rank='3rd'\n  Player_ID=10, Sponsor_name='Selkirk—Interlake', Player_name='Patricia Cordner', Gender='F', Residence='Selkirk', Occupation='Retired', Votes=9506, Rank='2nd'\n    ... 2 more row(s) removed\n- 4 row(s) changed:\n  Player_ID=5, Sponsor_name='Elmwood—Transcona', Player_name='Jim Maloway', Gender | Sponsor_name: 'Elmwood—Transcona' -> 'both_clubs_only_p5_false', Occupation: 'Small Businessman' -> 'log_phase_9'\n  Player_ID=6, Sponsor_name='Kildonan—St. Paul', Player_name='Ross Eadie', Gender= | Sponsor_name: 'Kildonan—St. Paul' -> 'both_clubs_only_p5_false', Occupation: 'Self Employed / Consultant' -> 'log_phase_9'\n  Player_ID=11, Sponsor_name='Winnipeg Centre', Player_name='Pat Martin', Gender=' | Sponsor_name: 'Winnipeg Centre' -> 'both_clubs_only_p5_false', Occupation: 'Parliamentarian' -> 'log_phase_9'\n  Player_ID=12, Sponsor_name='Winnipeg North', Player_name='Judy Wasylycia-Leis',  | Sponsor_name: 'Winnipeg North' -> 'both_clubs_only_p5_false', Occupation: 'Parliamentarian' -> 'log_phase_9'\n\n## Example 6\n\n```sql\nCALL sp(2002, 'only_c4_no_players', -4, 999, 'occ_x', 14356);\n```\n\n**club**\n- 3 row(s) removed:\n  Club_ID=1, Club_name='AIK', Region='USA', Start_year=2009\n  Club_ID=2, Club_name='BK Häcken', Region='UK', Start_year=1998\n  Club_ID=3, Club_name='Djurgårdens IF', Region='USA', Start_year=2005\n- 3 row(s) changed:\n  Club_ID=6, Club_name='Helsingborgs IF', Region='France', Start_year=2011 | Club_name: 'Helsingborgs IF' -> 'phase_9'\n  Club_ID=4, Club_name='Gefle IF', Region='Korea', Start_year=2001 | Club_name: 'Gefle IF' -> 'phase_9', Region: 'Korea' -> 'only_c4_no_players'\n  Club_ID=5, Club_name='Halmstads BK', Region='Russia', Start_year=2000 | Club_name: 'Halmstads BK' -> 'phase_9', Region: 'Russia' -> 'only_c4_no_players'\n\n**player**\n- 14 row(s) removed:\n  Player_ID=1, Sponsor_name='Brandon—Souris', Player_name='Jean Luc Bouché', Gender='M', Residence='Brandon', Occupation='Locomotive Engineer', Votes=6055, Rank='2nd'\n  Player_ID=2, Sponsor_name='Charleswood—St. James—Assiniboia', Player_name='Fiona Shiells', Gender='F', Residence='Winnipeg', Occupation='Ministerial Assistant', Votes=7190, Rank='3rd'\n  Player_ID=3, Sponsor_name='Churchill', Player_name='Niki Ashton', Gender='F', Residence='Thompson', Occupation='Researcher', Votes=8734, Rank='1st'\n  Player_ID=4, Sponsor_name='Dauphin—Swan River—Marquette', Player_name='Ron Strynadka', Gender='M', Residence='Birtle', Occupation='Retired', Votes=4914, Rank='2nd'\n  Player_ID=5, Sponsor_name='Elmwood—Transcona', Player_name='Jim Maloway', Gender='M', Residence='Winnipeg', Occupation='Small Businessman', Votes=14355, Rank='1st'\n  Player_ID=6, Sponsor_name='Kildonan—St. Paul', Player_name='Ross Eadie', Gender='M', Residence='Winnipeg', Occupation='Self Employed / Consultant', Votes=12093, Rank='2nd'\n  Player_ID=7, Sponsor_name='Portage—Lisgar', Player_name='Mohamed Alli', Gender='M', Residence='Winnipeg', Occupation='Distribution Centre Associate', Votes=2353, Rank='4th'\n  Player_ID=8, Sponsor_name='Provencher', Player_name='Ross C. Martin', Gender='M', Residence='Oakbank', Occupation='Design Coordinator', Votes=4947, Rank='2nd'\n    ... 6 more row(s) removed\n\n## Example 7\n\n```sql\nCALL sp(2013, 'both_clubs_no_players', -7, 5, 'occ_y', 14356);\n```\n\n**club**\n- 6 row(s) changed:\n  Club_ID=1, Club_name='AIK', Region='USA', Start_year=2009 | Club_name: 'AIK' -> 'phase_9', Region: 'USA' -> 'both_clubs_no_players'\n  Club_ID=2, Club_name='BK Häcken', Region='UK', Start_year=1998 | Club_name: 'BK Häcken' -> 'phase_9', Region: 'UK' -> 'both_clubs_no_players'\n  Club_ID=3, Club_name='Djurgårdens IF', Region='USA', Start_year=2005 | Club_name: 'Djurgårdens IF' -> 'phase_9', Region: 'USA' -> 'both_clubs_no_players'\n  Club_ID=4, Club_name='Gefle IF', Region='Korea', Start_year=2001 | Club_name: 'Gefle IF' -> 'phase_9', Region: 'Korea' -> 'both_clubs_no_players'\n  Club_ID=5, Club_name='Halmstads BK', Region='Russia', Start_year=2000 | Club_name: 'Halmstads BK' -> 'phase_9', Region: 'Russia' -> 'both_clubs_no_players'\n  Club_ID=6, Club_name='Helsingborgs IF', Region='France', Start_year=2011 | Club_name: 'Helsingborgs IF' -> 'phase_9', Region: 'France' -> 'both_clubs_no_players'\n\n**player**\n- 14 row(s) removed:\n  Player_ID=1, Sponsor_name='Brandon—Souris', Player_name='Jean Luc Bouché', Gender='M', Residence='Brandon', Occupation='Locomotive Engineer', Votes=6055, Rank='2nd'\n  Player_ID=2, Sponsor_name='Charleswood—St. James—Assiniboia', Player_name='Fiona Shiells', Gender='F', Residence='Winnipeg', Occupation='Ministerial Assistant', Votes=7190, Rank='3rd'\n  Player_ID=3, Sponsor_name='Churchill', Player_name='Niki Ashton', Gender='F', Residence='Thompson', Occupation='Researcher', Votes=8734, Rank='1st'\n  Player_ID=4, Sponsor_name='Dauphin—Swan River—Marquette', Player_name='Ron Strynadka', Gender='M', Residence='Birtle', Occupation='Retired', Votes=4914, Rank='2nd'\n  Player_ID=5, Sponsor_name='Elmwood—Transcona', Player_name='Jim Maloway', Gender='M', Residence='Winnipeg', Occupation='Small Businessman', Votes=14355, Rank='1st'\n  Player_ID=6, Sponsor_name='Kildonan—St. Paul', Player_name='Ross Eadie', Gender='M', Residence='Winnipeg', Occupation='Self Employed / Consultant', Votes=12093, Rank='2nd'\n  Player_ID=7, Sponsor_name='Portage—Lisgar', Player_name='Mohamed Alli', Gender='M', Residence='Winnipeg', Occupation='Distribution Centre Associate', Votes=2353, Rank='4th'\n  Player_ID=8, Sponsor_name='Provencher', Player_name='Ross C. Martin', Gender='M', Residence='Oakbank', Occupation='Design Coordinator', Votes=4947, Rank='2nd'\n    ... 6 more row(s) removed\n\n## Example 8\n\n```sql\nCALL sp(2001, 'both_clubs_region_none', -7, 5, 'sponsor_p5_b', 9491);\n```\n\n**club**\n- 6 row(s) changed:\n  Club_ID=1, Club_name='AIK', Region='USA', Start_year=2009 | Club_name: 'AIK' -> 'phase_9'\n  Club_ID=3, Club_name='Djurgårdens IF', Region='USA', Start_year=2005 | Club_name: 'Djurgårdens IF' -> 'phase_9'\n  Club_ID=4, Club_name='Gefle IF', Region='Korea', Start_year=2001 | Club_name: 'Gefle IF' -> 'phase_9'\n  Club_ID=6, Club_name='Helsingborgs IF', Region='France', Start_year=2011 | Club_name: 'Helsingborgs IF' -> 'phase_9'\n  Club_ID=2, Club_name='BK Häcken', Region='UK', Start_year=1998 | Club_name: 'BK Häcken' -> 'phase_9', Region: 'UK' -> 'both_clubs_region_none'\n  Club_ID=5, Club_name='Halmstads BK', Region='Russia', Start_year=2000 | Club_name: 'Halmstads BK' -> 'phase_9', Region: 'Russia' -> 'both_clubs_region_none'\n\n**player**\n- 9 row(s) removed:\n  Player_ID=1, Sponsor_name='Brandon—Souris', Player_name='Jean Luc Bouché', Gender='M', Residence='Brandon', Occupation='Locomotive Engineer', Votes=6055, Rank='2nd'\n  Player_ID=2, Sponsor_name='Charleswood—St. James—Assiniboia', Player_name='Fiona Shiells', Gender='F', Residence='Winnipeg', Occupation='Ministerial Assistant', Votes=7190, Rank='3rd'\n  Player_ID=3, Sponsor_name='Churchill', Player_name='Niki Ashton', Gender='F', Residence='Thompson', Occupation='Researcher', Votes=8734, Rank='1st'\n  Player_ID=4, Sponsor_name='Dauphin—Swan River—Marquette', Player_name='Ron Strynadka', Gender='M', Residence='Birtle', Occupation='Retired', Votes=4914, Rank='2nd'\n  Player_ID=7, Sponsor_name='Portage—Lisgar', Player_name='Mohamed Alli', Gender='M', Residence='Winnipeg', Occupation='Distribution Centre Associate', Votes=2353, Rank='4th'\n  Player_ID=8, Sponsor_name='Provencher', Player_name='Ross C. Martin', Gender='M', Residence='Oakbank', Occupation='Design Coordinator', Votes=4947, Rank='2nd'\n  Player_ID=9, Sponsor_name='Saint Boniface', Player_name='Matt Schaubroeck', Gender='M', Residence='Winnipeg', Occupation='Student', Votes=5502, Rank='3rd'\n  Player_ID=13, Sponsor_name='Winnipeg South', Player_name='Sean Robert', Gender='M', Residence='Winnipeg', Occupation='Product Consultant - MLCC', Votes=4673, Rank='3rd'\n    ... 1 more row(s) removed\n- 5 row(s) changed:\n  Player_ID=6, Sponsor_name='Kildonan—St. Paul', Player_name='Ross Eadie', Gender= | Occupation: 'Self Employed / Consultant' -> 'log_phase_9'\n  Player_ID=10, Sponsor_name='Selkirk—Interlake', Player_name='Patricia Cordner',  | Occupation: 'Retired' -> 'log_phase_9'\n  Player_ID=11, Sponsor_name='Winnipeg Centre', Player_name='Pat Martin', Gender=' | Occupation: 'Parliamentarian' -> 'log_phase_9'\n  Player_ID=12, Sponsor_name='Winnipeg North', Player_name='Judy Wasylycia-Leis',  | Occupation: 'Parliamentarian' -> 'log_phase_9'\n  Player_ID=5, Sponsor_name='Elmwood—Transcona', Player_name='Jim Maloway', Gender | Sponsor_name: 'Elmwood—Transcona' -> 'sponsor_p5_b', Occupation: 'Small Businessman' -> 'log_phase_9'\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable club , columns = [ Club_ID ( integer | primary key | values : 1 , 4 ) , Club_name ( text | values : AIK , Djurgårdens IF ) , Region ( text | values : USA , USA ) , Start_year ( integer | values : 2009 , 2001 ) ]\ntable coach , columns = [ Coach_ID ( integer | primary key | values : 4 , 2 ) , Coach_name ( text | values : Jameson Tomas , Jameson Tomas ) , Gender ( text | values : M , M ) , Club_ID ( integer | values : 1 , 3 ) , Rank ( integer | values : 3 , 2 ) ]\ntable match_result , columns = [ Rank ( integer | primary key | values : 6 , 4 ) , Club_ID ( integer | values : 5 , 2 ) , Gold ( integer | values : 13 , 20 ) , Big_Silver ( integer | values : 11 , 12 ) , Small_Silver ( integer | values : 4 , 4 ) , Bronze ( integer | values : 8 , 7 ) , Points ( integer | values : 102 , 102 ) ]\ntable player , columns = [ Player_ID ( integer | primary key | values : 2 , 5 ) , Sponsor_name ( text | values : Elmwood—Transcona , Dauphin—Swan River—Marquette ) , Player_name ( text | values : Jim Maloway , Patricia Cordner ) , Gender ( text | values : M , M ) , Residence ( text | values : Oakbank , Winnipeg ) , Occupation ( text | values : Product Consultant - MLCC , Small Businessman ) , Votes ( integer | values : 9506 , 14355 ) , Rank ( text | values : 4th , 3rd ) ]\ntable player_coach , columns = [ Player_ID ( integer | primary key | values : 6 , 4 ) , Coach_ID ( integer | values : 3 , 1 ) , Starting_year ( integer | values : 2011 , 2012 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "club"
+   },
+   "result": "Club_ID | Club_name | Region | Start_year\n1 | AIK | USA | 2009\n2 | BK Häcken | UK | 1998\n3 | Djurgårdens IF | USA | 2005\n4 | Gefle IF | Korea | 2001\n5 | Halmstads BK | Russia | 2000\n6 | Helsingborgs IF | France | 2011"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "player"
+   },
+   "result": "Player_ID | Sponsor_name | Player_name | Gender | Residence | Occupation | Votes | Rank\n1 | Brandon—Souris | Jean Luc Bouché | M | Brandon | Locomotive Engineer | 6055 | 2nd\n2 | Charleswood—St. James—Assiniboia | Fiona Shiells | F | Winnipeg | Ministerial Assistant | 7190 | 3rd\n3 | Churchill | Niki Ashton | F | Thompson | Researcher | 8734 | 1st\n4 | Dauphin—Swan River—Marquette | Ron Strynadka | M | Birtle | Retired | 4914 | 2nd\n5 | Elmwood—Transcona | Jim Maloway | M | Winnipeg | Small Businessman | 14355 | 1st\n6 | Kildonan—St. Paul | Ross Eadie | M | Winnipeg | Self Employed / Consultant | 12093 | 2nd\n7 | Portage—Lisgar | Mohamed Alli | M | Winnipeg | Distribution Centre Associate | 2353 | 4th\n8 | Provencher | Ross C. Martin | M | Oakbank | Design Coordinator | 4947 | 2nd\n9 | Saint Boniface | Matt Schaubroeck | M | Winnipeg | Student | 5502 | 3rd\n10 | Selkirk—Interlake | Patricia Cordner | F | Selkirk | Retired | 9506 | 2nd\n11 | Winnipeg Centre | Pat Martin | M | Winnipeg | Parliamentarian | 12285 | 1st\n12 | Winnipeg North | Judy Wasylycia-Leis | F | Winnipeg | Parliamentarian | 14097 | 1st\n13 | Winnipeg South | Sean Robert | M | Winnipeg | Product Consultant - MLCC | 4673 | 3rd\n14 | Winnipeg South Centre | Rachel Heinrichs | F | Winnipeg | Student | 5490 | 3rd"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_Club_ID = 0 THEN\n        DELETE FROM club;\n    ELSIF para_Club_ID = -7 THEN\n        UPDATE club\n           SET Club_name = 'phase_9',\n               Region = CASE\n                          WHEN Start_year < para_Start_year THEN para_Club_name\n                          ELSE Region\n                        END;\n    ELSE\n        DELETE FROM club WHERE Club_ID < -para_Club_ID;\n        UPDATE club\n           SET Club_name = 'phase_9',\n               Region = CASE\n                          WHEN Start_year < para_Start_year THEN para_Club_name\n                          ELSE Region\n                        END\n         WHERE Club_ID >= -para_Club_ID;\n    END IF;\n\n    DELETE FROM player WHERE Votes < para_Votes;\n\n    IF EXISTS (\n        SELECT 1 FROM player\n        WHERE Player_ID = para_Player_ID\n    ) THEN\n        UPDATE player\n           SET Occupation = 'log_phase_9',\n               Sponsor_name = CASE\n                                WHEN Player_ID = para_Player_ID THEN para_Occupation\n                                ELSE Sponsor_name\n                              END\n         WHERE Votes >= para_Votes;\n    ELSE\n        UPDATE player\n           SET Occupation = 'log_phase_9',\n               Sponsor_name = para_Club_name\n         WHERE Votes >= para_Votes;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_Club_ID = 0 THEN\n        DELETE FROM club;\n    ELSIF para_Club_ID = -7 THEN\n        UPDATE club\n           SET Club_name = 'phase_9',\n               Region = CASE\n                          WHEN Start_year < para_Start_year THEN para_Club_name\n                          ELSE Region\n                        END;\n    ELSE\n        DELETE FROM club WHERE Club_ID < -para_Club_ID;\n        UPDATE club\n           SET Club_name = 'phase_9',\n               Region = CASE\n                          WHEN Start_year < para_Start_year THEN para_Club_name\n                          ELSE Region\n                        END\n         WHERE Club_ID >= -para_Club_ID;\n    END IF;\n\n    DELETE FROM player WHERE Votes < para_Votes;\n\n    IF EXISTS (\n        SELECT 1 FROM player\n        WHERE Player_ID = para_Player_ID\n    ) THEN\n        UPDATE player\n           SET Occupation = 'log_phase_9',\n               Sponsor_name = CASE\n                                WHEN Player_ID = para_Player_ID THEN para_Occupation\n                                ELSE Sponsor_name\n                              END\n         WHERE Votes >= para_Votes;\n    ELSE\n        UPDATE player\n           SET Occupation = 'log_phase_9',\n               Sponsor_name = para_Club_name\n         WHERE Votes >= para_Votes;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(2012, 'region_all_both', -7, 2, 'sponsor_p2', 9491);"
+   },
+   "result": "error: [42703] column \"start_year\" does not exist"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT Start_year FROM club LIMIT 1;"
+   },
+   "result": "error: [42703] column \"start_year\" does not exist"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "club"
+   },
+   "result": "table club , columns = [ Club_ID ( integer | primary key | values : 1 , 4 ) , Club_name ( text | values : AIK , Djurgårdens IF ) , Region ( text | values : USA , USA ) , Start_year ( integer | values : 2009 , 2001 ) ]"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Start_year\" FROM club LIMIT 1;"
+   },
+   "result": "Start_year\n2009"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Club_ID\", \"Club_name\", \"Region\", \"Start_year\" FROM club LIMIT 1;"
+   },
+   "result": "Club_ID | Club_name | Region | Start_year\n1 | AIK | USA | 2009"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_Club_ID = 0 THEN\n        DELETE FROM club;\n    ELSIF para_Club_ID = -7 THEN\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END;\n    ELSE\n        DELETE FROM club WHERE \"Club_ID\" < -para_Club_ID;\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END\n         WHERE \"Club_ID\" >= -para_Club_ID;\n    END IF;\n\n    DELETE FROM player WHERE \"Votes\" < para_Votes;\n\n    IF EXISTS (\n        SELECT 1 FROM player\n        WHERE \"Player_ID\" = para_Player_ID\n    ) THEN\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = CASE\n                                WHEN \"Player_ID\" = para_Player_ID THEN para_Occupation\n                                ELSE \"Sponsor_name\"\n                              END\n         WHERE \"Votes\" >= para_Votes;\n    ELSE\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = para_Club_name\n         WHERE \"Votes\" >= para_Votes;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_Club_ID = 0 THEN\n        DELETE FROM club;\n    ELSIF para_Club_ID = -7 THEN\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END;\n    ELSE\n        DELETE FROM club WHERE \"Club_ID\" < -para_Club_ID;\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END\n         WHERE \"Club_ID\" >= -para_Club_ID;\n    END IF;\n\n    DELETE FROM player WHERE \"Votes\" < para_Votes;\n\n    IF EXISTS (\n        SELECT 1 FROM player\n        WHERE \"Player_ID\" = para_Player_ID\n    ) THEN\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = CASE\n                                WHEN \"Player_ID\" = para_Player_ID THEN para_Occupation\n                                ELSE \"Sponsor_name\"\n                              END\n         WHERE \"Votes\" >= para_Votes;\n    ELSE\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = para_Club_name\n         WHERE \"Votes\" >= para_Votes;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(2012, 'region_all_both', -7, 2, 'sponsor_p2', 9491);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM club ORDER BY \"Club_ID\";"
+   },
+   "result": "Club_ID | Club_name | Region | Start_year\n1 | phase_9 | region_all_both | 2009\n2 | phase_9 | region_all_both | 1998\n3 | phase_9 | region_all_both | 2005\n4 | phase_9 | region_all_both | 2001\n5 | phase_9 | region_all_both | 2000\n6 | phase_9 | region_all_both | 2011"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM player ORDER BY \"Player_ID\";"
+   },
+   "result": "Player_ID | Sponsor_name | Player_name | Gender | Residence | Occupation | Votes | Rank\n5 | region_all_both | Jim Maloway | M | Winnipeg | log_phase_9 | 14355 | 1st\n6 | region_all_both | Ross Eadie | M | Winnipeg | log_phase_9 | 12093 | 2nd\n10 | region_all_both | Patricia Cordner | F | Selkirk | log_phase_9 | 9506 | 2nd\n11 | region_all_both | Pat Martin | M | Winnipeg | log_phase_9 | 12285 | 1st\n12 | region_all_both | Judy Wasylycia-Leis | F | Winnipeg | log_phase_9 | 14097 | 1st"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_Club_ID = 0 THEN\n        DELETE FROM club;\n    ELSIF para_Club_ID = -7 THEN\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END;\n    ELSE\n        DELETE FROM club WHERE \"Club_ID\" < -para_Club_ID;\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END\n         WHERE \"Club_ID\" >= -para_Club_ID;\n    END IF;\n\n    DELETE FROM player WHERE \"Votes\" < para_Votes;\n\n    IF EXISTS (\n        SELECT 1 FROM player\n        WHERE \"Player_ID\" = para_Player_ID\n    ) THEN\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = CASE\n                                WHEN \"Player_ID\" = para_Player_ID THEN para_Occupation\n                                ELSE \"Sponsor_name\"\n                              END\n         WHERE \"Votes\" >= para_Votes;\n    ELSE\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = para_Club_name\n         WHERE \"Votes\" >= para_Votes;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(2008, 'region_c4', -4, 5, 'sponsor_p5', 9491);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM club ORDER BY \"Club_ID\";"
+   },
+   "result": "Club_ID | Club_name | Region | Start_year\n4 | phase_9 | region_c4 | 2001\n5 | phase_9 | region_c4 | 2000\n6 | phase_9 | France | 2011"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM player ORDER BY \"Player_ID\";"
+   },
+   "result": "Player_ID | Sponsor_name | Player_name | Gender | Residence | Occupation | Votes | Rank\n5 | sponsor_p5 | Jim Maloway | M | Winnipeg | log_phase_9 | 14355 | 1st\n6 | Kildonan—St. Paul | Ross Eadie | M | Winnipeg | log_phase_9 | 12093 | 2nd\n10 | Selkirk—Interlake | Patricia Cordner | F | Selkirk | log_phase_9 | 9506 | 2nd\n11 | Winnipeg Centre | Pat Martin | M | Winnipeg | log_phase_9 | 12285 | 1st\n12 | Winnipeg North | Judy Wasylycia-Leis | F | Winnipeg | log_phase_9 | 14097 | 1st"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_Club_ID = 0 THEN\n        DELETE FROM club;\n    ELSIF para_Club_ID = -7 THEN\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END;\n    ELSE\n        DELETE FROM club WHERE \"Club_ID\" < -para_Club_ID;\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END\n         WHERE \"Club_ID\" >= -para_Club_ID;\n    END IF;\n\n    DELETE FROM player WHERE \"Votes\" < para_Votes;\n\n    IF EXISTS (\n        SELECT 1 FROM player\n        WHERE \"Player_ID\" = para_Player_ID\n    ) THEN\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = CASE\n                                WHEN \"Player_ID\" = para_Player_ID THEN para_Occupation\n                                ELSE \"Sponsor_name\"\n                              END\n         WHERE \"Votes\" >= para_Votes;\n    ELSE\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = para_Club_name\n         WHERE \"Votes\" >= para_Votes;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(2000, 'no_clubs_only_p5', 0, 5, 'sponsor_p5_only', 10001);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM club ORDER BY \"Club_ID\";"
+   },
+   "result": "(Club_ID | Club_name | Region | Start_year)\n(no rows)"
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM player ORDER BY \"Player_ID\";"
+   },
+   "result": "Player_ID | Sponsor_name | Player_name | Gender | Residence | Occupation | Votes | Rank\n5 | sponsor_p5_only | Jim Maloway | M | Winnipeg | log_phase_9 | 14355 | 1st\n6 | Kildonan—St. Paul | Ross Eadie | M | Winnipeg | log_phase_9 | 12093 | 2nd\n11 | Winnipeg Centre | Pat Martin | M | Winnipeg | log_phase_9 | 12285 | 1st\n12 | Winnipeg North | Judy Wasylycia-Leis | F | Winnipeg | log_phase_9 | 14097 | 1st"
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 28,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_Club_ID = 0 THEN\n        DELETE FROM club;\n    ELSIF para_Club_ID = -7 THEN\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END;\n    ELSE\n        DELETE FROM club WHERE \"Club_ID\" < -para_Club_ID;\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END\n         WHERE \"Club_ID\" >= -para_Club_ID;\n    END IF;\n\n    DELETE FROM player WHERE \"Votes\" < para_Votes;\n\n    IF EXISTS (\n        SELECT 1 FROM player\n        WHERE \"Player_ID\" = para_Player_ID\n    ) THEN\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = CASE\n                                WHEN \"Player_ID\" = para_Player_ID THEN para_Occupation\n                                ELSE \"Sponsor_name\"\n                              END\n         WHERE \"Votes\" >= para_Votes;\n    ELSE\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = para_Club_name\n         WHERE \"Votes\" >= para_Votes;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 29,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(2020, 'no_clubs_both_players', 0, 999, 'unused_occ', 9491);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 30,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM club ORDER BY \"Club_ID\";"
+   },
+   "result": "(Club_ID | Club_name | Region | Start_year)\n(no rows)"
+  },
+  {
+   "step": 31,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM player ORDER BY \"Player_ID\";"
+   },
+   "result": "Player_ID | Sponsor_name | Player_name | Gender | Residence | Occupation | Votes | Rank\n5 | no_clubs_both_players | Jim Maloway | M | Winnipeg | log_phase_9 | 14355 | 1st\n6 | no_clubs_both_players | Ross Eadie | M | Winnipeg | log_phase_9 | 12093 | 2nd\n10 | no_clubs_both_players | Patricia Cordner | F | Selkirk | log_phase_9 | 9506 | 2nd\n11 | no_clubs_both_players | Pat Martin | M | Winnipeg | log_phase_9 | 12285 | 1st\n12 | no_clubs_both_players | Judy Wasylycia-Leis | F | Winnipeg | log_phase_9 | 14097 | 1st"
+  },
+  {
+   "step": 32,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 33,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_Club_ID = 0 THEN\n        DELETE FROM club;\n    ELSIF para_Club_ID = -7 THEN\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END;\n    ELSE\n        DELETE FROM club WHERE \"Club_ID\" < -para_Club_ID;\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END\n         WHERE \"Club_ID\" >= -para_Club_ID;\n    END IF;\n\n    DELETE FROM player WHERE \"Votes\" < para_Votes;\n\n    IF EXISTS (\n        SELECT 1 FROM player\n        WHERE \"Player_ID\" = para_Player_ID\n    ) THEN\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = CASE\n                                WHEN \"Player_ID\" = para_Player_ID THEN para_Occupation\n                                ELSE \"Sponsor_name\"\n                              END\n         WHERE \"Votes\" >= para_Votes;\n    ELSE\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = para_Club_name\n         WHERE \"Votes\" >= para_Votes;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 34,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(2011, 'both_clubs_only_p5_false', -7, 2, 'occ_deleted_p2', 10001);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 35,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM club ORDER BY \"Club_ID\";"
+   },
+   "result": "Club_ID | Club_name | Region | Start_year\n1 | phase_9 | both_clubs_only_p5_false | 2009\n2 | phase_9 | both_clubs_only_p5_false | 1998\n3 | phase_9 | both_clubs_only_p5_false | 2005\n4 | phase_9 | both_clubs_only_p5_false | 2001\n5 | phase_9 | both_clubs_only_p5_false | 2000\n6 | phase_9 | France | 2011"
+  },
+  {
+   "step": 36,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM player ORDER BY \"Player_ID\";"
+   },
+   "result": "Player_ID | Sponsor_name | Player_name | Gender | Residence | Occupation | Votes | Rank\n5 | both_clubs_only_p5_false | Jim Maloway | M | Winnipeg | log_phase_9 | 14355 | 1st\n6 | both_clubs_only_p5_false | Ross Eadie | M | Winnipeg | log_phase_9 | 12093 | 2nd\n11 | both_clubs_only_p5_false | Pat Martin | M | Winnipeg | log_phase_9 | 12285 | 1st\n12 | both_clubs_only_p5_false | Judy Wasylycia-Leis | F | Winnipeg | log_phase_9 | 14097 | 1st"
+  },
+  {
+   "step": 37,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 38,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_Club_ID = 0 THEN\n        DELETE FROM club;\n    ELSIF para_Club_ID = -7 THEN\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END;\n    ELSE\n        DELETE FROM club WHERE \"Club_ID\" < -para_Club_ID;\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END\n         WHERE \"Club_ID\" >= -para_Club_ID;\n    END IF;\n\n    DELETE FROM player WHERE \"Votes\" < para_Votes;\n\n    IF EXISTS (\n        SELECT 1 FROM player\n        WHERE \"Player_ID\" = para_Player_ID\n    ) THEN\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = CASE\n                                WHEN \"Player_ID\" = para_Player_ID THEN para_Occupation\n                                ELSE \"Sponsor_name\"\n                              END\n         WHERE \"Votes\" >= para_Votes;\n    ELSE\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = para_Club_name\n         WHERE \"Votes\" >= para_Votes;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 39,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(2002, 'only_c4_no_players', -4, 999, 'occ_x', 14356);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 40,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM club ORDER BY \"Club_ID\";"
+   },
+   "result": "Club_ID | Club_name | Region | Start_year\n4 | phase_9 | only_c4_no_players | 2001\n5 | phase_9 | only_c4_no_players | 2000\n6 | phase_9 | France | 2011"
+  },
+  {
+   "step": 41,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM player ORDER BY \"Player_ID\";"
+   },
+   "result": "(Player_ID | Sponsor_name | Player_name | Gender | Residence | Occupation | Votes | Rank)\n(no rows)"
+  },
+  {
+   "step": 42,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 43,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_Club_ID = 0 THEN\n        DELETE FROM club;\n    ELSIF para_Club_ID = -7 THEN\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END;\n    ELSE\n        DELETE FROM club WHERE \"Club_ID\" < -para_Club_ID;\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END\n         WHERE \"Club_ID\" >= -para_Club_ID;\n    END IF;\n\n    DELETE FROM player WHERE \"Votes\" < para_Votes;\n\n    IF EXISTS (\n        SELECT 1 FROM player\n        WHERE \"Player_ID\" = para_Player_ID\n    ) THEN\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = CASE\n                                WHEN \"Player_ID\" = para_Player_ID THEN para_Occupation\n                                ELSE \"Sponsor_name\"\n                              END\n         WHERE \"Votes\" >= para_Votes;\n    ELSE\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = para_Club_name\n         WHERE \"Votes\" >= para_Votes;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 44,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(2013, 'both_clubs_no_players', -7, 5, 'occ_y', 14356);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 45,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM club ORDER BY \"Club_ID\";"
+   },
+   "result": "Club_ID | Club_name | Region | Start_year\n1 | phase_9 | both_clubs_no_players | 2009\n2 | phase_9 | both_clubs_no_players | 1998\n3 | phase_9 | both_clubs_no_players | 2005\n4 | phase_9 | both_clubs_no_players | 2001\n5 | phase_9 | both_clubs_no_players | 2000\n6 | phase_9 | both_clubs_no_players | 2011"
+  },
+  {
+   "step": 46,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM player ORDER BY \"Player_ID\";"
+   },
+   "result": "(Player_ID | Sponsor_name | Player_name | Gender | Residence | Occupation | Votes | Rank)\n(no rows)"
+  },
+  {
+   "step": 47,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 48,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_Club_ID = 0 THEN\n        DELETE FROM club;\n    ELSIF para_Club_ID = -7 THEN\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END;\n    ELSE\n        DELETE FROM club WHERE \"Club_ID\" < -para_Club_ID;\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END\n         WHERE \"Club_ID\" >= -para_Club_ID;\n    END IF;\n\n    DELETE FROM player WHERE \"Votes\" < para_Votes;\n\n    IF EXISTS (\n        SELECT 1 FROM player\n        WHERE \"Player_ID\" = para_Player_ID\n    ) THEN\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = CASE\n                                WHEN \"Player_ID\" = para_Player_ID THEN para_Occupation\n                                ELSE \"Sponsor_name\"\n                              END\n         WHERE \"Votes\" >= para_Votes;\n    ELSE\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = para_Club_name\n         WHERE \"Votes\" >= para_Votes;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 49,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(2001, 'both_clubs_region_none', -7, 5, 'sponsor_p5_b', 9491);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 50,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM club ORDER BY \"Club_ID\";"
+   },
+   "result": "Club_ID | Club_name | Region | Start_year\n1 | phase_9 | USA | 2009\n2 | phase_9 | both_clubs_region_none | 1998\n3 | phase_9 | USA | 2005\n4 | phase_9 | Korea | 2001\n5 | phase_9 | both_clubs_region_none | 2000\n6 | phase_9 | France | 2011"
+  },
+  {
+   "step": 51,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM player ORDER BY \"Player_ID\";"
+   },
+   "result": "Player_ID | Sponsor_name | Player_name | Gender | Residence | Occupation | Votes | Rank\n5 | sponsor_p5_b | Jim Maloway | M | Winnipeg | log_phase_9 | 14355 | 1st\n6 | Kildonan—St. Paul | Ross Eadie | M | Winnipeg | log_phase_9 | 12093 | 2nd\n10 | Selkirk—Interlake | Patricia Cordner | F | Selkirk | log_phase_9 | 9506 | 2nd\n11 | Winnipeg Centre | Pat Martin | M | Winnipeg | log_phase_9 | 12285 | 1st\n12 | Winnipeg North | Judy Wasylycia-Leis | F | Winnipeg | log_phase_9 | 14097 | 1st"
+  },
+  {
+   "step": 52,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_Club_ID = 0 THEN\n        DELETE FROM club;\n    ELSIF para_Club_ID = -7 THEN\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END;\n    ELSE\n        DELETE FROM club WHERE \"Club_ID\" < -para_Club_ID;\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END\n         WHERE \"Club_ID\" >= -para_Club_ID;\n    END IF;\n\n    DELETE FROM player WHERE \"Votes\" < para_Votes;\n\n    IF EXISTS (\n        SELECT 1 FROM player\n        WHERE \"Player_ID\" = para_Player_ID\n    ) THEN\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = CASE\n                                WHEN \"Player_ID\" = para_Player_ID THEN para_Occupation\n                                ELSE \"Sponsor_name\"\n                              END\n         WHERE \"Votes\" >= para_Votes;\n    ELSE\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = para_Club_name\n         WHERE \"Votes\" >= para_Votes;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 53,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_Club_ID = 0 THEN\n        DELETE FROM club;\n    ELSIF para_Club_ID = -7 THEN\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END;\n    ELSE\n        DELETE FROM club WHERE \"Club_ID\" < -para_Club_ID;\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END\n         WHERE \"Club_ID\" >= -para_Club_ID;\n    END IF;\n\n    DELETE FROM player WHERE \"Votes\" < para_Votes;\n\n    IF EXISTS (\n        SELECT 1 FROM player\n        WHERE \"Player_ID\" = para_Player_ID\n    ) THEN\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = CASE\n                                WHEN \"Player_ID\" = para_Player_ID THEN para_Occupation\n                                ELSE \"Sponsor_name\"\n                              END\n         WHERE \"Votes\" >= para_Votes;\n    ELSE\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = para_Club_name\n         WHERE \"Votes\" >= para_Votes;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF para_Club_ID = 0 THEN\n        DELETE FROM club;\n    ELSIF para_Club_ID = -7 THEN\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END;\n    ELSE\n        DELETE FROM club WHERE \"Club_ID\" < -para_Club_ID;\n        UPDATE club\n           SET \"Club_name\" = 'phase_9',\n               \"Region\" = CASE\n                          WHEN \"Start_year\" < para_Start_year THEN para_Club_name\n                          ELSE \"Region\"\n                        END\n         WHERE \"Club_ID\" >= -para_Club_ID;\n    END IF;\n\n    DELETE FROM player WHERE \"Votes\" < para_Votes;\n\n    IF EXISTS (\n        SELECT 1 FROM player\n        WHERE \"Player_ID\" = para_Player_ID\n    ) THEN\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = CASE\n                                WHEN \"Player_ID\" = para_Player_ID THEN para_Occupation\n                                ELSE \"Sponsor_name\"\n                              END\n         WHERE \"Votes\" >= para_Votes;\n    ELSE\n        UPDATE player\n           SET \"Occupation\" = 'log_phase_9',\n               \"Sponsor_name\" = para_Club_name\n         WHERE \"Votes\" >= para_Votes;\n    END IF;\nEND;\n$$;"
+ },
+ "pair": null
+}

@@ -1,0 +1,418 @@
+{
+ "id": "ep01--postgres_b3_002",
+ "run": "ep01",
+ "task_id": "postgres_b3_002",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "full",
+ "scenario": "b3",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 40,
+ "simulator": {
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": null,
+  "attribution": null,
+  "recovered": 0,
+  "oracle_size": 3
+ },
+ "summary": {
+  "steps": 33,
+  "seconds": 425.2,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 3,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "compile_plsql": 3,
+   "sample_rows": 9,
+   "execute_scratch": 13,
+   "reset_scratch": 6,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Implement a PostgreSQL PL/pgSQL procedure named sp with the following parameters in this exact order: para_Height real, para_Country text, para_mountain_id integer, para_camera_lens_id integer, para_max_aperture real, para_focal_length_mm real. The procedure returns no result set. It operates on three tables: mountain, photos, and camera_lens. The relevant columns are as follows. mountain: id, name, Height, Prominence, Range, Country. The procedure reads all columns of mountain through a cursor over all mountain rows, and it writes the Height and Country columns. photos: id, camera_lens_id, mountain_id, color, name. The procedure reads all columns of photos through a cursor over all photo rows, and it uses photos.mountain_id for the delete and for the inner comparison. camera_lens: id, brand, name, focal_length_mm, max_aperture. The procedure reads camera_lens.id and camera_lens.focal_length_mm, and it writes camera_lens.focal_length_mm and camera_lens.max_aperture; the other camera_lens columns are not read or written. The literal values used by the procedure are 76, 33, and -1000. The required behavior in order is as follows. First, update every row in mountain: set Height to para_Height plus 76, and set Country to para_Country. This update has no restriction, so it affects all mountain rows. Second, delete every row from photos whose mountain_id is strictly less than para_mountain_id. Rows with mountain_id equal to or greater than para_mountain_id are not deleted. Third, open a cursor over all rows of mountain. Do not impose any explicit ordering on this cursor; process rows in whatever order the database supplies. For each row returned by the mountain cursor, open a cursor over all rows of photos, again without imposing any explicit ordering, and process every photo row. For each photo row, apply this branch: if the photo row's mountain_id is strictly greater than para_max_aperture, then update camera_lens rows: for every camera_lens row whose current focal_length_mm is strictly greater than para_focal_length_mm plus 33, set focal_length_mm to the current focal_length_mm minus para_focal_length_mm, then minus 33. Rows whose focal_length_mm is not strictly greater than para_focal_length_mm plus 33 are left unchanged. If the photo row's mountain_id is not strictly greater than para_max_aperture, do nothing for that photo row. Because the update is executed once for every qualifying photo row, camera_lens rows may be updated multiple times when more than one photo row qualifies, and the focal_length_mm condition is re-evaluated against the then-current value each time. After all rows in the photos cursor have been processed, close the photos cursor. After all rows in the mountain cursor have been processed, close the mountain cursor. Then apply the final branch independently of the loops. If para_camera_lens_id is not equal to -1000, first update every row in mountain and set Height to para_Height, overwriting the earlier height; then update camera_lens rows whose id equals para_camera_lens_id, setting max_aperture to para_max_aperture. If no camera_lens row has id equal to para_camera_lens_id, that second update has no effect. If para_camera_lens_id is equal to -1000, skip both of those final updates, so mountain Height remains para_Height plus 76 and camera_lens max_aperture is not changed by the final step. In all cases, after the initial update, mountain Country remains para_Country because no later step changes it. If the mountain cursor has no rows, the photos cursor is never opened and no focal_length_mm updates from the loop occur, but the final branch may still update mountain Height and camera_lens.max_aperture depending on para_camera_lens_id. If the photos cursor has no rows for a mountain row, no focal_length_mm updates occur for that mountain row. There is no explicit error or exception handling; any SQL error causes the procedure to abort and propagate the error to the caller. No special handling of null parameter values is specified; normal PostgreSQL null comparison and arithmetic rules apply.",
+  "materials": [
+   {
+    "file": "buggy_procedure.sql",
+    "kind": "defective procedure",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_Height real, para_Country text, para_mountain_id integer, para_camera_lens_id integer, para_max_aperture real, para_focal_length_mm real)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"mountain\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"photos\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    DELETE FROM \"photos\" WHERE \"mountain_id < para_mountain_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n            IF rec2.\"mountain_id\" > para_max_aperture \n                UPDATE \"camera_lens\" SET \"focal_length_mm\" = \"focal_length_mm\" - para_focal_length_mm - 33\n                WHERE \"focal_length_mm\" > para_focal_length_mm + 43;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    ;\n    CLOSE ref_cursor;\n    IF para_Height <> -1000 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height;\n        UPDATE \"camera_lens\" SET \"max_aperture\" = para_max_aperture WHERE \"id\" = para_camera_lens_id;\n    END IF,\nEND;\n$$;"
+   },
+   {
+    "file": "error.txt",
+    "kind": "server diagnostic",
+    "text": "[42601]"
+   },
+   {
+    "file": "observed_behaviour.md",
+    "kind": "bug report",
+    "text": "# Reported behaviour\n\nThe procedure does not compile. Once the compilation errors are fixed, it still behaves incorrectly, as follows.\n\nAfter that call the following table(s) do not hold what they should:\n\n- camera_lens\n- mountain\n\nAfter that call, the camera_lens and trail tables do not hold what they should."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What procedure call was made against a fresh database before the tables were checked?",
+   "answer": "Running the calls below in order against a fresh database, the data is wrong from call 1 onwards:\n\n```sql\nCALL sp(100.0, 'Kenya', 10, -1000, 5.0, 8.0);\n```"
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What did the diagnostic after [42601] say?",
+   "answer": "unterminated quoted identifier at or near \"\" = para_camera_lens_id;\n    END IF,\nEND;\n\""
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Which second table does not hold what it should?",
+   "answer": "The earlier list is correct: the affected tables are camera_lens and mountain; trail is not affected."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable camera_lens , columns = [ id ( integer | primary key | values : 9 , 6 ) , brand ( text | values : Sigma , Panasonic ) , name ( text | values : Olympus 15mm f/8.0 Body Cap , Schneider Kreuznach Super Angulon 14mm f /2.0 ) , focal_length_mm ( real | values : 42.5 , 30.0 ) , max_aperture ( real | values : 2.8 , 1.4 ) ]\ntable mountain , columns = [ id ( integer | primary key | values : 16 , 9 ) , name ( text | values : Weshema / Wasema? , Hey / Hay ) , Height ( real | values : 4071.0 , 4070.0 ) , Prominence ( real | values : 1909.0 , 2225.0 ) , Range ( text | values : Semien Mountains , Kollo Massif ) , Country ( text | values : Ethiopia , Ethiopia ) ]\ntable photos , columns = [ id ( integer | primary key | values : 6 , 3 ) , camera_lens_id ( integer | values : 10 , 6 ) , mountain_id ( integer | values : 10 , 20 ) , color ( text | values : RBG , RBG ) , name ( text | values : wolfs , deers ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Height real, para_Country text, para_mountain_id integer, para_camera_lens_id integer, para_max_aperture real, para_focal_length_mm real)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"mountain\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"photos\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    UPDATE \"mountain\" SET \"Height\" = para_Height + 76, \"Country\" = para_Country;\n    DELETE FROM \"photos\" WHERE \"mountain_id\" < para_mountain_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n            IF rec2.\"mountain_id\" > para_max_aperture THEN\n                UPDATE \"camera_lens\" SET \"focal_length_mm\" = \"focal_length_mm\" - para_focal_length_mm - 33\n                WHERE \"focal_length_mm\" > para_focal_length_mm + 33;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n    CLOSE ref_cursor;\n    IF para_camera_lens_id <> -1000 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height;\n        UPDATE \"camera_lens\" SET \"max_aperture\" = para_max_aperture WHERE \"id\" = para_camera_lens_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "mountain",
+    "limit": 20
+   },
+   "result": "id | name | Height | Prominence | Range | Country\n1 | Abune Yosef / Guliba Amba | 4260.0 | 1909.0 | Lasta Massif | Ethiopia\n2 | Ioll / Yoll | 4220.0 | 350.0 | Kollo Massif | Ethiopia\n3 | Bada | 4195.0 | 1605.0 | Arsi Mountains | Ethiopia\n4 | Kaka / Kecha / Chiqe | 4193.0 | 1215.0 | Arsi Mountains | Ethiopia\n5 | Jbel Toubkal | 4167.0 | 3755.0 | Toubkal Atlas | Morocco\n6 | Muhavura | 4127.0 | 1530.0 | Virunga Mountains | Rwanda Uganda\n7 | Hey / Hay | 4125.0 | 660.0 | Semien Mountains | Ethiopia\n8 | Guna | 4120.0 | 1510.0 | Guna Massif | Ethiopia\n9 | Choqa / Choke / Birhan | 4100.0 | 2225.0 | Choqa Mountains | Ethiopia\n10 | Ouanoukrim | 4088.0 | 420.0 | Toubkal Atlas | Morocco\n11 | Chilalo | 4071.0 | 610.0 | Arsi Mountains | Ethiopia\n12 | Mount Cameroon | 4070.0 | 3931.0 | Cameroon line | Cameroon\n13 | Inatye | 4070.0 | 500.0 | Semien Mountains | Ethiopia\n14 | Ighil Mgoun | 4068.0 | 1904.0 | Central High Atlas | Morocco\n15 | Weshema / Wasema? | 4030.0 | 420.0 | Bale Mountains | Ethiopia\n16 | Oldoinyo Lesatima | 4001.0 | 2081.0 | Aberdare Range | Kenya\n17 | Jebel n'Tarourt / Tifnout / Iferouane | 3996.0 | 910.0 | Toubkal Atlas | Morocco\n18 | Muggia | 3950.0 | 500.0 | Lasta Massif | Ethiopia\n19 | Dubbai | 3941.0 | 1540.0 | Tigray Mountains | Ethiopia\n20 | Taska n’Zat | 3912.0 | 460.0 | Toubkal Atlas | Morocco"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "photos",
+    "limit": 20
+   },
+   "result": "id | camera_lens_id | mountain_id | color | name\n1 | 1 | 20 | RBG | monkey\n2 | 10 | 2 | RBG | rabbits\n3 | 10 | 1 | Black/White | deers\n4 | 1 | 10 | RBG | grass\n5 | 5 | 14 | RBG | cloud\n6 | 6 | 12 | RBG | sunset\n7 | 7 | 12 | RBG | river\n8 | 7 | 12 | Black/White | wolfs\n9 | 10 | 14 | RBG | the mountain\n10 | 10 | 20 | RBG | life"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "camera_lens",
+    "limit": 20
+   },
+   "result": "id | brand | name | focal_length_mm | max_aperture\n1 | Olympus | Olympus 15mm f/8.0 Body Cap | 15.0 | 8.0\n2 | Olympus | Olympus M.Zuiko Digital ED 45mm f/1.8 | 45.0 | 1.8\n3 | Olympus | Olympus M.Zuiko Digital ED 75mm f/1.8 | 75.0 | 1.8\n4 | Panasonic | Panasonic Leica DG Summilux 25mm f /1.4 Asph. | 25.0 | 1.4\n5 | Panasonic | Panasonic Leica DG Nocticron 42.5mm f /1.2 | 42.5 | 1.2\n6 | Panasonic | Panasonic Lumix G 150mm f /2.8 | 150.0 | 2.8\n7 | Schneider Kreuznach | Schneider Kreuznach Super Angulon 14mm f /2.0 | 14.0 | 2.0\n8 | Schneider Kreuznach | Schneider Kreuznach Xenon 30mm f /1.4 | 30.0 | 1.4\n9 | Sigma | Sigma 19mm f2.8 DN | 19.0 | 2.8\n10 | Sigma | Sigma 19mm f2.8 EX DN | 19.0 | 2.8\n11 | Sigma | Sigma 30mm f2.8 DN | 30.0 | 2.8"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_Height real, para_Country text, para_mountain_id integer, para_camera_lens_id integer, para_max_aperture real, para_focal_length_mm real)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"mountain\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"photos\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    UPDATE \"mountain\" SET \"Height\" = para_Height + 76, \"Country\" = para_Country;\n    DELETE FROM \"photos\" WHERE \"mountain_id\" < para_mountain_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n            IF rec2.\"mountain_id\" > para_max_aperture THEN\n                UPDATE \"camera_lens\" SET \"focal_length_mm\" = \"focal_length_mm\" - para_focal_length_mm - 33\n                WHERE \"focal_length_mm\" > para_focal_length_mm + 33;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n    CLOSE ref_cursor;\n    IF para_camera_lens_id <> -1000 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height;\n        UPDATE \"camera_lens\" SET \"max_aperture\" = para_max_aperture WHERE \"id\" = para_camera_lens_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(100.0, 'X', 5, 3, 10.0, 20.0)"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DO $$ BEGIN IF NULL THEN RAISE NOTICE 'then'; ELSE RAISE NOTICE 'else'; END IF; END $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TEMP TABLE IF NOT EXISTS test_null_if (x int); INSERT INTO test_null_if VALUES (0); DO $$ BEGIN IF NULL THEN UPDATE test_null_if SET x=1; ELSE UPDATE test_null_if SET x=2; END IF; END $$; SELECT * FROM test_null_if;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "mountain",
+    "limit": 5
+   },
+   "result": "id | name | Height | Prominence | Range | Country\n1 | Abune Yosef / Guliba Amba | 100.0 | 1909.0 | Lasta Massif | X\n2 | Ioll / Yoll | 100.0 | 350.0 | Kollo Massif | X\n3 | Bada | 100.0 | 1605.0 | Arsi Mountains | X\n4 | Kaka / Kecha / Chiqe | 100.0 | 1215.0 | Arsi Mountains | X\n5 | Jbel Toubkal | 100.0 | 3755.0 | Toubkal Atlas | X"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_Height real, para_Country text, para_mountain_id integer, para_camera_lens_id integer, para_max_aperture real, para_focal_length_mm real)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"mountain\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"photos\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    UPDATE \"mountain\" SET \"Height\" = para_Height + 76, \"Country\" = para_Country;\n    DELETE FROM \"photos\" WHERE \"mountain_id\" < para_mountain_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n            IF rec2.\"mountain_id\" > para_max_aperture THEN\n                UPDATE \"camera_lens\" SET \"focal_length_mm\" = \"focal_length_mm\" - para_focal_length_mm - 33\n                WHERE \"focal_length_mm\" > para_focal_length_mm + 33;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n    CLOSE ref_cursor;\n    IF para_camera_lens_id <> -1000 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height;\n        UPDATE \"camera_lens\" SET \"max_aperture\" = para_max_aperture WHERE \"id\" = para_camera_lens_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(200.0, 'ZZ', 999, -1000, 5.0, 10.0)"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_Height real, para_Country text, para_mountain_id integer, para_camera_lens_id integer, para_max_aperture real, para_focal_length_mm real)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"mountain\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"photos\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    UPDATE \"mountain\" SET \"Height\" = para_Height + 76, \"Country\" = para_Country;\n    DELETE FROM \"photos\" WHERE \"mountain_id\" < para_mountain_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n            IF rec2.\"mountain_id\" > para_max_aperture THEN\n                UPDATE \"camera_lens\" SET \"focal_length_mm\" = \"focal_length_mm\" - para_focal_length_mm - 33\n                WHERE \"focal_length_mm\" > para_focal_length_mm + 33;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n    CLOSE ref_cursor;\n    IF para_camera_lens_id <> -1000 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height;\n        UPDATE \"camera_lens\" SET \"max_aperture\" = para_max_aperture WHERE \"id\" = para_camera_lens_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(200.0, 'ZZ', 999, -1000, 5.0, 10.0)"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "mountain",
+    "limit": 3
+   },
+   "result": "id | name | Height | Prominence | Range | Country\n1 | Abune Yosef / Guliba Amba | 276.0 | 1909.0 | Lasta Massif | ZZ\n2 | Ioll / Yoll | 276.0 | 350.0 | Kollo Massif | ZZ\n3 | Bada | 276.0 | 1605.0 | Arsi Mountains | ZZ"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "camera_lens",
+    "limit": 5
+   },
+   "result": "id | brand | name | focal_length_mm | max_aperture\n1 | Olympus | Olympus 15mm f/8.0 Body Cap | 15.0 | 8.0\n2 | Olympus | Olympus M.Zuiko Digital ED 45mm f/1.8 | 45.0 | 1.8\n3 | Olympus | Olympus M.Zuiko Digital ED 75mm f/1.8 | 75.0 | 1.8\n4 | Panasonic | Panasonic Leica DG Summilux 25mm f /1.4 Asph. | 25.0 | 1.4\n5 | Panasonic | Panasonic Leica DG Nocticron 42.5mm f /1.2 | 42.5 | 1.2"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE TABLE IF NOT EXISTS null_test_result (branch text); DELETE FROM null_test_result; DO $$ BEGIN IF NULL THEN INSERT INTO null_test_result VALUES ('then'); ELSE INSERT INTO null_test_result VALUES ('else'); END IF; END $$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "null_test_result",
+    "limit": 5
+   },
+   "result": "branch\nelse"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp_test(para_max_aperture real)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    rec2 RECORD;\nBEGIN\n    IF rec2.\"mountain_id\" > para_max_aperture \n        THEN\n        UPDATE \"camera_lens\" SET \"focal_length_mm\" = 1;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Height real, para_Country text, para_mountain_id integer, para_camera_lens_id integer, para_max_aperture real, para_focal_length_mm real)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"mountain\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"photos\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    UPDATE \"mountain\" SET \"Height\" = para_Height + 76, \"Country\" = para_Country;\n    DELETE FROM \"photos\" WHERE \"mountain_id\" < para_mountain_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n            IF rec2.\"mountain_id\" > para_max_aperture \n                THEN\n                UPDATE \"camera_lens\" SET \"focal_length_mm\" = \"focal_length_mm\" - para_focal_length_mm - 33\n                WHERE \"focal_length_mm\" > para_focal_length_mm + 33;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n    CLOSE ref_cursor;\n    IF para_camera_lens_id <> -1000 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height;\n        UPDATE \"camera_lens\" SET \"max_aperture\" = para_max_aperture WHERE \"id\" = para_camera_lens_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_Height real, para_Country text, para_mountain_id integer, para_camera_lens_id integer, para_max_aperture real, para_focal_length_mm real)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"mountain\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"photos\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    UPDATE \"mountain\" SET \"Height\" = para_Height + 76, \"Country\" = para_Country;\n    DELETE FROM \"photos\" WHERE \"mountain_id\" < para_mountain_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n            IF rec2.\"mountain_id\" > para_max_aperture \n                THEN\n                UPDATE \"camera_lens\" SET \"focal_length_mm\" = \"focal_length_mm\" - para_focal_length_mm - 33\n                WHERE \"focal_length_mm\" > para_focal_length_mm + 33;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n    CLOSE ref_cursor;\n    IF para_camera_lens_id <> -1000 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height;\n        UPDATE \"camera_lens\" SET \"max_aperture\" = para_max_aperture WHERE \"id\" = para_camera_lens_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(200.0, 'ZZ', 999, -1000, 5.0, 10.0)"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 28,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_Height real, para_Country text, para_mountain_id integer, para_camera_lens_id integer, para_max_aperture real, para_focal_length_mm real)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"mountain\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"photos\";\n    rec RECORD;\n    rec2 RECORD;\nBEGIN\n    UPDATE \"mountain\" SET \"Height\" = para_Height + 76, \"Country\" = para_Country;\n    DELETE FROM \"photos\" WHERE \"mountain_id\" < para_mountain_id;\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN NOT FOUND;\n            IF rec2.\"mountain_id\" > para_max_aperture \n                THEN\n                UPDATE \"camera_lens\" SET \"focal_length_mm\" = \"focal_length_mm\" - para_focal_length_mm - 33\n                WHERE \"focal_length_mm\" > para_focal_length_mm + 33;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END LOOP;\n    CLOSE ref_cursor;\n    IF para_camera_lens_id <> -1000 THEN\n        UPDATE \"mountain\" SET \"Height\" = para_Height;\n        UPDATE \"camera_lens\" SET \"max_aperture\" = para_max_aperture WHERE \"id\" = para_camera_lens_id;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 29,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(50.0, 'ABC', 0, 3, 9.9, 10.0)"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 30,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "mountain",
+    "limit": 3
+   },
+   "result": "id | name | Height | Prominence | Range | Country\n1 | Abune Yosef / Guliba Amba | 50.0 | 1909.0 | Lasta Massif | ABC\n2 | Ioll / Yoll | 50.0 | 350.0 | Kollo Massif | ABC\n3 | Bada | 50.0 | 1605.0 | Arsi Mountains | ABC"
+  },
+  {
+   "step": 31,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "camera_lens",
+    "limit": 5
+   },
+   "result": "id | brand | name | focal_length_mm | max_aperture\n1 | Olympus | Olympus 15mm f/8.0 Body Cap | 15.0 | 8.0\n2 | Olympus | Olympus M.Zuiko Digital ED 45mm f/1.8 | 2.0 | 1.8\n3 | Olympus | Olympus M.Zuiko Digital ED 75mm f/1.8 | 32.0 | 9.9\n4 | Panasonic | Panasonic Leica DG Summilux 25mm f /1.4 Asph. | 25.0 | 1.4\n5 | Panasonic | Panasonic Leica DG Nocticron 42.5mm f /1.2 | 42.5 | 1.2"
+  },
+  {
+   "step": 32,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 33,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "{\"edits\":[{\"line\":10,\"old\":\"    DELETE FROM \\\"photos\\\" WHERE \\\"mountain_id < para_mountain_id;\",\"new\":\"    UPDATE \\\"mountain\\\" SET \\\"Height\\\" = para_Height + 76, \\\"Country\\\" = para_Country;\\n    DELETE FROM \\\"photos\\\" WHERE \\\"mountain_id\\\" < para_mountain_id;\"},{\"line\":20,\"old\":\"                UPDATE \\\"camera_lens\\\" SET \\\"focal_length_mm\\\" = \\\"focal_length_mm\\\" - para_focal_length_mm - 33\",\"new\":\"                THEN\\n                UPDATE \\\"camera_lens\\\" SET \\\"focal_length_mm\\\" = \\\"focal_length_mm\\\" - para_focal_length_mm - 33\"},{\"line\":21,\"old\":\"                WHERE \\\"focal_length_mm\\\" > para_focal_length_mm + 43;\",\"new\":\"                WHERE \\\"focal_length_mm\\\" > para_focal_length_mm + 33;\"},{\"line\":25,\"old\":\"    ;\",\"new\":\"    END LOOP;\"},{\"line\":27,\"old\":\"    IF para_Height <> -1000 THEN\",\"new\":\"    IF para_camera_lens_id <> -1000 THEN\"},{\"line\":30,\"old\":\"    END IF,\",\"new\":\"    END IF;\"}]}"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "diff",
+  "text": "{\"edits\":[{\"line\":10,\"old\":\"    DELETE FROM \\\"photos\\\" WHERE \\\"mountain_id < para_mountain_id;\",\"new\":\"    UPDATE \\\"mountain\\\" SET \\\"Height\\\" = para_Height + 76, \\\"Country\\\" = para_Country;\\n    DELETE FROM \\\"photos\\\" WHERE \\\"mountain_id\\\" < para_mountain_id;\"},{\"line\":20,\"old\":\"                UPDATE \\\"camera_lens\\\" SET \\\"focal_length_mm\\\" = \\\"focal_length_mm\\\" - para_focal_length_mm - 33\",\"new\":\"                THEN\\n                UPDATE \\\"camera_lens\\\" SET \\\"focal_length_mm\\\" = \\\"focal_length_mm\\\" - para_focal_length_mm - 33\"},{\"line\":21,\"old\":\"                WHERE \\\"focal_length_mm\\\" > para_focal_length_mm + 43;\",\"new\":\"                WHERE \\\"focal_length_mm\\\" > para_focal_length_mm + 33;\"},{\"line\":25,\"old\":\"    ;\",\"new\":\"    END LOOP;\"},{\"line\":27,\"old\":\"    IF para_Height <> -1000 THEN\",\"new\":\"    IF para_camera_lens_id <> -1000 THEN\"},{\"line\":30,\"old\":\"    END IF,\",\"new\":\"    END IF;\"}]}"
+ },
+ "pair": {
+  "single_run": "st04",
+  "single_task": "postgres_b3_002"
+ }
+}

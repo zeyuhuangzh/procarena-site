@@ -1,0 +1,315 @@
+{
+ "id": "sp-ora-a1b2-tools--oracle_a1_003",
+ "run": "sp-ora-a1b2-tools",
+ "task_id": "oracle_a1_003",
+ "stage": "single",
+ "condition": "tools-only",
+ "tier": "single-turn",
+ "scenario": "a1",
+ "dialect": "oracle",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 27,
+  "seconds": 185.2,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "compile_plsql": 2,
+   "execute_scratch": 19,
+   "describe_table": 1,
+   "reset_scratch": 2,
+   "sample_rows": 1,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Create an Oracle PL/SQL stored procedure with the exact signature sp(para_Location VARCHAR2, para_Fate VARCHAR2, para_Speed_knots NUMBER, para_Ship_ID NUMBER). The procedure operates only on the mission table; the ship table is never read or written. Table and column usage: the procedure reads mission.Location for the cursor selection, reads mission.Speed_knots for the deletions and average calculation, writes mission.Fate for cursor-selected rows, deletes entire mission rows based on mission.Speed_knots, and updates mission.Ship_ID on all remaining rows. The cursor also selects all other mission columns, but they do not affect the procedure's decisions. The only literal value used is NULL. The procedure performs the following steps in this exact order. First, it opens an updateable cursor that reads all columns of the mission table and selects rows where the Location column value is greater than the value of para_Location under Oracle's default comparison semantics for VARCHAR2. This comparison is strict: a row whose Location equals para_Location is not selected. The cursor locks the selected rows for update. It then fetches the selected rows one at a time. For each fetched row, it updates that same row's Fate column to the value of para_Fate. If the cursor selects no rows, no updates to Fate occur. After all fetched rows have been processed, the cursor is closed. Second, the procedure deletes rows from the mission table where Speed_knots is NULL, or where Speed_knots is strictly less than the value of para_Speed_knots. Rows with Speed_knots equal to para_Speed_knots are not deleted by this step, and rows with a non-null Speed_knots greater than or equal to para_Speed_knots remain. If no rows meet this delete condition, no rows are deleted. Third, after the previous delete completes, the procedure computes the average of the Speed_knots values over all remaining mission rows. It then deletes any remaining mission row whose Speed_knots value is strictly less than that average. Rows whose Speed_knots equals the average are not deleted. If no mission rows remain before this step, the average is undefined or NULL and the strict less-than comparison does not identify any row, so no rows are deleted. If there are remaining rows but none has a Speed_knots below the average, no rows are deleted. Fourth and finally, for all mission rows remaining after both deletes, the procedure updates the Ship_ID column to the value of para_Ship_ID. If no mission rows remain, this update affects zero rows and the procedure still completes normally. The procedure contains no exception handlers. If any Oracle error occurs during the cursor processing, deletions, or update, the procedure terminates and the exception is propagated to the caller. The procedure also does not commit or roll back the transaction; transaction control is left to the caller.\n\nImplement this as an Oracle (PL/SQL) stored procedure named `sp` with the parameter list exactly `sp(para_Location VARCHAR2, para_Fate VARCHAR2, para_Speed_knots NUMBER, para_Ship_ID NUMBER)`. Return the complete stored procedure, and nothing else.\n",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable mission , columns = [ Mission_ID ( NUMBER | primary key | values : 6 , 5 ) , Ship_ID ( NUMBER | values : 5 , 7 ) , Code ( VARCHAR2 | values : VMV-3 , VMV-3 ) , Launched_Year ( NUMBER | values : 1931 , 1930 ) , Location ( VARCHAR2 | values : Turku , Finland , Turku , Finland ) , Speed_knots ( NUMBER | values : 23 , 25 ) , Fate ( VARCHAR2 | values : Retired 1939 , Decommissioned 1959 ) ]\ntable ship , columns = [ Ship_ID ( NUMBER | primary key | values : 8 , 6 ) , Name ( VARCHAR2 | values : Appam , Clan McTavish ) , Type ( VARCHAR2 | values : Battle ship , Battle ship ) , Nationality ( VARCHAR2 | values : United Kingdom , United Kingdom ) , Tonnage ( NUMBER | values : 3627 , 3146 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n  para_Location VARCHAR2,\n  para_Fate VARCHAR2,\n  para_Speed_knots NUMBER,\n  para_Ship_ID NUMBER\n)\nIS\n  CURSOR c_mission IS\n    SELECT *\n    FROM mission\n    WHERE Location > para_Location\n    FOR UPDATE;\n  r_mission c_mission%ROWTYPE;\nBEGIN\n  OPEN c_mission;\n  LOOP\n    FETCH c_mission INTO r_mission;\n    EXIT WHEN c_mission%NOTFOUND;\n    UPDATE mission\n       SET Fate = para_Fate\n     WHERE CURRENT OF c_mission;\n  END LOOP;\n  CLOSE c_mission;\n\n  DELETE FROM mission\n   WHERE Speed_knots IS NULL\n      OR Speed_knots < para_Speed_knots;\n\n  DELETE FROM mission\n   WHERE Speed_knots < (SELECT AVG(Speed_knots) FROM mission);\n\n  UPDATE mission\n     SET Ship_ID = para_Ship_ID;\nEND sp;"
+   },
+   "result": "compile error: line 10:10 PL/SQL: ORA-00942: table or view does not exist; line 9:5 PL/SQL: SQL Statement ignored; line 8:10 PLS-00341: declaration of cursor 'C_MISSION' is incomplete or malformed; line 0:0 PL/SQL: Compilation unit analysis terminated",
+   "compiled": false
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM mission FETCH FIRST 5 ROWS ONLY"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables"
+   },
+   "result": "TABLE_NAME\nLOGMNR_SESSION_EVOLVE$\nLOGMNR_GLOBAL$\nLOGMNR_PDB_INFO$\nLOGMNR_DID$\nLOGMNR_UID$\nLOGMNRGGC_GTLO\nLOGMNRGGC_GTCS\nLOGMNRC_DBNAME_UID_MAP\nLOGMNR_LOG$\nLOGMNR_PROCESSED_LOG$\nLOGMNR_SPILL$\nLOGMNR_AGE_SPILL$\nLOGMNR_RESTART_CKPT_TXINFO$\nLOGMNR_ERROR$\nLOGMNR_RESTART_CKPT$\nLOGMNR_FILTER$\nLOGMNR_SESSION_ACTIONS$\nLOGMNR_PARAMETER$\nLOGMNR_SESSION$\nLOGMNR_PROFILE_TABLE_STATS$\nLOGMNR_PROFILE_PLSQL_STATS$\nREDO_DB\nREDO_LOG\nROLLING$CONNECTIONS\nROLLING$DATABASES\nROLLING$DIRECTIVES\nROLLING$EVENTS\nROLLING$PARAMETERS\nROLLING$PLAN\nROLLING$STATISTICS\nROLLING$STATUS\nMVIEW$_ADV_WORKLOAD\nMVIEW$_ADV_BASETABLE\nMVIEW$_ADV_SQLDEPEND\nMVIEW$_ADV_PRETTY\nMVIEW$_ADV_TEMP\nMVIEW$_ADV_FILTER\nMVIEW$_ADV_LOG\nMVIEW$_ADV_FILTERINSTANCE\nMVIEW$_ADV_LEVEL\nMVIEW$_ADV_ROLLUP\nMVIEW$_ADV_AJG\nMVIEW$_ADV_FJG\nMVIEW$_ADV_GC\nMVIEW$_ADV_CLIQUE\nMVIEW$_ADV_ELIGIBLE\nMVIEW$_ADV_OUTPUT\nMVIEW$_ADV_EXCEPTIONS\nMVIEW$_ADV_PARAMETERS\nMVIEW$_ADV_INFO\n... (more rows not shown)"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name FROM all_tables WHERE table_name IN ('MISSION','SHIP','mission','ship')"
+   },
+   "result": "OWNER | TABLE_NAME\nBATTLE_DEATH | ship\nSHIP_MISSION | mission\nSHIP_MISSION | ship\nLC_SHIP | ship\nLC_SUBMARINE | mission\nSHIP_MISSION_E3D070 | mission\nSHIP_MISSION_E3D070 | ship\nSHIP_MISSION_E85450 | mission\nSHIP_MISSION_E85450 | ship\nSHIP_MISSION_ORW0E36_1 | mission\nSHIP_MISSION_ORW0E36_1 | ship\nSHIP_MISSION_ORW6298_1 | ship\nSHIP_MISSION_ORW6298_1 | mission\nSHIP_MISSION_ORWBE19_1 | mission\nSHIP_MISSION_ORWBE19_1 | ship\nSHIP_MISSION_ORWBE19_0 | mission\nSHIP_MISSION_ORWBE19_0 | ship\nSHIP_MISSION_ORWD44B_0 | mission\nSHIP_MISSION_ORWD44B_0 | ship\nSHIP_MISSION_EPCD5ADD09 | mission\nSHIP_MISSION_EPCD5ADD09 | ship"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "mission"
+   },
+   "result": "table mission , columns = [ Mission_ID ( NUMBER | primary key | values : 6 , 5 ) , Ship_ID ( NUMBER | values : 5 , 7 ) , Code ( VARCHAR2 | values : VMV-3 , VMV-3 ) , Launched_Year ( NUMBER | values : 1931 , 1930 ) , Location ( VARCHAR2 | values : Turku , Finland , Turku , Finland ) , Speed_knots ( NUMBER | values : 23 , 25 ) , Fate ( VARCHAR2 | values : Retired 1939 , Decommissioned 1959 ) ]"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT USER, SYS_CONTEXT('USERENV','CURRENT_SCHEMA') FROM dual"
+   },
+   "result": "USER | SYS_CONTEXT('USERENV','CURRENT_SCHEMA')\nSYSTEM | SHIP_MISSION_EPCD5ADD09"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables WHERE table_name = 'MISSION'"
+   },
+   "result": "(TABLE_NAME)\n(no rows)"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name FROM all_tables WHERE owner = SYS_CONTEXT('USERENV','CURRENT_SCHEMA')"
+   },
+   "result": "OWNER | TABLE_NAME\nSHIP_MISSION_EPCD5ADD09 | mission\nSHIP_MISSION_EPCD5ADD09 | ship"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, object_name, object_type FROM all_objects WHERE owner = SYS_CONTEXT('USERENV','CURRENT_SCHEMA') AND object_name IN ('mission','MISSION')"
+   },
+   "result": "OWNER | OBJECT_NAME | OBJECT_TYPE\nSHIP_MISSION_EPCD5ADD09 | mission | TABLE"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"mission\" FETCH FIRST 5 ROWS ONLY"
+   },
+   "result": "Mission_ID | Ship_ID | Code | Launched_Year | Location | Speed_knots | Fate\n1 | 1 | VMV-1 | 1930 | Germany | 25 | Decommissioned 1950\n2 | 2 | VMV-2 | 1930 | Germany | 25 | Decommissioned 1950\n3 | 3 | VMV-3 | 1930 | Helsinki , Finland | 23 | Lost (burned) 1931\n4 | 5 | VMV-4 Former: Sterling | 1916 | Norway | 16 | Retired 1939\n5 | 6 | VMV-5 | 1931 | Uusikaupunki , Finland | 23 | Decommissioned 1959"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT column_name FROM all_tab_columns WHERE owner=SYS_CONTEXT('USERENV','CURRENT_SCHEMA') AND table_name='mission' ORDER BY column_id"
+   },
+   "result": "COLUMN_NAME\nMission_ID\nShip_ID\nCode\nLaunched_Year\nLocation\nSpeed_knots\nFate"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n  para_Location VARCHAR2,\n  para_Fate VARCHAR2,\n  para_Speed_knots NUMBER,\n  para_Ship_ID NUMBER\n)\nIS\n  CURSOR c_mission IS\n    SELECT *\n    FROM \"mission\"\n    WHERE \"Location\" > para_Location\n    FOR UPDATE;\n  r_mission c_mission%ROWTYPE;\nBEGIN\n  OPEN c_mission;\n  LOOP\n    FETCH c_mission INTO r_mission;\n    EXIT WHEN c_mission%NOTFOUND;\n    UPDATE \"mission\"\n       SET \"Fate\" = para_Fate\n     WHERE CURRENT OF c_mission;\n  END LOOP;\n  CLOSE c_mission;\n\n  DELETE FROM \"mission\"\n   WHERE \"Speed_knots\" IS NULL\n      OR \"Speed_knots\" < para_Speed_knots;\n\n  DELETE FROM \"mission\"\n   WHERE \"Speed_knots\" < (SELECT AVG(\"Speed_knots\") FROM \"mission\");\n\n  UPDATE \"mission\"\n     SET \"Ship_ID\" = para_Ship_ID;\nEND sp;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"mission\" ORDER BY \"Mission_ID\""
+   },
+   "result": "Mission_ID | Ship_ID | Code | Launched_Year | Location | Speed_knots | Fate\n1 | 1 | VMV-1 | 1930 | Germany | 25 | Decommissioned 1950\n2 | 2 | VMV-2 | 1930 | Germany | 25 | Decommissioned 1950\n3 | 3 | VMV-3 | 1930 | Helsinki , Finland | 23 | Lost (burned) 1931\n4 | 5 | VMV-4 Former: Sterling | 1916 | Norway | 16 | Retired 1939\n5 | 6 | VMV-5 | 1931 | Uusikaupunki , Finland | 23 | Decommissioned 1959\n6 | 7 | VMV-6 | 1931 | Uusikaupunki , Finland | 23 | Decommissioned 1960\n7 | 8 | VMV-7 | 1932 | Turku , Finland | 23 | Lost (burned and sunk) 1933"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n  para_Location VARCHAR2,\n  para_Fate VARCHAR2,\n  para_Speed_knots NUMBER,\n  para_Ship_ID NUMBER\n)\nIS\n  CURSOR c_mission IS\n    SELECT *\n    FROM \"mission\"\n    WHERE \"Location\" > para_Location\n    FOR UPDATE;\n  r_mission c_mission%ROWTYPE;\nBEGIN\n  OPEN c_mission;\n  LOOP\n    FETCH c_mission INTO r_mission;\n    EXIT WHEN c_mission%NOTFOUND;\n    UPDATE \"mission\"\n       SET \"Fate\" = para_Fate\n     WHERE CURRENT OF c_mission;\n  END LOOP;\n  CLOSE c_mission;\n\n  DELETE FROM \"mission\"\n   WHERE \"Speed_knots\" IS NULL\n      OR \"Speed_knots\" < para_Speed_knots;\n\n  DELETE FROM \"mission\"\n   WHERE \"Speed_knots\" < (SELECT AVG(\"Speed_knots\") FROM \"mission\");\n\n  UPDATE \"mission\"\n     SET \"Ship_ID\" = para_Ship_ID;\nEND sp;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp('Finland', 'TEST_FATE', 23, 99)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"mission\" ORDER BY \"Mission_ID\""
+   },
+   "result": "Mission_ID | Ship_ID | Code | Launched_Year | Location | Speed_knots | Fate\n1 | 99 | VMV-1 | 1930 | Germany | 25 | TEST_FATE\n2 | 99 | VMV-2 | 1930 | Germany | 25 | TEST_FATE"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "RESET"
+   },
+   "result": "error: DatabaseError: ORA-00900: invalid SQL statement\nHelp: https://docs.oracle.com/error-help/db/ora-00900/"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "mission",
+    "limit": 5
+   },
+   "result": "Mission_ID | Ship_ID | Code | Launched_Year | Location | Speed_knots | Fate\n1 | 1 | VMV-1 | 1930 | Germany | 25 | Decommissioned 1950\n2 | 2 | VMV-2 | 1930 | Germany | 25 | Decommissioned 1950\n3 | 3 | VMV-3 | 1930 | Helsinki , Finland | 23 | Lost (burned) 1931\n4 | 5 | VMV-4 Former: Sterling | 1916 | Norway | 16 | Retired 1939\n5 | 6 | VMV-5 | 1931 | Uusikaupunki , Finland | 23 | Decommissioned 1959"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n  para_Location VARCHAR2,\n  para_Fate VARCHAR2,\n  para_Speed_knots NUMBER,\n  para_Ship_ID NUMBER\n)\nIS\n  CURSOR c_mission IS\n    SELECT *\n    FROM \"mission\"\n    WHERE \"Location\" > para_Location\n    FOR UPDATE;\n  r_mission c_mission%ROWTYPE;\nBEGIN\n  OPEN c_mission;\n  LOOP\n    FETCH c_mission INTO r_mission;\n    EXIT WHEN c_mission%NOTFOUND;\n    UPDATE \"mission\"\n       SET \"Fate\" = para_Fate\n     WHERE CURRENT OF c_mission;\n  END LOOP;\n  CLOSE c_mission;\n\n  DELETE FROM \"mission\"\n   WHERE \"Speed_knots\" IS NULL\n      OR \"Speed_knots\" < para_Speed_knots;\n\n  DELETE FROM \"mission\"\n   WHERE \"Speed_knots\" < (SELECT AVG(\"Speed_knots\") FROM \"mission\");\n\n  UPDATE \"mission\"\n     SET \"Ship_ID\" = para_Ship_ID;\nEND sp;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp('zzzz', 'SHOULD_NOT', 24, 100)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"mission\" ORDER BY \"Mission_ID\""
+   },
+   "result": "Mission_ID | Ship_ID | Code | Launched_Year | Location | Speed_knots | Fate\n1 | 100 | VMV-1 | 1930 | Germany | 25 | Decommissioned 1950\n2 | 100 | VMV-2 | 1930 | Germany | 25 | Decommissioned 1950"
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DELETE FROM \"mission\""
+   },
+   "result": "ok, 2 row(s) affected"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp('A', 'X', 10, 200)"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n  para_Location VARCHAR2,\n  para_Fate VARCHAR2,\n  para_Speed_knots NUMBER,\n  para_Ship_ID NUMBER\n)\nIS\n  CURSOR c_mission IS\n    SELECT *\n      FROM \"mission\"\n     WHERE \"Location\" > para_Location\n       FOR UPDATE;\n  r_mission c_mission%ROWTYPE;\nBEGIN\n  OPEN c_mission;\n  LOOP\n    FETCH c_mission INTO r_mission;\n    EXIT WHEN c_mission%NOTFOUND;\n    UPDATE \"mission\"\n       SET \"Fate\" = para_Fate\n     WHERE CURRENT OF c_mission;\n  END LOOP;\n  CLOSE c_mission;\n\n  DELETE FROM \"mission\"\n   WHERE \"Speed_knots\" IS NULL\n      OR \"Speed_knots\" < para_Speed_knots;\n\n  DELETE FROM \"mission\"\n   WHERE \"Speed_knots\" < (SELECT AVG(\"Speed_knots\") FROM \"mission\");\n\n  UPDATE \"mission\"\n     SET \"Ship_ID\" = para_Ship_ID;\nEND sp;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n  para_Location VARCHAR2,\n  para_Fate VARCHAR2,\n  para_Speed_knots NUMBER,\n  para_Ship_ID NUMBER\n)\nIS\n  CURSOR c_mission IS\n    SELECT *\n      FROM \"mission\"\n     WHERE \"Location\" > para_Location\n       FOR UPDATE;\n  r_mission c_mission%ROWTYPE;\nBEGIN\n  OPEN c_mission;\n  LOOP\n    FETCH c_mission INTO r_mission;\n    EXIT WHEN c_mission%NOTFOUND;\n    UPDATE \"mission\"\n       SET \"Fate\" = para_Fate\n     WHERE CURRENT OF c_mission;\n  END LOOP;\n  CLOSE c_mission;\n\n  DELETE FROM \"mission\"\n   WHERE \"Speed_knots\" IS NULL\n      OR \"Speed_knots\" < para_Speed_knots;\n\n  DELETE FROM \"mission\"\n   WHERE \"Speed_knots\" < (SELECT AVG(\"Speed_knots\") FROM \"mission\");\n\n  UPDATE \"mission\"\n     SET \"Ship_ID\" = para_Ship_ID;\nEND sp;"
+ },
+ "pair": null
+}

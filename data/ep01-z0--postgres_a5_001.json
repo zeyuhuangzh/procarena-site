@@ -1,0 +1,411 @@
+{
+ "id": "ep01-z0--postgres_a5_001",
+ "run": "ep01-z0",
+ "task_id": "postgres_a5_001",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "no-contradiction",
+ "scenario": "a5",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 40,
+ "simulator": {
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "component_usage": true,
+   "ex": true
+  },
+  "metrics": null,
+  "attribution": null,
+  "recovered": 1,
+  "oracle_size": 4
+ },
+ "summary": {
+  "steps": 32,
+  "seconds": 353.7,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 1,
+  "oracle_size": 4,
+  "entries_per_question": 1.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 2,
+   "ask_user": 1,
+   "execute_scratch": 20,
+   "describe_table": 2,
+   "compile_plsql": 1,
+   "reset_scratch": 4,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Write a complete PostgreSQL PL/pgSQL stored procedure. The procedure must be named sp and its signature must be exactly:\n\nsp(para_Player_id integer, para_Player_name text, para_Rank integer, para_Gender text, para_Votes_bonus integer)\n\nThe database already contains two procedures, sp_part1 and sp_part2, in the attached file components.sql. They already exist and must be called as specified below. Do not recreate them, do not modify them, and do not include their definitions.\n\nThe procedure must use only the following tables and columns:\n- player: the participant dossier\n- coach: Coach_ID, Rank, Gender\n\nIt must perform the following steps in this exact order.\n\n1. Determine whether a row exists in the player table whose Player_ID equals para_Player_id. Use exact equality on Player_ID only.\n\n2. If such a player row exists:\n   a. Call sp_part1 with arguments in this order: para_Votes_bonus, para_Player_name, para_Rank, para_Gender.\n   b. Call sp_part2 with arguments para_Player_id and the integer literal 5.\n   c. Set the Sponsor_name of the player row identified by para_Player_id to the exact text literal 'orchestrated_update'. If that player row no longer exists at this point, this update affects no rows.\n\n3. If no such player row exists:\n   a. Insert a new row into the player table with Player_ID equal to para_Player_id, Player_name equal to para_Player_name, Votes equal to the integer literal 0, and Rank equal to para_Rank. Leave all other columns unset.\n   b. Call sp_part2 with arguments para_Player_id and para_Votes_bonus.\n   c. Update the coach row whose Coach_ID equals the integer literal 1 by increasing its Rank by para_Votes_bonus.\n\n4. After completing either step 2 or step 3, check whether at least one row exists in the coach table whose Rank equals para_Rank. The equality comparison is exact. If multiple coach rows have that Rank, the presence of any such row satisfies the condition.\n   a. If one or more such coach rows exist, call sp_part1 with arguments in this order: an integer literal, para_Player_name, para_Rank, para_Gender.\n   b. If no coach row has Rank equal to para_Rank, add para_Votes_bonus to the current Votes of the player row identified by para_Player_id. If that player row no longer exists, this update affects no rows.\n\n5. After step 4, examine the player row identified by para_Player_id. If that row still exists and its Sponsor_name is distinct from the exact text literal 'orchestrated_update', then set Sponsor_name to the exact text literal 'orchestrated_update' and add para_Votes_bonus to that row's current Votes. If the row does not exist, or if Sponsor_name is already exactly 'orchestrated_update', do nothing.\n\n6. After step 5, read the current Votes value from the player row identified by para_Player_id, if such a row still exists.\n   a. If the row exists and its current Votes satisfies the vote-surge gate, set that player row's Occupation to the exact text literal 'orchestrated_update'.\n   b. Otherwise, meaning the row exists with Votes less than or equal to para_Votes_bonus multiplied by 2, or the row does not exist, set the Occupation of the player row identified by para_Player_id to the exact text literal 'orchestrated_pending'. If the player row does not exist, this update affects no rows.\n\nAll equality checks are exact. The final vote threshold is strict greater-than; equality with twice para_Votes_bonus goes to the otherwise branch.\n\nDo not add any exception handlers. If any statement or any call to sp_part1 or sp_part2 raises an error, the procedure must abort and the error must propagate to the caller.\n\nReturn only the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "components.sql",
+    "kind": "existing component procedures",
+    "text": "-- These procedures already exist in the database. Call them.\n-- Do not recreate them, and do not change them.\n\nCREATE OR REPLACE PROCEDURE sp_part1(para_Votes integer, para_Player_name text, para_Rank integer, para_Gender text) LANGUAGE plpgsql AS\n$$\nDECLARE\n    calc_result integer := 0;\n    status_msg text;\nBEGIN\n    calc_result := para_Votes + 10;\n    UPDATE \"player\" SET \"Votes\" = calc_result WHERE \"Player_name\" = para_Player_name;\n    calc_result := calc_result * 2;\n    DELETE FROM \"coach\" WHERE \"Rank\" = para_Rank;\n    calc_result := calc_result - 5;\n    UPDATE \"coach\" SET \"Gender\" = para_Gender || '_update' WHERE \"Rank\" = para_Rank;\n    calc_result := calc_result + para_Votes;\n    UPDATE \"player\" SET \"Player_name\" = para_Player_name || '_step1' WHERE \"Votes\" = para_Votes;\n    calc_result := calc_result / 3;\n    DELETE FROM \"player\" WHERE \"Votes\" < calc_result;\n    status_msg := 'processing';\n    UPDATE \"coach\" SET \"Rank\" = para_Rank + calc_result WHERE \"Gender\" = para_Gender;\n    calc_result := calc_result + 15;\n    UPDATE \"player\" SET \"Votes\" = calc_result WHERE \"Player_name\" = para_Player_name;\n    calc_result := calc_result - para_Votes;\n    DELETE FROM \"coach\" WHERE \"Gender\" = para_Gender || '_old';\n    calc_result := calc_result * para_Votes;\n    UPDATE \"player\" SET \"Player_name\" = status_msg WHERE \"Votes\" = para_Votes;\n    calc_result := calc_result + 7;\n    UPDATE \"coach\" SET \"Rank\" = calc_result WHERE \"Gender\" = para_Gender;\n    DELETE FROM \"player\" WHERE \"Player_name\" = para_Player_name || '_step1';\n    calc_result := calc_result - 12;\n    UPDATE \"coach\" SET \"Gender\" = para_Gender || status_msg WHERE \"Rank\" = para_Rank;\nEND;\n$$;\n\nCREATE OR REPLACE PROCEDURE sp_part2(para_Player_id integer, para_New_votes integer) LANGUAGE plpgsql AS\n$$\nBEGIN\n    UPDATE \"player\" SET \"Votes\" = \"Votes\" + para_New_votes WHERE \"Player_ID\" = para_Player_id;\nEND;\n$$;\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the participant dossier?",
+   "answer": "The player columns the procedure may use: Player_ID, Player_name, Sponsor_name, Votes, Rank, Occupation."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the vote-surge gate?",
+   "answer": "The player row's current Votes is strictly greater than para_Votes_bonus multiplied by 2."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 4,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what integer literal is the first argument to sp_part1 in step 4a",
+   "answer": "The first argument to sp_part1 in step 4a is the integer literal 10."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "whether a null Sponsor_name satisfies the distinct-from condition in step 5",
+   "answer": "A null Sponsor_name is included as a case where Sponsor_name is distinct from the exact text literal 'orchestrated_update'."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable club , columns = [ Club_ID ( integer | primary key | values : 5 , 5 ) , Club_name ( text | values : AIK , Djurgårdens IF ) , Region ( text | values : France , France ) , Start_year ( integer | values : 2011 , 1998 ) ]\ntable coach , columns = [ Coach_ID ( integer | primary key | values : 4 , 3 ) , Coach_name ( text | values : James Wong , Jameson Tomas ) , Gender ( text | values : M , F ) , Club_ID ( integer | values : 1 , 3 ) , Rank ( integer | values : 2 , 1 ) ]\ntable match_result , columns = [ Rank ( integer | primary key | values : 2 , 5 ) , Club_ID ( integer | values : 6 , 5 ) , Gold ( integer | values : 20 , 13 ) , Big_Silver ( integer | values : 12 , 12 ) , Small_Silver ( integer | values : 4 , 4 ) , Bronze ( integer | values : 8 , 9 ) , Points ( integer | values : 84 , 139 ) ]\ntable player , columns = [ Player_ID ( integer | primary key | values : 5 , 2 ) , Sponsor_name ( text | values : Winnipeg Centre , Elmwood—Transcona ) , Player_name ( text | values : Jean Luc Bouché , Jean Luc Bouché ) , Gender ( text | values : M , F ) , Residence ( text | values : Oakbank , Selkirk ) , Occupation ( text | values : Design Coordinator , Retired ) , Votes ( integer | values : 8734 , 4914 ) , Rank ( text | values : 1st , 1st ) ]\ntable player_coach , columns = [ Player_ID ( integer | primary key | values : 3 , 1 ) , Coach_ID ( integer | values : 3 , 2 ) , Starting_year ( integer | values : 2012 , 2012 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "player"
+   },
+   "result": "Player_ID | Sponsor_name | Player_name | Gender | Residence | Occupation | Votes | Rank\n1 | Brandon—Souris | Jean Luc Bouché | M | Brandon | Locomotive Engineer | 6055 | 2nd\n2 | Charleswood—St. James—Assiniboia | Fiona Shiells | F | Winnipeg | Ministerial Assistant | 7190 | 3rd\n3 | Churchill | Niki Ashton | F | Thompson | Researcher | 8734 | 1st\n4 | Dauphin—Swan River—Marquette | Ron Strynadka | M | Birtle | Retired | 4914 | 2nd\n5 | Elmwood—Transcona | Jim Maloway | M | Winnipeg | Small Businessman | 14355 | 1st\n6 | Kildonan—St. Paul | Ross Eadie | M | Winnipeg | Self Employed / Consultant | 12093 | 2nd\n7 | Portage—Lisgar | Mohamed Alli | M | Winnipeg | Distribution Centre Associate | 2353 | 4th\n8 | Provencher | Ross C. Martin | M | Oakbank | Design Coordinator | 4947 | 2nd\n9 | Saint Boniface | Matt Schaubroeck | M | Winnipeg | Student | 5502 | 3rd\n10 | Selkirk—Interlake | Patricia Cordner | F | Selkirk | Retired | 9506 | 2nd\n11 | Winnipeg Centre | Pat Martin | M | Winnipeg | Parliamentarian | 12285 | 1st\n12 | Winnipeg North | Judy Wasylycia-Leis | F | Winnipeg | Parliamentarian | 14097 | 1st\n13 | Winnipeg South | Sean Robert | M | Winnipeg | Product Consultant - MLCC | 4673 | 3rd\n14 | Winnipeg South Centre | Rachel Heinrichs | F | Winnipeg | Student | 5490 | 3rd"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "coach"
+   },
+   "result": "Coach_ID | Coach_name | Gender | Club_ID | Rank\n1 | Jameson Tomas | M | 1 | 1\n2 | Joe Fabbri | F | 1 | 2\n3 | Robert Chen | M | 3 | 3\n4 | James Wong | M | 3 | 4\n5 | Smith Brown | M | 1 | 5"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "In step 4.a, the spec says \"call sp_part1 with arguments in this order: an integer literal, para_Player_name, para_Rank, para_Gender.\" It does not say which integer literal. Which exact integer literal should be used as the first argument to sp_part1 in step 4.a?"
+   },
+   "result": "The first argument to sp_part1 in step 4a is the integer literal 10.",
+   "revealed": [
+    "M1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO player (Player_ID, Player_name, Votes, Rank) VALUES (9999, 'test', 0, 123) RETURNING Player_ID, Player_name, Votes, Rank;"
+   },
+   "result": "error: [42703] column \"player_id\" of relation \"player\" does not exist"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "player"
+   },
+   "result": "table player , columns = [ Player_ID ( integer | primary key | values : 5 , 2 ) , Sponsor_name ( text | values : Winnipeg Centre , Elmwood—Transcona ) , Player_name ( text | values : Jean Luc Bouché , Jean Luc Bouché ) , Gender ( text | values : M , F ) , Residence ( text | values : Oakbank , Selkirk ) , Occupation ( text | values : Design Coordinator , Retired ) , Votes ( integer | values : 8734 , 4914 ) , Rank ( text | values : 1st , 1st ) ]"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "coach"
+   },
+   "result": "table coach , columns = [ Coach_ID ( integer | primary key | values : 4 , 3 ) , Coach_name ( text | values : James Wong , Jameson Tomas ) , Gender ( text | values : M , F ) , Club_ID ( integer | values : 1 , 3 ) , Rank ( integer | values : 2 , 1 ) ]"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO player (\"Player_ID\", \"Player_name\", \"Votes\", \"Rank\") VALUES (9999, 'test', 0, 123) RETURNING \"Player_ID\", \"Player_name\", \"Votes\", \"Rank\";"
+   },
+   "result": "Player_ID | Player_name | Votes | Rank\n9999 | test | 0 | 123"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Player_id integer, para_Player_name text, para_Rank integer, para_Gender text, para_Votes_bonus integer)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_player_exists boolean;\n    v_coach_rank_exists boolean;\nBEGIN\n    SELECT EXISTS (\n        SELECT 1\n        FROM \"player\"\n        WHERE \"Player_ID\" = para_Player_id\n    ) INTO v_player_exists;\n\n    IF v_player_exists THEN\n        CALL sp_part1(para_Votes_bonus, para_Player_name, para_Rank, para_Gender);\n        CALL sp_part2(para_Player_id, 5);\n        UPDATE \"player\"\n        SET \"Sponsor_name\" = 'orchestrated_update'\n        WHERE \"Player_ID\" = para_Player_id;\n    ELSE\n        INSERT INTO \"player\" (\"Player_ID\", \"Player_name\", \"Votes\", \"Rank\")\n        VALUES (para_Player_id, para_Player_name, 0, para_Rank);\n        CALL sp_part2(para_Player_id, para_Votes_bonus);\n        UPDATE \"coach\"\n        SET \"Rank\" = \"Rank\" + para_Votes_bonus\n        WHERE \"Coach_ID\" = 1;\n    END IF;\n\n    SELECT EXISTS (\n        SELECT 1\n        FROM \"coach\"\n        WHERE \"Rank\" = para_Rank\n    ) INTO v_coach_rank_exists;\n\n    IF v_coach_rank_exists THEN\n        CALL sp_part1(10, para_Player_name, para_Rank, para_Gender);\n    ELSE\n        UPDATE \"player\"\n        SET \"Votes\" = \"Votes\" + para_Votes_bonus\n        WHERE \"Player_ID\" = para_Player_id;\n    END IF;\n\n    UPDATE \"player\"\n    SET \"Sponsor_name\" = 'orchestrated_update',\n        \"Votes\" = \"Votes\" + para_Votes_bonus\n    WHERE \"Player_ID\" = para_Player_id\n      AND \"Sponsor_name\" IS DISTINCT FROM 'orchestrated_update';\n\n    UPDATE \"player\"\n    SET \"Occupation\" = CASE\n            WHEN \"Votes\" > para_Votes_bonus * 2 THEN 'orchestrated_update'\n            ELSE 'orchestrated_pending'\n        END\n    WHERE \"Player_ID\" = para_Player_id;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_Player_id integer, para_Player_name text, para_Rank integer, para_Gender text, para_Votes_bonus integer)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_player_exists boolean;\n    v_coach_rank_exists boolean;\nBEGIN\n    SELECT EXISTS (\n        SELECT 1\n        FROM \"player\"\n        WHERE \"Player_ID\" = para_Player_id\n    ) INTO v_player_exists;\n\n    IF v_player_exists THEN\n        CALL sp_part1(para_Votes_bonus, para_Player_name, para_Rank, para_Gender);\n        CALL sp_part2(para_Player_id, 5);\n        UPDATE \"player\"\n        SET \"Sponsor_name\" = 'orchestrated_update'\n        WHERE \"Player_ID\" = para_Player_id;\n    ELSE\n        INSERT INTO \"player\" (\"Player_ID\", \"Player_name\", \"Votes\", \"Rank\")\n        VALUES (para_Player_id, para_Player_name, 0, para_Rank);\n        CALL sp_part2(para_Player_id, para_Votes_bonus);\n        UPDATE \"coach\"\n        SET \"Rank\" = \"Rank\" + para_Votes_bonus\n        WHERE \"Coach_ID\" = 1;\n    END IF;\n\n    SELECT EXISTS (\n        SELECT 1\n        FROM \"coach\"\n        WHERE \"Rank\" = para_Rank\n    ) INTO v_coach_rank_exists;\n\n    IF v_coach_rank_exists THEN\n        CALL sp_part1(10, para_Player_name, para_Rank, para_Gender);\n    ELSE\n        UPDATE \"player\"\n        SET \"Votes\" = \"Votes\" + para_Votes_bonus\n        WHERE \"Player_ID\" = para_Player_id;\n    END IF;\n\n    UPDATE \"player\"\n    SET \"Sponsor_name\" = 'orchestrated_update',\n        \"Votes\" = \"Votes\" + para_Votes_bonus\n    WHERE \"Player_ID\" = para_Player_id\n      AND \"Sponsor_name\" IS DISTINCT FROM 'orchestrated_update';\n\n    UPDATE \"player\"\n    SET \"Occupation\" = CASE\n            WHEN \"Votes\" > para_Votes_bonus * 2 THEN 'orchestrated_update'\n            ELSE 'orchestrated_pending'\n        END\n    WHERE \"Player_ID\" = para_Player_id;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(200, 'New Player', 999, 'X', 7);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Player_ID\", \"Player_name\", \"Votes\", \"Rank\", \"Sponsor_name\", \"Occupation\", \"Gender\", \"Residence\" FROM \"player\" WHERE \"Player_ID\" = 200;"
+   },
+   "result": "Player_ID | Player_name | Votes | Rank | Sponsor_name | Occupation | Gender | Residence\n200 | New Player | 21 | 999 | orchestrated_update | orchestrated_update | NULL | NULL"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Coach_ID\", \"Rank\" FROM \"coach\" ORDER BY \"Coach_ID\";"
+   },
+   "result": "Coach_ID | Rank\n1 | 8\n2 | 2\n3 | 3\n4 | 4\n5 | 5"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(201, 'New Player', 3, 'X', 2);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Player_ID\", \"Player_name\", \"Votes\", \"Rank\", \"Sponsor_name\", \"Occupation\", \"Gender\", \"Residence\" FROM \"player\" WHERE \"Player_ID\" = 201;"
+   },
+   "result": "Player_ID | Player_name | Votes | Rank | Sponsor_name | Occupation | Gender | Residence\n201 | New Player | 32 | 3 | orchestrated_update | orchestrated_update | NULL | NULL"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT proname FROM pg_proc WHERE proname IN ('sp_part1','sp_part2','sp');"
+   },
+   "result": "proname\nsp_part1\nsp_part2"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_Player_id integer, para_Player_name text, para_Rank integer, para_Gender text, para_Votes_bonus integer)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_player_exists boolean;\n    v_coach_rank_exists boolean;\nBEGIN\n    SELECT EXISTS (\n        SELECT 1\n        FROM \"player\"\n        WHERE \"Player_ID\" = para_Player_id\n    ) INTO v_player_exists;\n\n    IF v_player_exists THEN\n        CALL sp_part1(para_Votes_bonus, para_Player_name, para_Rank, para_Gender);\n        CALL sp_part2(para_Player_id, 5);\n        UPDATE \"player\"\n        SET \"Sponsor_name\" = 'orchestrated_update'\n        WHERE \"Player_ID\" = para_Player_id;\n    ELSE\n        INSERT INTO \"player\" (\"Player_ID\", \"Player_name\", \"Votes\", \"Rank\")\n        VALUES (para_Player_id, para_Player_name, 0, para_Rank);\n        CALL sp_part2(para_Player_id, para_Votes_bonus);\n        UPDATE \"coach\"\n        SET \"Rank\" = \"Rank\" + para_Votes_bonus\n        WHERE \"Coach_ID\" = 1;\n    END IF;\n\n    SELECT EXISTS (\n        SELECT 1\n        FROM \"coach\"\n        WHERE \"Rank\" = para_Rank\n    ) INTO v_coach_rank_exists;\n\n    IF v_coach_rank_exists THEN\n        CALL sp_part1(10, para_Player_name, para_Rank, para_Gender);\n    ELSE\n        UPDATE \"player\"\n        SET \"Votes\" = \"Votes\" + para_Votes_bonus\n        WHERE \"Player_ID\" = para_Player_id;\n    END IF;\n\n    UPDATE \"player\"\n    SET \"Sponsor_name\" = 'orchestrated_update',\n        \"Votes\" = \"Votes\" + para_Votes_bonus\n    WHERE \"Player_ID\" = para_Player_id\n      AND \"Sponsor_name\" IS DISTINCT FROM 'orchestrated_update';\n\n    UPDATE \"player\"\n    SET \"Occupation\" = CASE\n            WHEN \"Votes\" > para_Votes_bonus * 2 THEN 'orchestrated_update'\n            ELSE 'orchestrated_pending'\n        END\n    WHERE \"Player_ID\" = para_Player_id;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(5, 'Jim Maloway', 999, 'M', 2);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Player_ID\", \"Player_name\", \"Votes\", \"Rank\", \"Sponsor_name\", \"Occupation\", \"Gender\", \"Residence\" FROM \"player\" WHERE \"Player_ID\" = 5;"
+   },
+   "result": "Player_ID | Player_name | Votes | Rank | Sponsor_name | Occupation | Gender | Residence\n5 | Jim Maloway | 29 | 1st | orchestrated_update | orchestrated_update | M | Winnipeg"
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_Player_id integer, para_Player_name text, para_Rank integer, para_Gender text, para_Votes_bonus integer)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_player_exists boolean;\n    v_coach_rank_exists boolean;\nBEGIN\n    SELECT EXISTS (\n        SELECT 1\n        FROM \"player\"\n        WHERE \"Player_ID\" = para_Player_id\n    ) INTO v_player_exists;\n\n    IF v_player_exists THEN\n        CALL sp_part1(para_Votes_bonus, para_Player_name, para_Rank, para_Gender);\n        CALL sp_part2(para_Player_id, 5);\n        UPDATE \"player\"\n        SET \"Sponsor_name\" = 'orchestrated_update'\n        WHERE \"Player_ID\" = para_Player_id;\n    ELSE\n        INSERT INTO \"player\" (\"Player_ID\", \"Player_name\", \"Votes\", \"Rank\")\n        VALUES (para_Player_id, para_Player_name, 0, para_Rank);\n        CALL sp_part2(para_Player_id, para_Votes_bonus);\n        UPDATE \"coach\"\n        SET \"Rank\" = \"Rank\" + para_Votes_bonus\n        WHERE \"Coach_ID\" = 1;\n    END IF;\n\n    SELECT EXISTS (\n        SELECT 1\n        FROM \"coach\"\n        WHERE \"Rank\" = para_Rank\n    ) INTO v_coach_rank_exists;\n\n    IF v_coach_rank_exists THEN\n        CALL sp_part1(10, para_Player_name, para_Rank, para_Gender);\n    ELSE\n        UPDATE \"player\"\n        SET \"Votes\" = \"Votes\" + para_Votes_bonus\n        WHERE \"Player_ID\" = para_Player_id;\n    END IF;\n\n    UPDATE \"player\"\n    SET \"Sponsor_name\" = 'orchestrated_update',\n        \"Votes\" = \"Votes\" + para_Votes_bonus\n    WHERE \"Player_ID\" = para_Player_id\n      AND \"Sponsor_name\" IS DISTINCT FROM 'orchestrated_update';\n\n    UPDATE \"player\"\n    SET \"Occupation\" = CASE\n            WHEN \"Votes\" > para_Votes_bonus * 2 THEN 'orchestrated_update'\n            ELSE 'orchestrated_pending'\n        END\n    WHERE \"Player_ID\" = para_Player_id;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(300, 'TestZero', 1, 'X', 0);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Player_ID\", \"Player_name\", \"Votes\", \"Rank\", \"Sponsor_name\", \"Occupation\", \"Gender\" FROM \"player\" WHERE \"Player_ID\" = 300;"
+   },
+   "result": "Player_ID | Player_name | Votes | Rank | Sponsor_name | Occupation | Gender\n300 | TestZero | 30 | 1 | orchestrated_update | orchestrated_update | NULL"
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(301, 'Zero', 999, 'X', 0);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Player_ID\", \"Player_name\", \"Votes\", \"Rank\", \"Sponsor_name\", \"Occupation\", \"Gender\" FROM \"player\" WHERE \"Player_ID\" = 301;"
+   },
+   "result": "Player_ID | Player_name | Votes | Rank | Sponsor_name | Occupation | Gender\n301 | Zero | 0 | 999 | orchestrated_update | orchestrated_pending | NULL"
+  },
+  {
+   "step": 28,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 29,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_Player_id integer, para_Player_name text, para_Rank integer, para_Gender text, para_Votes_bonus integer)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_player_exists boolean;\n    v_coach_rank_exists boolean;\nBEGIN\n    SELECT EXISTS (\n        SELECT 1\n        FROM \"player\"\n        WHERE \"Player_ID\" = para_Player_id\n    ) INTO v_player_exists;\n\n    IF v_player_exists THEN\n        CALL sp_part1(para_Votes_bonus, para_Player_name, para_Rank, para_Gender);\n        CALL sp_part2(para_Player_id, 5);\n        UPDATE \"player\"\n        SET \"Sponsor_name\" = 'orchestrated_update'\n        WHERE \"Player_ID\" = para_Player_id;\n    ELSE\n        INSERT INTO \"player\" (\"Player_ID\", \"Player_name\", \"Votes\", \"Rank\")\n        VALUES (para_Player_id, para_Player_name, 0, para_Rank);\n        CALL sp_part2(para_Player_id, para_Votes_bonus);\n        UPDATE \"coach\"\n        SET \"Rank\" = \"Rank\" + para_Votes_bonus\n        WHERE \"Coach_ID\" = 1;\n    END IF;\n\n    SELECT EXISTS (\n        SELECT 1\n        FROM \"coach\"\n        WHERE \"Rank\" = para_Rank\n    ) INTO v_coach_rank_exists;\n\n    IF v_coach_rank_exists THEN\n        CALL sp_part1(10, para_Player_name, para_Rank, para_Gender);\n    ELSE\n        UPDATE \"player\"\n        SET \"Votes\" = \"Votes\" + para_Votes_bonus\n        WHERE \"Player_ID\" = para_Player_id;\n    END IF;\n\n    UPDATE \"player\"\n    SET \"Sponsor_name\" = 'orchestrated_update',\n        \"Votes\" = \"Votes\" + para_Votes_bonus\n    WHERE \"Player_ID\" = para_Player_id\n      AND \"Sponsor_name\" IS DISTINCT FROM 'orchestrated_update';\n\n    UPDATE \"player\"\n    SET \"Occupation\" = CASE\n            WHEN \"Votes\" > para_Votes_bonus * 2 THEN 'orchestrated_update'\n            ELSE 'orchestrated_pending'\n        END\n    WHERE \"Player_ID\" = para_Player_id;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 30,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(5, 'Jim Maloway', 3, 'M', 2);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 31,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Player_ID\", \"Player_name\", \"Votes\", \"Rank\", \"Sponsor_name\", \"Occupation\", \"Gender\" FROM \"player\" WHERE \"Player_ID\" = 5;"
+   },
+   "result": "Player_ID | Player_name | Votes | Rank | Sponsor_name | Occupation | Gender\n5 | Jim Maloway | 29 | 1st | orchestrated_update | orchestrated_update | M"
+  },
+  {
+   "step": 32,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_Player_id integer, para_Player_name text, para_Rank integer, para_Gender text, para_Votes_bonus integer)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_player_exists boolean;\n    v_coach_rank_exists boolean;\nBEGIN\n    SELECT EXISTS (\n        SELECT 1\n        FROM \"player\"\n        WHERE \"Player_ID\" = para_Player_id\n    ) INTO v_player_exists;\n\n    IF v_player_exists THEN\n        CALL sp_part1(para_Votes_bonus, para_Player_name, para_Rank, para_Gender);\n        CALL sp_part2(para_Player_id, 5);\n        UPDATE \"player\"\n        SET \"Sponsor_name\" = 'orchestrated_update'\n        WHERE \"Player_ID\" = para_Player_id;\n    ELSE\n        INSERT INTO \"player\" (\"Player_ID\", \"Player_name\", \"Votes\", \"Rank\")\n        VALUES (para_Player_id, para_Player_name, 0, para_Rank);\n        CALL sp_part2(para_Player_id, para_Votes_bonus);\n        UPDATE \"coach\"\n        SET \"Rank\" = \"Rank\" + para_Votes_bonus\n        WHERE \"Coach_ID\" = 1;\n    END IF;\n\n    SELECT EXISTS (\n        SELECT 1\n        FROM \"coach\"\n        WHERE \"Rank\" = para_Rank\n    ) INTO v_coach_rank_exists;\n\n    IF v_coach_rank_exists THEN\n        CALL sp_part1(10, para_Player_name, para_Rank, para_Gender);\n    ELSE\n        UPDATE \"player\"\n        SET \"Votes\" = \"Votes\" + para_Votes_bonus\n        WHERE \"Player_ID\" = para_Player_id;\n    END IF;\n\n    UPDATE \"player\"\n    SET \"Sponsor_name\" = 'orchestrated_update',\n        \"Votes\" = \"Votes\" + para_Votes_bonus\n    WHERE \"Player_ID\" = para_Player_id\n      AND \"Sponsor_name\" IS DISTINCT FROM 'orchestrated_update';\n\n    UPDATE \"player\"\n    SET \"Occupation\" = CASE\n            WHEN \"Votes\" > para_Votes_bonus * 2 THEN 'orchestrated_update'\n            ELSE 'orchestrated_pending'\n        END\n    WHERE \"Player_ID\" = para_Player_id;\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_Player_id integer, para_Player_name text, para_Rank integer, para_Gender text, para_Votes_bonus integer)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_player_exists boolean;\n    v_coach_rank_exists boolean;\nBEGIN\n    SELECT EXISTS (\n        SELECT 1\n        FROM \"player\"\n        WHERE \"Player_ID\" = para_Player_id\n    ) INTO v_player_exists;\n\n    IF v_player_exists THEN\n        CALL sp_part1(para_Votes_bonus, para_Player_name, para_Rank, para_Gender);\n        CALL sp_part2(para_Player_id, 5);\n        UPDATE \"player\"\n        SET \"Sponsor_name\" = 'orchestrated_update'\n        WHERE \"Player_ID\" = para_Player_id;\n    ELSE\n        INSERT INTO \"player\" (\"Player_ID\", \"Player_name\", \"Votes\", \"Rank\")\n        VALUES (para_Player_id, para_Player_name, 0, para_Rank);\n        CALL sp_part2(para_Player_id, para_Votes_bonus);\n        UPDATE \"coach\"\n        SET \"Rank\" = \"Rank\" + para_Votes_bonus\n        WHERE \"Coach_ID\" = 1;\n    END IF;\n\n    SELECT EXISTS (\n        SELECT 1\n        FROM \"coach\"\n        WHERE \"Rank\" = para_Rank\n    ) INTO v_coach_rank_exists;\n\n    IF v_coach_rank_exists THEN\n        CALL sp_part1(10, para_Player_name, para_Rank, para_Gender);\n    ELSE\n        UPDATE \"player\"\n        SET \"Votes\" = \"Votes\" + para_Votes_bonus\n        WHERE \"Player_ID\" = para_Player_id;\n    END IF;\n\n    UPDATE \"player\"\n    SET \"Sponsor_name\" = 'orchestrated_update',\n        \"Votes\" = \"Votes\" + para_Votes_bonus\n    WHERE \"Player_ID\" = para_Player_id\n      AND \"Sponsor_name\" IS DISTINCT FROM 'orchestrated_update';\n\n    UPDATE \"player\"\n    SET \"Occupation\" = CASE\n            WHEN \"Votes\" > para_Votes_bonus * 2 THEN 'orchestrated_update'\n            ELSE 'orchestrated_pending'\n        END\n    WHERE \"Player_ID\" = para_Player_id;\nEND;\n$$;"
+ },
+ "pair": {
+  "single_run": "st04",
+  "single_task": "postgres_a5_001"
+ }
+}

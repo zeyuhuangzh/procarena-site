@@ -1,0 +1,340 @@
+{
+ "id": "ep01--postgres_a2_001",
+ "run": "ep01",
+ "task_id": "postgres_a2_001",
+ "stage": "multi",
+ "condition": "tools+ask",
+ "tier": "full",
+ "scenario": "a2",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 40,
+ "simulator": {
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": null,
+  "attribution": null,
+  "recovered": 5,
+  "oracle_size": 7
+ },
+ "summary": {
+  "steps": 20,
+  "seconds": 168.7,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 5,
+  "oracle_size": 7,
+  "entries_per_question": 5.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 2,
+   "ask_user": 1,
+   "compile_plsql": 2,
+   "execute_scratch": 11,
+   "reset_scratch": 1,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Implement the PL/pgSQL stored procedure `sp` so that it performs exactly the maintenance work specified in the attached design document.\n\nThe procedure signature is exactly:\n\n`sp(para_Start_year integer, para_Club_name text, para_Club_ID integer, para_Player_ID integer, para_Occupation text, para_Votes integer)`\n\nThe procedure returns no result. All requirements live in the attached design document; follow it exactly.\n\nReturn only the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "design_document.md",
+    "kind": "design document",
+    "text": "## 1. Overview\n\n`sp` is a PL/pgSQL stored procedure that executes nine ordered maintenance phases against the `club` and `player` tables. It renames clubs based on `Start_year`, deletes clubs based on `Club_ID` thresholds, updates player occupations based on `Player_ID`, and deletes players based on `Votes` thresholds. Two parameters are accepted but unused, and the procedure returns no result.\n\n## 2. Interface\n\nThe procedure takes six parameters in this order and returns no result.\n\n| Position | Name | Type | Meaning |\n| --- | --- | --- | --- |\n| 1 | `para_Start_year` | integer | Starting year used to initialize `v_min_start_year` and drive the club-name update condition. |\n| 2 | `para_Club_name` | text | Accepted but not used by any operation. |\n| 3 | `para_Club_ID` | integer | Base value for the club deletion thresholds. |\n| 4 | `para_Player_ID` | integer | Player identifier used to initialize `v_reference_player_id`; null is replaced by `0`. |\n| 5 | `para_Occupation` | text | Accepted but not used by any operation. |\n| 6 | `para_Votes` | integer | Base value for the player deletion vote thresholds. |\n\n## 3. Data dictionary\n\nThe procedure reads and writes only these columns:\n\n| Table | Column | Access |\n| --- | --- | --- |\n| `club` | `Club_ID` | read |\n| `club` | `Club_name` | written |\n| `club` | `Start_year` | read |\n| `player` | `Player_ID` | read |\n| `player` | `Occupation` | written |\n| `player` | `Votes` | read |\n\n## 4. Rule catalogue\n\n| Rule name | Definition |\n| --- | --- |\n| **Start year filter** | **Cobalt datum**. |\n| **Reference player filter** | The value of `para_Player_ID` when `para_Player_ID` is not null, otherwise a fallback value; used to initialize `v_reference_player_id`. |\n| **Phase 1 club name** | The exact text `phase_1`. |\n| **Phase 2 club name** | The exact text `phase_2`. |\n| **Phase 3 club name** | The exact text `phase_3`. |\n| **Phase 4 club name** | The exact text `phase_4`. |\n| **Phase 5 club name** | The exact text `phase_5`. |\n| **Phase 6 club name** | The exact text `phase_6`. |\n| **Phase 7 club name** | The exact text `phase_7`. |\n| **Phase 8 club name** | The exact text `phase_8`. |\n| **Phase 9 club name** | The exact text `phase_9`. |\n| **Phase 1 occupation value** | The exact text `log_phase_1`. |\n| **Phase 2 occupation value** | The exact text `log_phase_2`. |\n| **Phase 3 occupation value** | The exact text `log_phase_3`. |\n| **Phase 4 occupation value** | The exact text `log_phase_4`. |\n| **Phase 5 occupation value** | The exact text `log_phase_5`. |\n| **Phase 6 occupation value** | The exact text `log_phase_6`. |\n| **Phase 7 occupation value** | The exact text `log_phase_7`. |\n| **Phase 8 occupation value** | **Sable label**. |\n| **Phase 9 occupation value** | The exact text `log_phase_9`. |\n| **Phase 1 club threshold** | `para_Club_ID`. |\n| **Phase 2 club threshold** | `para_Club_ID` plus a phase-specific offset. |\n| **Phase 3 club threshold** | `para_Club_ID + 2`. |\n| **Phase 4 club threshold** | `para_Club_ID + 3`. |\n| **Phase 5 club threshold** | `para_Club_ID + 4`. |\n| **Phase 6 club threshold** | `para_Club_ID + 5`. |\n| **Phase 7 club threshold** | `para_Club_ID + 6`. |\n| **Phase 8 club threshold** | `para_Club_ID + 7`. |\n| **Phase 9 club threshold** | `para_Club_ID + 8`. |\n| **Phase 1 vote threshold** | `para_Votes`. |\n| **Phase 2 vote threshold** | `para_Votes + 1`. |\n| **Phase 3 vote threshold** | `para_Votes + 2`. |\n| **Phase 4 vote threshold** | `para_Votes + 3`. |\n| **Phase 5 vote threshold** | `para_Votes + 4`. |\n| **Phase 6 vote threshold** | `para_Votes + 5`. |\n| **Phase 7 vote threshold** | `para_Votes + 6`. |\n| **Phase 8 vote threshold** | `para_Votes + 7`. |\n| **Phase 9 vote threshold** | **Crimson limit**. |\n## 5. Processing specification\n\n1. Declare an integer variable `v_min_start_year` and initialize it to **Cobalt datum**.\n2. Declare an integer variable `v_reference_player_id` and initialize it to **Reference player filter**.\n\nExecute phases 1 through 9 in ascending order. In every phase, the operations occur in this exact order: first the club-name update, second the club deletion, third the player-occupation update, fourth the player deletion.\n\nFor a phase N:\n\n1. Club-name update: update every row in the `club` table whose `Start_year` is greater than or equal to `v_min_start_year`, setting `Club_name` to the phase-specific club name for phase N.\n2. Club deletion: delete every row from the `club` table whose `Club_ID` is strictly less than the phase-specific club threshold for phase N.\n3. Player-occupation update: update rows in the `player` table whose `Player_ID` is greater than or equal to `v_reference_player_id`, setting `Occupation` to the phase-specific occupation value for phase N.\n4. Player deletion: delete every row from the `player` table whose `Votes` is strictly less than the phase-specific vote threshold for phase N.\n\nThe phase-specific values for the operations above are:\n- Phase 1 uses **Phase 1 club name**, **Phase 1 club threshold**, **Phase 1 occupation value**, and **Phase 1 vote threshold**.\n- Phase 2 uses **Phase 2 club name**, **Phase 2 club threshold**, **Phase 2 occupation value**, and **Phase 2 vote threshold**.\n- Phase 3 uses **Phase 3 club name**, **Phase 3 club threshold**, **Phase 3 occupation value**, and **Phase 3 vote threshold**.\n- Phase 4 uses **Phase 4 club name**, **Phase 4 club threshold**, **Phase 4 occupation value**, and **Phase 4 vote threshold**.\n- Phase 5 uses **Phase 5 club name**, **Phase 5 club threshold**, **Phase 5 occupation value**, and **Phase 5 vote threshold**.\n- Phase 6 uses **Phase 6 club name**, **Phase 6 club threshold**, **Phase 6 occupation value**, and **Phase 6 vote threshold**.\n- Phase 7 uses **Phase 7 club name**, **Phase 7 club threshold**, **Phase 7 occupation value**, and **Phase 7 vote threshold**.\n- Phase 8 uses **Phase 8 club name**, **Phase 8 club threshold**, **Sable label**, and **Phase 8 vote threshold**.\n- Phase 9 uses **Phase 9 club name**, **Phase 9 club threshold**, **Phase 9 occupation value**, and **Crimson limit**.\n\nFor phase 9, the player-occupation update sets `Occupation` to the exact text `log_phase_10`.\n\n## 6. Edge cases and error behaviour\n\n- Null handling: `v_reference_player_id` is initialized to **Reference player filter**, which replaces `para_Player_ID` with `0` only when `para_Player_ID` is null. No other null replacement is specified. If any other parameter used in a comparison is null, standard PostgreSQL null comparison semantics apply; the affected condition is not true for any row and the corresponding statement affects zero rows.\n- Update scope: Clubs with `Start_year` lower than **Cobalt datum** are not renamed during any phase because the club-name update condition uses `v_min_start_year`. They are still subject to deletion in every phase according to their `Club_ID` and the current phase club threshold. Players with `Player_ID` lower than `v_reference_player_id` are not given any log_phase occupation during any phase because the player-occupation update condition uses `v_reference_player_id`. They are still subject to deletion in every phase according to their `Votes` and the current phase vote threshold.\n- No-row / empty-table behaviour: If no rows satisfy a particular update or delete condition, that operation simply affects zero rows.\n- Ordering guarantees: Later operations see only rows that remain after earlier deletions. Later club-name updates overwrite earlier club-name labels for any club that satisfies the `Start_year >= v_min_start_year` condition and remains present. Later player-occupation updates overwrite earlier occupation labels for any player that satisfies the `Player_ID >= v_reference_player_id` condition and remains present. A club deleted in any phase is gone before any later phase can update or delete it again. A player deleted in any phase is gone before any later phase can update or delete it again.\n- Final state for survivors: A club that survives all nine phases and has `Start_year` greater than or equal to **Cobalt datum** has `Club_name` equal to **Phase 9 club name**. A surviving club with `Start_year` lower than **Cobalt datum** retains its original `Club_name`. A player that survives all nine phases and has `Player_ID` greater than or equal to `v_reference_player_id` has `Occupation` equal to **Phase 9 occupation value**. A surviving player with `Player_ID` lower than `v_reference_player_id` retains its original `Occupation`.\n- Combined deletion effect when relevant integer parameters are not null: by the end of phase 9, any club with `Club_ID` less than **Phase 9 club threshold** has been deleted, and any player with `Votes` less than **Crimson limit** has been deleted.\n- Failure behaviour: The procedure has no explicit exception handling. If any statement fails, the procedure aborts and the error is raised to the caller."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": 4,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the cobalt datum?",
+   "answer": "The value of `para_Start_year`; used to initialize `v_min_start_year`."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": 4,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the sable label?",
+   "answer": "The exact text `log_phase_8`."
+  },
+  {
+   "id": "J3",
+   "op": "jargon",
+   "revealed_at": 4,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the crimson limit?",
+   "answer": "`para_Votes + 8`."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What fallback value is used when `para_Player_ID` is null?",
+   "answer": "The fallback value is `0`."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": 4,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the exact Phase 2 club threshold?",
+   "answer": "The Phase 2 club threshold is `para_Club_ID + 1`."
+  },
+  {
+   "id": "M3",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "How many of the player rows satisfying the `Player_ID` condition are updated?",
+   "answer": "Every row that satisfies the `Player_ID` condition is updated."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": 4,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Which exact text does phase 9 write to Occupation?",
+   "answer": "The rule catalogue in Section 4 is correct: the phase 9 occupation value is `log_phase_9`. The closing statement in Section 5 is the inconsistency and must not be used."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable club , columns = [ Club_ID ( integer | primary key | values : 1 , 4 ) , Club_name ( text | values : AIK , Djurgårdens IF ) , Region ( text | values : USA , USA ) , Start_year ( integer | values : 2009 , 2001 ) ]\ntable coach , columns = [ Coach_ID ( integer | primary key | values : 4 , 2 ) , Coach_name ( text | values : Jameson Tomas , Jameson Tomas ) , Gender ( text | values : M , M ) , Club_ID ( integer | values : 1 , 3 ) , Rank ( integer | values : 3 , 2 ) ]\ntable match_result , columns = [ Rank ( integer | primary key | values : 6 , 4 ) , Club_ID ( integer | values : 5 , 2 ) , Gold ( integer | values : 13 , 20 ) , Big_Silver ( integer | values : 11 , 12 ) , Small_Silver ( integer | values : 4 , 4 ) , Bronze ( integer | values : 8 , 7 ) , Points ( integer | values : 102 , 102 ) ]\ntable player , columns = [ Player_ID ( integer | primary key | values : 2 , 5 ) , Sponsor_name ( text | values : Elmwood—Transcona , Dauphin—Swan River—Marquette ) , Player_name ( text | values : Jim Maloway , Patricia Cordner ) , Gender ( text | values : M , M ) , Residence ( text | values : Oakbank , Winnipeg ) , Occupation ( text | values : Product Consultant - MLCC , Small Businessman ) , Votes ( integer | values : 9506 , 14355 ) , Rank ( text | values : 4th , 3rd ) ]\ntable player_coach , columns = [ Player_ID ( integer | primary key | values : 6 , 4 ) , Coach_ID ( integer | values : 3 , 1 ) , Starting_year ( integer | values : 2011 , 2012 ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "club"
+   },
+   "result": "Club_ID | Club_name | Region | Start_year\n1 | AIK | USA | 2009\n2 | BK Häcken | UK | 1998\n3 | Djurgårdens IF | USA | 2005\n4 | Gefle IF | Korea | 2001\n5 | Halmstads BK | Russia | 2000\n6 | Helsingborgs IF | France | 2011"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "player"
+   },
+   "result": "Player_ID | Sponsor_name | Player_name | Gender | Residence | Occupation | Votes | Rank\n1 | Brandon—Souris | Jean Luc Bouché | M | Brandon | Locomotive Engineer | 6055 | 2nd\n2 | Charleswood—St. James—Assiniboia | Fiona Shiells | F | Winnipeg | Ministerial Assistant | 7190 | 3rd\n3 | Churchill | Niki Ashton | F | Thompson | Researcher | 8734 | 1st\n4 | Dauphin—Swan River—Marquette | Ron Strynadka | M | Birtle | Retired | 4914 | 2nd\n5 | Elmwood—Transcona | Jim Maloway | M | Winnipeg | Small Businessman | 14355 | 1st\n6 | Kildonan—St. Paul | Ross Eadie | M | Winnipeg | Self Employed / Consultant | 12093 | 2nd\n7 | Portage—Lisgar | Mohamed Alli | M | Winnipeg | Distribution Centre Associate | 2353 | 4th\n8 | Provencher | Ross C. Martin | M | Oakbank | Design Coordinator | 4947 | 2nd\n9 | Saint Boniface | Matt Schaubroeck | M | Winnipeg | Student | 5502 | 3rd\n10 | Selkirk—Interlake | Patricia Cordner | F | Selkirk | Retired | 9506 | 2nd\n11 | Winnipeg Centre | Pat Martin | M | Winnipeg | Parliamentarian | 12285 | 1st\n12 | Winnipeg North | Judy Wasylycia-Leis | F | Winnipeg | Parliamentarian | 14097 | 1st\n13 | Winnipeg South | Sean Robert | M | Winnipeg | Product Consultant - MLCC | 4673 | 3rd\n14 | Winnipeg South Centre | Rachel Heinrichs | F | Winnipeg | Student | 5490 | 3rd"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "The design document contains several symbolic/contradictory items I need clarified to implement exactly: 1) \"Cobalt datum\" used to initialize v_min_start_year — is that para_Start_year? 2) Phase 2 club threshold is \"para_Club_ID plus a phase-specific offset\" — is the offset 1 (so threshold = para_Club_ID + 1)? 3) \"Sable label\" for the Phase 8 occupation value — is that the exact text 'log_phase_8'? 4) \"Crimson limit\" for the Phase 9 vote threshold — is that para_Votes + 8? 5) The Phase 9 player-occupation value: the rule catalogue says 'log_phase_9', but the processing section's final sentence says phase 9 sets Occupation to 'log_phase_10'. Which exact text should phase 9 use?"
+   },
+   "result": "The value of `para_Start_year`; used to initialize `v_min_start_year`.\n\nThe Phase 2 club threshold is `para_Club_ID + 1`.\n\nThe exact text `log_phase_8`.\n\n`para_Votes + 8`.\n\nThe rule catalogue in Section 4 is correct: the phase 9 occupation value is `log_phase_9`. The closing statement in Section 5 is the inconsistency and must not be used.",
+   "revealed": [
+    "J1",
+    "M2",
+    "J2",
+    "J3",
+    "C1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_min_start_year integer := para_Start_year;\n    v_reference_player_id integer := COALESCE(para_Player_ID, 0);\nBEGIN\n    -- Phase 1\n    UPDATE club\n       SET Club_name = 'phase_1'\n     WHERE Start_year >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE Club_ID < para_Club_ID;\n\n    UPDATE player\n       SET Occupation = 'log_phase_1'\n     WHERE Player_ID >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE Votes < para_Votes;\n\n    -- Phase 2\n    UPDATE club\n       SET Club_name = 'phase_2'\n     WHERE Start_year >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE Club_ID < para_Club_ID + 1;\n\n    UPDATE player\n       SET Occupation = 'log_phase_2'\n     WHERE Player_ID >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE Votes < para_Votes + 1;\n\n    -- Phase 3\n    UPDATE club\n       SET Club_name = 'phase_3'\n     WHERE Start_year >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE Club_ID < para_Club_ID + 2;\n\n    UPDATE player\n       SET Occupation = 'log_phase_3'\n     WHERE Player_ID >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE Votes < para_Votes + 2;\n\n    -- Phase 4\n    UPDATE club\n       SET Club_name = 'phase_4'\n     WHERE Start_year >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE Club_ID < para_Club_ID + 3;\n\n    UPDATE player\n       SET Occupation = 'log_phase_4'\n     WHERE Player_ID >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE Votes < para_Votes + 3;\n\n    -- Phase 5\n    UPDATE club\n       SET Club_name = 'phase_5'\n     WHERE Start_year >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE Club_ID < para_Club_ID + 4;\n\n    UPDATE player\n       SET Occupation = 'log_phase_5'\n     WHERE Player_ID >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE Votes < para_Votes + 4;\n\n    -- Phase 6\n    UPDATE club\n       SET Club_name = 'phase_6'\n     WHERE Start_year >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE Club_ID < para_Club_ID + 5;\n\n    UPDATE player\n       SET Occupation = 'log_phase_6'\n     WHERE Player_ID >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE Votes < para_Votes + 5;\n\n    -- Phase 7\n    UPDATE club\n       SET Club_name = 'phase_7'\n     WHERE Start_year >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE Club_ID < para_Club_ID + 6;\n\n    UPDATE player\n       SET Occupation = 'log_phase_7'\n     WHERE Player_ID >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE Votes < para_Votes + 6;\n\n    -- Phase 8\n    UPDATE club\n       SET Club_name = 'phase_8'\n     WHERE Start_year >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE Club_ID < para_Club_ID + 7;\n\n    UPDATE player\n       SET Occupation = 'log_phase_8'\n     WHERE Player_ID >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE Votes < para_Votes + 7;\n\n    -- Phase 9\n    UPDATE club\n       SET Club_name = 'phase_9'\n     WHERE Start_year >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE Club_ID < para_Club_ID + 8;\n\n    UPDATE player\n       SET Occupation = 'log_phase_9'\n     WHERE Player_ID >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE Votes < para_Votes + 8;\nEND;\n$$;\n"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_min_start_year integer := para_Start_year;\n    v_reference_player_id integer := COALESCE(para_Player_ID, 0);\nBEGIN\n    UPDATE club SET Club_name = 'phase_1' WHERE Start_year >= v_min_start_year;\n    DELETE FROM club WHERE Club_ID < para_Club_ID;\n    UPDATE player SET Occupation = 'log_phase_1' WHERE Player_ID >= v_reference_player_id;\n    DELETE FROM player WHERE Votes < para_Votes;\n\n    UPDATE club SET Club_name = 'phase_2' WHERE Start_year >= v_min_start_year;\n    DELETE FROM club WHERE Club_ID < para_Club_ID + 1;\n    UPDATE player SET Occupation = 'log_phase_2' WHERE Player_ID >= v_reference_player_id;\n    DELETE FROM player WHERE Votes < para_Votes + 1;\n\n    UPDATE club SET Club_name = 'phase_3' WHERE Start_year >= v_min_start_year;\n    DELETE FROM club WHERE Club_ID < para_Club_ID + 2;\n    UPDATE player SET Occupation = 'log_phase_3' WHERE Player_ID >= v_reference_player_id;\n    DELETE FROM player WHERE Votes < para_Votes + 2;\n\n    UPDATE club SET Club_name = 'phase_4' WHERE Start_year >= v_min_start_year;\n    DELETE FROM club WHERE Club_ID < para_Club_ID + 3;\n    UPDATE player SET Occupation = 'log_phase_4' WHERE Player_ID >= v_reference_player_id;\n    DELETE FROM player WHERE Votes < para_Votes + 3;\n\n    UPDATE club SET Club_name = 'phase_5' WHERE Start_year >= v_min_start_year;\n    DELETE FROM club WHERE Club_ID < para_Club_ID + 4;\n    UPDATE player SET Occupation = 'log_phase_5' WHERE Player_ID >= v_reference_player_id;\n    DELETE FROM player WHERE Votes < para_Votes + 4;\n\n    UPDATE club SET Club_name = 'phase_6' WHERE Start_year >= v_min_start_year;\n    DELETE FROM club WHERE Club_ID < para_Club_ID + 5;\n    UPDATE player SET Occupation = 'log_phase_6' WHERE Player_ID >= v_reference_player_id;\n    DELETE FROM player WHERE Votes < para_Votes + 5;\n\n    UPDATE club SET Club_name = 'phase_7' WHERE Start_year >= v_min_start_year;\n    DELETE FROM club WHERE Club_ID < para_Club_ID + 6;\n    UPDATE player SET Occupation = 'log_phase_7' WHERE Player_ID >= v_reference_player_id;\n    DELETE FROM player WHERE Votes < para_Votes + 6;\n\n    UPDATE club SET Club_name = 'phase_8' WHERE Start_year >= v_min_start_year;\n    DELETE FROM club WHERE Club_ID < para_Club_ID + 7;\n    UPDATE player SET Occupation = 'log_phase_8' WHERE Player_ID >= v_reference_player_id;\n    DELETE FROM player WHERE Votes < para_Votes + 7;\n\n    UPDATE club SET Club_name = 'phase_9' WHERE Start_year >= v_min_start_year;\n    DELETE FROM club WHERE Club_ID < para_Club_ID + 8;\n    UPDATE player SET Occupation = 'log_phase_9' WHERE Player_ID >= v_reference_player_id;\n    DELETE FROM player WHERE Votes < para_Votes + 8;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(2000, 'x', 3, 5, 'y', 5000);"
+   },
+   "result": "error: [42703] column \"start_year\" does not exist"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT column_name FROM information_schema.columns WHERE table_name='club';"
+   },
+   "result": "column_name\nClub_ID\nClub_name\nRegion\nStart_year"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT Start_year FROM club LIMIT 1;"
+   },
+   "result": "error: [42703] column \"start_year\" does not exist"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Start_year\" FROM club LIMIT 1;"
+   },
+   "result": "Start_year\n2009"
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Club_ID\", \"Club_name\", \"Start_year\" FROM club LIMIT 2;"
+   },
+   "result": "Club_ID | Club_name | Start_year\n1 | AIK | 2009\n2 | BK Häcken | 1998"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Player_ID\", \"Occupation\", \"Votes\" FROM player LIMIT 2;"
+   },
+   "result": "Player_ID | Occupation | Votes\n1 | Locomotive Engineer | 6055\n2 | Ministerial Assistant | 7190"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_min_start_year integer := para_Start_year;\n    v_reference_player_id integer := COALESCE(para_Player_ID, 0);\nBEGIN\n    -- Phase 1\n    UPDATE club\n       SET \"Club_name\" = 'phase_1'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_1'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes;\n\n    -- Phase 2\n    UPDATE club\n       SET \"Club_name\" = 'phase_2'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 1;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_2'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 1;\n\n    -- Phase 3\n    UPDATE club\n       SET \"Club_name\" = 'phase_3'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 2;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_3'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 2;\n\n    -- Phase 4\n    UPDATE club\n       SET \"Club_name\" = 'phase_4'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 3;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_4'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 3;\n\n    -- Phase 5\n    UPDATE club\n       SET \"Club_name\" = 'phase_5'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 4;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_5'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 4;\n\n    -- Phase 6\n    UPDATE club\n       SET \"Club_name\" = 'phase_6'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 5;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_6'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 5;\n\n    -- Phase 7\n    UPDATE club\n       SET \"Club_name\" = 'phase_7'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 6;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_7'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 6;\n\n    -- Phase 8\n    UPDATE club\n       SET \"Club_name\" = 'phase_8'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 7;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_8'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 7;\n\n    -- Phase 9\n    UPDATE club\n       SET \"Club_name\" = 'phase_9'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 8;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_9'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 8;\nEND;\n$$;\n"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_min_start_year integer := para_Start_year;\n    v_reference_player_id integer := COALESCE(para_Player_ID, 0);\nBEGIN\n    UPDATE club SET \"Club_name\" = 'phase_1' WHERE \"Start_year\" >= v_min_start_year;\n    DELETE FROM club WHERE \"Club_ID\" < para_Club_ID;\n    UPDATE player SET \"Occupation\" = 'log_phase_1' WHERE \"Player_ID\" >= v_reference_player_id;\n    DELETE FROM player WHERE \"Votes\" < para_Votes;\n\n    UPDATE club SET \"Club_name\" = 'phase_2' WHERE \"Start_year\" >= v_min_start_year;\n    DELETE FROM club WHERE \"Club_ID\" < para_Club_ID + 1;\n    UPDATE player SET \"Occupation\" = 'log_phase_2' WHERE \"Player_ID\" >= v_reference_player_id;\n    DELETE FROM player WHERE \"Votes\" < para_Votes + 1;\n\n    UPDATE club SET \"Club_name\" = 'phase_3' WHERE \"Start_year\" >= v_min_start_year;\n    DELETE FROM club WHERE \"Club_ID\" < para_Club_ID + 2;\n    UPDATE player SET \"Occupation\" = 'log_phase_3' WHERE \"Player_ID\" >= v_reference_player_id;\n    DELETE FROM player WHERE \"Votes\" < para_Votes + 2;\n\n    UPDATE club SET \"Club_name\" = 'phase_4' WHERE \"Start_year\" >= v_min_start_year;\n    DELETE FROM club WHERE \"Club_ID\" < para_Club_ID + 3;\n    UPDATE player SET \"Occupation\" = 'log_phase_4' WHERE \"Player_ID\" >= v_reference_player_id;\n    DELETE FROM player WHERE \"Votes\" < para_Votes + 3;\n\n    UPDATE club SET \"Club_name\" = 'phase_5' WHERE \"Start_year\" >= v_min_start_year;\n    DELETE FROM club WHERE \"Club_ID\" < para_Club_ID + 4;\n    UPDATE player SET \"Occupation\" = 'log_phase_5' WHERE \"Player_ID\" >= v_reference_player_id;\n    DELETE FROM player WHERE \"Votes\" < para_Votes + 4;\n\n    UPDATE club SET \"Club_name\" = 'phase_6' WHERE \"Start_year\" >= v_min_start_year;\n    DELETE FROM club WHERE \"Club_ID\" < para_Club_ID + 5;\n    UPDATE player SET \"Occupation\" = 'log_phase_6' WHERE \"Player_ID\" >= v_reference_player_id;\n    DELETE FROM player WHERE \"Votes\" < para_Votes + 5;\n\n    UPDATE club SET \"Club_name\" = 'phase_7' WHERE \"Start_year\" >= v_min_start_year;\n    DELETE FROM club WHERE \"Club_ID\" < para_Club_ID + 6;\n    UPDATE player SET \"Occupation\" = 'log_phase_7' WHERE \"Player_ID\" >= v_reference_player_id;\n    DELETE FROM player WHERE \"Votes\" < para_Votes + 6;\n\n    UPDATE club SET \"Club_name\" = 'phase_8' WHERE \"Start_year\" >= v_min_start_year;\n    DELETE FROM club WHERE \"Club_ID\" < para_Club_ID + 7;\n    UPDATE player SET \"Occupation\" = 'log_phase_8' WHERE \"Player_ID\" >= v_reference_player_id;\n    DELETE FROM player WHERE \"Votes\" < para_Votes + 7;\n\n    UPDATE club SET \"Club_name\" = 'phase_9' WHERE \"Start_year\" >= v_min_start_year;\n    DELETE FROM club WHERE \"Club_ID\" < para_Club_ID + 8;\n    UPDATE player SET \"Occupation\" = 'log_phase_9' WHERE \"Player_ID\" >= v_reference_player_id;\n    DELETE FROM player WHERE \"Votes\" < para_Votes + 8;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(2000, 'unused', 3, 5, 'unused', 5000);"
+   },
+   "result": "ok, -1 row(s) affected"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM club ORDER BY \"Club_ID\";"
+   },
+   "result": "(Club_ID | Club_name | Region | Start_year)\n(no rows)"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Player_ID\", \"Occupation\", \"Votes\" FROM player ORDER BY \"Player_ID\";"
+   },
+   "result": "Player_ID | Occupation | Votes\n1 | Locomotive Engineer | 6055\n2 | Ministerial Assistant | 7190\n3 | Researcher | 8734\n5 | log_phase_9 | 14355\n6 | log_phase_9 | 12093\n9 | log_phase_9 | 5502\n10 | log_phase_9 | 9506\n11 | log_phase_9 | 12285\n12 | log_phase_9 | 14097\n14 | log_phase_9 | 5490"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 19,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_min_start_year integer := para_Start_year;\n    v_reference_player_id integer := COALESCE(para_Player_ID, 0);\nBEGIN\n    -- Phase 1\n    UPDATE club\n       SET \"Club_name\" = 'phase_1'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_1'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes;\n\n    -- Phase 2\n    UPDATE club\n       SET \"Club_name\" = 'phase_2'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 1;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_2'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 1;\n\n    -- Phase 3\n    UPDATE club\n       SET \"Club_name\" = 'phase_3'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 2;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_3'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 2;\n\n    -- Phase 4\n    UPDATE club\n       SET \"Club_name\" = 'phase_4'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 3;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_4'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 3;\n\n    -- Phase 5\n    UPDATE club\n       SET \"Club_name\" = 'phase_5'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 4;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_5'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DE"
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_min_start_year integer := para_Start_year;\n    v_reference_player_id integer := COALESCE(para_Player_ID, 0);\nBEGIN\n    -- Phase 1\n    UPDATE club\n       SET \"Club_name\" = 'phase_1'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_1'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes;\n\n    -- Phase 2\n    UPDATE club\n       SET \"Club_name\" = 'phase_2'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 1;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_2'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 1;\n\n    -- Phase 3\n    UPDATE club\n       SET \"Club_name\" = 'phase_3'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 2;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_3'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 2;\n\n    -- Phase 4\n    UPDATE club\n       SET \"Club_name\" = 'phase_4'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 3;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_4'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 3;\n\n    -- Phase 5\n    UPDATE club\n       SET \"Club_name\" = 'phase_5'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 4;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_5'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 4;\n\n    -- Phase 6\n    UPDATE club\n       SET \"Club_name\" = 'phase_6'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 5;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_6'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 5;\n\n    -- Phase 7\n    UPDATE club\n       SET \"Club_name\" = 'phase_7'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 6;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_7'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 6;\n\n    -- Phase 8\n    UPDATE club\n       SET \"Club_name\" = 'phase_8'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 7;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_8'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 7;\n\n    -- Phase 9\n    UPDATE club\n       SET \"Club_name\" = 'phase_9'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 8;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_9'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 8;\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    para_Start_year integer,\n    para_Club_name text,\n    para_Club_ID integer,\n    para_Player_ID integer,\n    para_Occupation text,\n    para_Votes integer\n)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    v_min_start_year integer := para_Start_year;\n    v_reference_player_id integer := COALESCE(para_Player_ID, 0);\nBEGIN\n    -- Phase 1\n    UPDATE club\n       SET \"Club_name\" = 'phase_1'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_1'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes;\n\n    -- Phase 2\n    UPDATE club\n       SET \"Club_name\" = 'phase_2'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 1;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_2'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 1;\n\n    -- Phase 3\n    UPDATE club\n       SET \"Club_name\" = 'phase_3'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 2;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_3'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 2;\n\n    -- Phase 4\n    UPDATE club\n       SET \"Club_name\" = 'phase_4'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 3;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_4'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 3;\n\n    -- Phase 5\n    UPDATE club\n       SET \"Club_name\" = 'phase_5'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 4;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_5'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 4;\n\n    -- Phase 6\n    UPDATE club\n       SET \"Club_name\" = 'phase_6'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 5;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_6'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 5;\n\n    -- Phase 7\n    UPDATE club\n       SET \"Club_name\" = 'phase_7'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 6;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_7'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 6;\n\n    -- Phase 8\n    UPDATE club\n       SET \"Club_name\" = 'phase_8'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 7;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_8'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 7;\n\n    -- Phase 9\n    UPDATE club\n       SET \"Club_name\" = 'phase_9'\n     WHERE \"Start_year\" >= v_min_start_year;\n\n    DELETE FROM club\n     WHERE \"Club_ID\" < para_Club_ID + 8;\n\n    UPDATE player\n       SET \"Occupation\" = 'log_phase_9'\n     WHERE \"Player_ID\" >= v_reference_player_id;\n\n    DELETE FROM player\n     WHERE \"Votes\" < para_Votes + 8;\nEND;\n$$;"
+ },
+ "pair": {
+  "single_run": "st04",
+  "single_task": "postgres_a2_001"
+ }
+}

@@ -1,0 +1,3597 @@
+{
+ "generated": "2026-08-26T04:04:04+00:00",
+ "note": "Every verdict is copied from grades.json / episode.json; cells count copied booleans. Cells fixed at multi=tools+ask (full tier), single=tools-only. Missing cells mean the runs have not happened.",
+ "models": [
+  {
+   "id": "deepseek-v4-flash",
+   "label": "DeepSeek-V4 Flash"
+  },
+  {
+   "id": "deepseek-v4-pro",
+   "label": "DeepSeek-V4 Pro"
+  }
+ ],
+ "dialects": [
+  "postgres",
+  "oracle"
+ ],
+ "scenarios": [
+  "a1",
+  "a2",
+  "a3",
+  "a4",
+  "a5",
+  "b1",
+  "b2",
+  "b3",
+  "b4",
+  "c1",
+  "c2"
+ ],
+ "conditions": {
+  "multi": "tools+ask",
+  "single": "tools-only"
+ },
+ "pick": "first",
+ "corpus": {
+  "files": [
+   {
+    "dialect": "oracle",
+    "scenario": "a1",
+    "tasks": 100,
+    "file": "oracle_a1_final_100.json"
+   },
+   {
+    "dialect": "oracle",
+    "scenario": "a2",
+    "tasks": 100,
+    "file": "oracle_a2_final_100.json"
+   },
+   {
+    "dialect": "oracle",
+    "scenario": "a3",
+    "tasks": 100,
+    "file": "oracle_a3_final_100.json"
+   },
+   {
+    "dialect": "oracle",
+    "scenario": "a4",
+    "tasks": 100,
+    "file": "oracle_a4_final_100.json"
+   },
+   {
+    "dialect": "oracle",
+    "scenario": "a5",
+    "tasks": 100,
+    "file": "oracle_a5_final_100.json"
+   },
+   {
+    "dialect": "oracle",
+    "scenario": "b1",
+    "tasks": 100,
+    "file": "oracle_b1_final_100.json"
+   },
+   {
+    "dialect": "oracle",
+    "scenario": "b2",
+    "tasks": 100,
+    "file": "oracle_b2_final_100.json"
+   },
+   {
+    "dialect": "oracle",
+    "scenario": "b3",
+    "tasks": 100,
+    "file": "oracle_b3_final_100.json"
+   },
+   {
+    "dialect": "oracle",
+    "scenario": "b4",
+    "tasks": 100,
+    "file": "oracle_b4_final_100.json"
+   },
+   {
+    "dialect": "oracle",
+    "scenario": "c1",
+    "tasks": 100,
+    "file": "oracle_c1_final_100.json"
+   },
+   {
+    "dialect": "oracle",
+    "scenario": "c2",
+    "tasks": 100,
+    "file": "oracle_c2_final_100.json"
+   },
+   {
+    "dialect": "postgres",
+    "scenario": "a1",
+    "tasks": 100,
+    "file": "postgres_a1_final_100.json"
+   },
+   {
+    "dialect": "postgres",
+    "scenario": "a2",
+    "tasks": 100,
+    "file": "postgres_a2_final_100.json"
+   },
+   {
+    "dialect": "postgres",
+    "scenario": "a3",
+    "tasks": 100,
+    "file": "postgres_a3_final_100.json"
+   },
+   {
+    "dialect": "postgres",
+    "scenario": "a4",
+    "tasks": 100,
+    "file": "postgres_a4_final_100.json"
+   },
+   {
+    "dialect": "postgres",
+    "scenario": "a5",
+    "tasks": 100,
+    "file": "postgres_a5_final_100.json"
+   },
+   {
+    "dialect": "postgres",
+    "scenario": "b1",
+    "tasks": 100,
+    "file": "postgres_b1_final_100.json"
+   },
+   {
+    "dialect": "postgres",
+    "scenario": "b2",
+    "tasks": 100,
+    "file": "postgres_b2_final_100.json"
+   },
+   {
+    "dialect": "postgres",
+    "scenario": "b3",
+    "tasks": 100,
+    "file": "postgres_b3_final_100.json"
+   },
+   {
+    "dialect": "postgres",
+    "scenario": "b4",
+    "tasks": 100,
+    "file": "postgres_b4_final_100.json"
+   },
+   {
+    "dialect": "postgres",
+    "scenario": "c1",
+    "tasks": 100,
+    "file": "postgres_c1_final_100.json"
+   },
+   {
+    "dialect": "postgres",
+    "scenario": "c2",
+    "tasks": 100,
+    "file": "postgres_c2_final_100.json"
+   }
+  ],
+  "total": 2200
+ },
+ "cells": {
+  "multi|deepseek-v4-flash|oracle|a1": {
+   "episodes": 5,
+   "passed": 1,
+   "attribution": {
+    "spec": 4,
+    "impl": 0
+   },
+   "runs": [
+    "ep-ora-a1-k"
+   ],
+   "rep": "ep-ora-a1-k--oracle_a1_000"
+  },
+  "multi|deepseek-v4-pro|oracle|a1": {
+   "episodes": 5,
+   "passed": 3,
+   "attribution": {
+    "spec": 2,
+    "impl": 0
+   },
+   "runs": [
+    "ep-ora-a1b2"
+   ],
+   "rep": "ep-ora-a1b2--oracle_a1_000"
+  },
+  "multi|deepseek-v4-pro|oracle|b2": {
+   "episodes": 2,
+   "passed": 2,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "ep-ora-a1b2"
+   ],
+   "rep": "ep-ora-a1b2--oracle_b2_000"
+  },
+  "multi|deepseek-v4-flash|oracle|a2": {
+   "episodes": 2,
+   "passed": 2,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "ep-ora-a2-k"
+   ],
+   "rep": "ep-ora-a2-k--oracle_a2_000"
+  },
+  "multi|deepseek-v4-flash|oracle|a3": {
+   "episodes": 3,
+   "passed": 0,
+   "attribution": {
+    "spec": 3,
+    "impl": 0
+   },
+   "runs": [
+    "ep-ora-a2a5-k"
+   ],
+   "rep": "ep-ora-a2a5-k--oracle_a3_000"
+  },
+  "multi|deepseek-v4-flash|oracle|a4": {
+   "episodes": 3,
+   "passed": 2,
+   "attribution": {
+    "spec": 1,
+    "impl": 0
+   },
+   "runs": [
+    "ep-ora-a2a5-k"
+   ],
+   "rep": "ep-ora-a2a5-k--oracle_a4_000"
+  },
+  "multi|deepseek-v4-flash|oracle|a5": {
+   "episodes": 2,
+   "passed": 0,
+   "attribution": {
+    "spec": 2,
+    "impl": 0
+   },
+   "runs": [
+    "ep-ora-a2a5-k"
+   ],
+   "rep": "ep-ora-a2a5-k--oracle_a5_001"
+  },
+  "multi|deepseek-v4-pro|postgres|a1": {
+   "episodes": 5,
+   "passed": 5,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "ep-pg-a1b2"
+   ],
+   "rep": "ep-pg-a1b2--postgres_a1_000"
+  },
+  "multi|deepseek-v4-pro|postgres|b2": {
+   "episodes": 1,
+   "passed": 0,
+   "attribution": {
+    "spec": 1,
+    "impl": 0
+   },
+   "runs": [
+    "ep-pg-a1b2"
+   ],
+   "rep": "ep-pg-a1b2--postgres_b2_000"
+  },
+  "multi|deepseek-v4-flash|postgres|a1": {
+   "episodes": 5,
+   "passed": 3,
+   "attribution": {
+    "spec": 2,
+    "impl": 0
+   },
+   "runs": [
+    "ep-pg-a1b2-k"
+   ],
+   "rep": "ep-pg-a1b2-k--postgres_a1_000"
+  },
+  "multi|deepseek-v4-flash|postgres|b2": {
+   "episodes": 1,
+   "passed": 1,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "ep-pg-a1b2-k"
+   ],
+   "rep": "ep-pg-a1b2-k--postgres_b2_000"
+  },
+  "multi|deepseek-v4-flash|postgres|a2": {
+   "episodes": 2,
+   "passed": 2,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "ep-pg-a2a5-k"
+   ],
+   "rep": "ep-pg-a2a5-k--postgres_a2_001"
+  },
+  "multi|deepseek-v4-flash|postgres|a3": {
+   "episodes": 3,
+   "passed": 0,
+   "attribution": {
+    "spec": 3,
+    "impl": 0
+   },
+   "runs": [
+    "ep-pg-a2a5-k"
+   ],
+   "rep": "ep-pg-a2a5-k--postgres_a3_000"
+  },
+  "multi|deepseek-v4-flash|postgres|a5": {
+   "episodes": 2,
+   "passed": 1,
+   "attribution": {
+    "spec": 1,
+    "impl": 0
+   },
+   "runs": [
+    "ep-pg-a2a5-k"
+   ],
+   "rep": "ep-pg-a2a5-k--postgres_a5_001"
+  },
+  "multi|deepseek-v4-flash|postgres|a4": {
+   "episodes": 3,
+   "passed": 2,
+   "attribution": {
+    "spec": 1,
+    "impl": 0
+   },
+   "runs": [
+    "ep-pg-a4-k"
+   ],
+   "rep": "ep-pg-a4-k--postgres_a4_000"
+  },
+  "multi|deepseek-v4-pro|postgres|a2": {
+   "episodes": 3,
+   "passed": 2,
+   "attribution": {
+    "spec": 1,
+    "impl": 0
+   },
+   "runs": [
+    "ep01"
+   ],
+   "rep": "ep01--postgres_a2_000"
+  },
+  "multi|deepseek-v4-pro|postgres|a3": {
+   "episodes": 3,
+   "passed": 0,
+   "attribution": {
+    "spec": 3,
+    "impl": 0
+   },
+   "runs": [
+    "ep01"
+   ],
+   "rep": "ep01--postgres_a3_000"
+  },
+  "multi|deepseek-v4-pro|postgres|a4": {
+   "episodes": 3,
+   "passed": 3,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "ep01"
+   ],
+   "rep": "ep01--postgres_a4_000"
+  },
+  "multi|deepseek-v4-pro|postgres|a5": {
+   "episodes": 2,
+   "passed": 1,
+   "attribution": {
+    "spec": 1,
+    "impl": 0
+   },
+   "runs": [
+    "ep01"
+   ],
+   "rep": "ep01--postgres_a5_001"
+  },
+  "multi|deepseek-v4-pro|postgres|b1": {
+   "episodes": 3,
+   "passed": 2,
+   "attribution": {
+    "spec": 1,
+    "impl": 0
+   },
+   "runs": [
+    "ep01"
+   ],
+   "rep": "ep01--postgres_b1_000"
+  },
+  "multi|deepseek-v4-pro|postgres|b3": {
+   "episodes": 3,
+   "passed": 3,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "ep01"
+   ],
+   "rep": "ep01--postgres_b3_000"
+  },
+  "multi|deepseek-v4-pro|postgres|b4": {
+   "episodes": 3,
+   "passed": 2,
+   "attribution": {
+    "spec": 1,
+    "impl": 0
+   },
+   "runs": [
+    "ep01"
+   ],
+   "rep": "ep01--postgres_b4_000"
+  },
+  "multi|deepseek-v4-pro|postgres|c1": {
+   "episodes": 3,
+   "passed": 3,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "ep01"
+   ],
+   "rep": "ep01--postgres_c1_000"
+  },
+  "multi|deepseek-v4-pro|postgres|c2": {
+   "episodes": 2,
+   "passed": 2,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "ep01"
+   ],
+   "rep": "ep01--postgres_c2_000"
+  },
+  "single|deepseek-v4-pro|oracle|a1": {
+   "episodes": 5,
+   "passed": 4,
+   "attribution": {
+    "spec": 0,
+    "impl": 1
+   },
+   "runs": [
+    "sp-ora-a1b2-tools"
+   ],
+   "rep": "sp-ora-a1b2-tools--oracle_a1_000"
+  },
+  "single|deepseek-v4-pro|oracle|b2": {
+   "episodes": 2,
+   "passed": 1,
+   "attribution": {
+    "spec": 0,
+    "impl": 1
+   },
+   "runs": [
+    "sp-ora-a1b2-tools"
+   ],
+   "rep": "sp-ora-a1b2-tools--oracle_b2_000"
+  },
+  "single|deepseek-v4-pro|postgres|a1": {
+   "episodes": 5,
+   "passed": 5,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "sp-pg-a1b2-tools"
+   ],
+   "rep": "sp-pg-a1b2-tools--postgres_a1_000"
+  },
+  "single|deepseek-v4-pro|postgres|b2": {
+   "episodes": 1,
+   "passed": 0,
+   "attribution": {
+    "spec": 0,
+    "impl": 1
+   },
+   "runs": [
+    "sp-pg-a1b2-tools"
+   ],
+   "rep": "sp-pg-a1b2-tools--postgres_b2_000"
+  },
+  "single|deepseek-v4-pro|postgres|a2": {
+   "episodes": 3,
+   "passed": 3,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "sp01-tools"
+   ],
+   "rep": "sp01-tools--postgres_a2_000"
+  },
+  "single|deepseek-v4-pro|postgres|a3": {
+   "episodes": 3,
+   "passed": 0,
+   "attribution": {
+    "spec": 0,
+    "impl": 3
+   },
+   "runs": [
+    "sp01-tools"
+   ],
+   "rep": "sp01-tools--postgres_a3_000"
+  },
+  "single|deepseek-v4-pro|postgres|a4": {
+   "episodes": 3,
+   "passed": 3,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "sp01-tools"
+   ],
+   "rep": "sp01-tools--postgres_a4_000"
+  },
+  "single|deepseek-v4-pro|postgres|a5": {
+   "episodes": 2,
+   "passed": 1,
+   "attribution": {
+    "spec": 0,
+    "impl": 1
+   },
+   "runs": [
+    "sp01-tools"
+   ],
+   "rep": "sp01-tools--postgres_a5_001"
+  },
+  "single|deepseek-v4-pro|postgres|b1": {
+   "episodes": 3,
+   "passed": 3,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "sp01-tools"
+   ],
+   "rep": "sp01-tools--postgres_b1_000"
+  },
+  "single|deepseek-v4-pro|postgres|b3": {
+   "episodes": 3,
+   "passed": 3,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "sp01-tools"
+   ],
+   "rep": "sp01-tools--postgres_b3_000"
+  },
+  "single|deepseek-v4-pro|postgres|b4": {
+   "episodes": 3,
+   "passed": 2,
+   "attribution": {
+    "spec": 0,
+    "impl": 1
+   },
+   "runs": [
+    "sp01-tools"
+   ],
+   "rep": "sp01-tools--postgres_b4_000"
+  },
+  "single|deepseek-v4-pro|postgres|c1": {
+   "episodes": 3,
+   "passed": 3,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "sp01-tools"
+   ],
+   "rep": "sp01-tools--postgres_c1_000"
+  },
+  "single|deepseek-v4-pro|postgres|c2": {
+   "episodes": 2,
+   "passed": 2,
+   "attribution": {
+    "spec": 0,
+    "impl": 0
+   },
+   "runs": [
+    "sp01-tools"
+   ],
+   "rep": "sp01-tools--postgres_c2_000"
+  }
+ },
+ "runs": [
+  {
+   "run": "ep-ora-a1-k",
+   "stage": "multi",
+   "condition": "tools+ask",
+   "model": "deepseek-v4-flash",
+   "source_run": "mt-ora-a1-k",
+   "dialects": [
+    "oracle"
+   ],
+   "episodes": 5,
+   "graded": 5,
+   "passed": 1,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep-ora-a1-kB",
+   "stage": "multi",
+   "condition": "tools+ask@B14+2L+6",
+   "model": "deepseek-v4-flash",
+   "source_run": "mt-ora-a1-k",
+   "dialects": [
+    "oracle"
+   ],
+   "episodes": 5,
+   "graded": 5,
+   "passed": 2,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep-ora-a1b2",
+   "stage": "multi",
+   "condition": "tools+ask",
+   "model": "deepseek-v4-pro",
+   "source_run": "mt-oracle-a1b2",
+   "dialects": [
+    "oracle"
+   ],
+   "episodes": 7,
+   "graded": 7,
+   "passed": 5,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep-ora-a2-k",
+   "stage": "multi",
+   "condition": "tools+ask",
+   "model": "deepseek-v4-flash",
+   "source_run": "mt-ora-a2-k",
+   "dialects": [
+    "oracle"
+   ],
+   "episodes": 2,
+   "graded": 2,
+   "passed": 2,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep-ora-a2-kB",
+   "stage": "multi",
+   "condition": "tools+ask@B14+2L+6",
+   "model": "deepseek-v4-flash",
+   "source_run": "mt-ora-a2-k",
+   "dialects": [
+    "oracle"
+   ],
+   "episodes": 2,
+   "graded": 2,
+   "passed": 2,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep-ora-a2a5-k",
+   "stage": "multi",
+   "condition": "tools+ask",
+   "model": "deepseek-v4-flash",
+   "source_run": "mt-ora-a2a5-k",
+   "dialects": [
+    "oracle"
+   ],
+   "episodes": 8,
+   "graded": 8,
+   "passed": 2,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep-ora-a2a5-kB",
+   "stage": "multi",
+   "condition": "tools+ask@B14+2L+6",
+   "model": "deepseek-v4-flash",
+   "source_run": "mt-ora-a2a5-k",
+   "dialects": [
+    "oracle"
+   ],
+   "episodes": 8,
+   "graded": 8,
+   "passed": 1,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep-pg-a1b2",
+   "stage": "multi",
+   "condition": "tools+ask",
+   "model": "deepseek-v4-pro",
+   "source_run": "mt-postgres-a1b2",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 6,
+   "graded": 6,
+   "passed": 5,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep-pg-a1b2-k",
+   "stage": "multi",
+   "condition": "tools+ask",
+   "model": "deepseek-v4-flash",
+   "source_run": "mt-pg-a1b2-k",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 6,
+   "graded": 6,
+   "passed": 4,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep-pg-a1b2-kB",
+   "stage": "multi",
+   "condition": "tools+ask@B14+2L+6",
+   "model": "deepseek-v4-flash",
+   "source_run": "mt-pg-a1b2-k",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 6,
+   "graded": 6,
+   "passed": 6,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep-pg-a2a5-k",
+   "stage": "multi",
+   "condition": "tools+ask",
+   "model": "deepseek-v4-flash",
+   "source_run": "mt-pg-a2a5-k",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 7,
+   "graded": 7,
+   "passed": 3,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep-pg-a2a5-kB",
+   "stage": "multi",
+   "condition": "tools+ask@B14+2L+6",
+   "model": "deepseek-v4-flash",
+   "source_run": "mt-pg-a2a5-k",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 7,
+   "graded": 7,
+   "passed": 3,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep-pg-a4-k",
+   "stage": "multi",
+   "condition": "tools+ask",
+   "model": "deepseek-v4-flash",
+   "source_run": "mt-pg-a4-k",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 3,
+   "graded": 3,
+   "passed": 2,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep-pg-a4-kB",
+   "stage": "multi",
+   "condition": "tools+ask@B14+2L+6",
+   "model": "deepseek-v4-flash",
+   "source_run": "mt-pg-a4-k",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 3,
+   "graded": 3,
+   "passed": 3,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep-pg-b2-100",
+   "stage": "multi",
+   "condition": "tools+ask",
+   "model": "deepseek-v4-pro",
+   "source_run": "mt-postgres-a1b2",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 1,
+   "graded": 1,
+   "passed": 1,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep-pg-b2-fw",
+   "stage": "multi",
+   "condition": "tools+ask",
+   "model": "deepseek-v4-pro",
+   "source_run": "mt-postgres-a1b2",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 1,
+   "graded": 1,
+   "passed": 1,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep01",
+   "stage": "multi",
+   "condition": null,
+   "model": "deepseek-v4-pro",
+   "source_run": "mt03",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 25,
+   "graded": 25,
+   "passed": 18,
+   "ungraded": 0,
+   "legacy": true
+  },
+  {
+   "run": "ep01-x",
+   "stage": "multi",
+   "condition": "tools+ask",
+   "model": "deepseek-v4-pro",
+   "source_run": "mt03",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 2,
+   "graded": 2,
+   "passed": 0,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "ep01-z0",
+   "stage": "multi",
+   "condition": null,
+   "model": "deepseek-v4-pro",
+   "source_run": "mt03-z0",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 25,
+   "graded": 25,
+   "passed": 20,
+   "ungraded": 0,
+   "legacy": true
+  },
+  {
+   "run": "ep01-z0-x",
+   "stage": "multi",
+   "condition": "tools+ask",
+   "model": "deepseek-v4-pro",
+   "source_run": "mt03-z0",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 2,
+   "graded": 2,
+   "passed": 0,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "sp-ora-a1b2-noTools",
+   "stage": "single",
+   "condition": "submit-only",
+   "model": "deepseek-v4-pro",
+   "source_run": "st-oracle-a1b2",
+   "dialects": [
+    "oracle"
+   ],
+   "episodes": 7,
+   "graded": 7,
+   "passed": 3,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "sp-ora-a1b2-tools",
+   "stage": "single",
+   "condition": "tools-only",
+   "model": "deepseek-v4-pro",
+   "source_run": "st-oracle-a1b2",
+   "dialects": [
+    "oracle"
+   ],
+   "episodes": 7,
+   "graded": 7,
+   "passed": 5,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "sp-ora-b2-fw",
+   "stage": "single",
+   "condition": "tools-only",
+   "model": "deepseek-v4-pro",
+   "source_run": "st-oracle-a1b2",
+   "dialects": [
+    "oracle"
+   ],
+   "episodes": 1,
+   "graded": 1,
+   "passed": 1,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "sp-pg-a1b2-noTools",
+   "stage": "single",
+   "condition": "submit-only",
+   "model": "deepseek-v4-pro",
+   "source_run": "st-postgres-a1b2",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 6,
+   "graded": 6,
+   "passed": 2,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "sp-pg-a1b2-tools",
+   "stage": "single",
+   "condition": "tools-only",
+   "model": "deepseek-v4-pro",
+   "source_run": "st-postgres-a1b2",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 6,
+   "graded": 6,
+   "passed": 5,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "sp-pg-b2-100",
+   "stage": "single",
+   "condition": "tools-only",
+   "model": "deepseek-v4-pro",
+   "source_run": "st-postgres-a1b2",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 1,
+   "graded": 1,
+   "passed": 0,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "sp-pg-b2-fw",
+   "stage": "single",
+   "condition": "tools-only",
+   "model": "deepseek-v4-pro",
+   "source_run": "st-postgres-a1b2",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 1,
+   "graded": 1,
+   "passed": 1,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "sp01-noTools",
+   "stage": "single",
+   "condition": "submit-only",
+   "model": "deepseek-v4-pro",
+   "source_run": "st04",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 25,
+   "graded": 25,
+   "passed": 19,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "sp01-tools",
+   "stage": "single",
+   "condition": "tools-only",
+   "model": "deepseek-v4-pro",
+   "source_run": "st04",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 25,
+   "graded": 25,
+   "passed": 20,
+   "ungraded": 0,
+   "legacy": false
+  },
+  {
+   "run": "sp01-tools-x",
+   "stage": "single",
+   "condition": "tools-only",
+   "model": "deepseek-v4-pro",
+   "source_run": "st04",
+   "dialects": [
+    "postgres"
+   ],
+   "episodes": 4,
+   "graded": 4,
+   "passed": 1,
+   "ungraded": 0,
+   "legacy": false
+  }
+ ],
+ "excluded": {
+  "ep-ora-a1-kB": "condition tools+ask@B14+2L+6",
+  "ep-ora-a2-kB": "condition tools+ask@B14+2L+6",
+  "ep-ora-a2a5-kB": "condition tools+ask@B14+2L+6",
+  "ep-pg-a1b2-kB": "condition tools+ask@B14+2L+6",
+  "ep-pg-a2a5-kB": "condition tools+ask@B14+2L+6",
+  "ep-pg-a4-kB": "condition tools+ask@B14+2L+6",
+  "ep-pg-b2-100": "variant run (ep-pg-b2-100)",
+  "ep-pg-b2-fw": "variant run (ep-pg-b2-fw)",
+  "ep01-x": "variant run (ep01-x)",
+  "ep01-z0": "tier no-contradiction",
+  "ep01-z0-x": "variant run (ep01-z0-x)",
+  "sp-ora-a1b2-noTools": "condition submit-only",
+  "sp-ora-b2-fw": "variant run (sp-ora-b2-fw)",
+  "sp-pg-a1b2-noTools": "condition submit-only",
+  "sp-pg-b2-100": "variant run (sp-pg-b2-100)",
+  "sp-pg-b2-fw": "variant run (sp-pg-b2-fw)",
+  "sp01-noTools": "condition submit-only",
+  "sp01-tools-x": "variant run (sp01-tools-x)"
+ },
+ "collisions": [],
+ "b2_performance": [
+  {
+   "run": "ep-ora-a1b2",
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "condition": "tools+ask",
+   "dialects": [
+    "oracle"
+   ],
+   "performance": {
+    "episodes": 2,
+    "ex_passed": 2,
+    "performance_passed": 2,
+    "both_passed": 2,
+    "mean_speedup_vs_baseline": 2.2249,
+    "mean_work_ratio_vs_baseline": 840.9443,
+    "mean_ratio_vs_gold": 0.7179,
+    "mean_score_v1": 0.7
+   }
+  },
+  {
+   "run": "ep-pg-a1b2-k",
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "condition": "tools+ask",
+   "dialects": [
+    "postgres"
+   ],
+   "performance": {
+    "episodes": 1,
+    "ex_passed": 1,
+    "performance_passed": 1,
+    "both_passed": 1,
+    "mean_speedup_vs_baseline": 1.5891,
+    "mean_work_ratio_vs_baseline": 1.0,
+    "mean_ratio_vs_gold": 1.0451,
+    "mean_score_v1": 0.5863
+   }
+  },
+  {
+   "run": "ep-pg-a1b2-kB",
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "condition": "tools+ask@B14+2L+6",
+   "dialects": [
+    "postgres"
+   ],
+   "performance": {
+    "episodes": 1,
+    "ex_passed": 1,
+    "performance_passed": 1,
+    "both_passed": 1,
+    "mean_speedup_vs_baseline": 1.6949,
+    "mean_work_ratio_vs_baseline": 1.0,
+    "mean_ratio_vs_gold": 0.8936,
+    "mean_score_v1": 0.6335
+   }
+  },
+  {
+   "run": "ep-pg-b2-100",
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "condition": "tools+ask",
+   "dialects": [
+    "postgres"
+   ],
+   "performance": {
+    "episodes": 1,
+    "ex_passed": 1,
+    "performance_passed": 1,
+    "both_passed": 1,
+    "mean_speedup_vs_baseline": 2.0546,
+    "mean_work_ratio_vs_baseline": 1.0,
+    "mean_ratio_vs_gold": 1.0384,
+    "mean_score_v1": 0.5883
+   }
+  },
+  {
+   "run": "ep-pg-b2-fw",
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "condition": "tools+ask",
+   "dialects": [
+    "postgres"
+   ],
+   "performance": {
+    "episodes": 1,
+    "ex_passed": 1,
+    "performance_passed": 1,
+    "both_passed": 1,
+    "mean_speedup_vs_baseline": 1.9151,
+    "mean_work_ratio_vs_baseline": 1.0,
+    "mean_ratio_vs_gold": 0.9434,
+    "mean_score_v1": 0.6176
+   }
+  },
+  {
+   "run": "sp-ora-a1b2-noTools",
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "condition": "submit-only",
+   "dialects": [
+    "oracle"
+   ],
+   "performance": {
+    "episodes": 2,
+    "ex_passed": 2,
+    "performance_passed": 2,
+    "both_passed": 2,
+    "mean_speedup_vs_baseline": 2.0802,
+    "mean_work_ratio_vs_baseline": 793.3438,
+    "mean_ratio_vs_gold": 0.9865,
+    "mean_score_v1": 0.6041
+   }
+  },
+  {
+   "run": "sp-ora-a1b2-tools",
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "condition": "tools-only",
+   "dialects": [
+    "oracle"
+   ],
+   "performance": {
+    "episodes": 2,
+    "ex_passed": 1,
+    "performance_passed": 1,
+    "both_passed": 1,
+    "mean_speedup_vs_baseline": 2.7056,
+    "mean_work_ratio_vs_baseline": 1126.2188,
+    "mean_ratio_vs_gold": 0.4443,
+    "mean_score_v1": 0.7969
+   }
+  },
+  {
+   "run": "sp-ora-b2-fw",
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "condition": "tools-only",
+   "dialects": [
+    "oracle"
+   ],
+   "performance": {
+    "episodes": 1,
+    "ex_passed": 1,
+    "performance_passed": 1,
+    "both_passed": 1,
+    "mean_speedup_vs_baseline": 1.916,
+    "mean_work_ratio_vs_baseline": 463.7874,
+    "mean_ratio_vs_gold": 1.0171,
+    "mean_score_v1": 0.5948
+   }
+  },
+  {
+   "run": "sp-pg-a1b2-noTools",
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "condition": "submit-only",
+   "dialects": [
+    "postgres"
+   ],
+   "performance": {
+    "episodes": 1,
+    "ex_passed": 1,
+    "performance_passed": 1,
+    "both_passed": 1,
+    "mean_speedup_vs_baseline": 2.0738,
+    "mean_work_ratio_vs_baseline": 1.0,
+    "mean_ratio_vs_gold": 0.9109,
+    "mean_score_v1": 0.628
+   }
+  },
+  {
+   "run": "sp-pg-b2-fw",
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "condition": "tools-only",
+   "dialects": [
+    "postgres"
+   ],
+   "performance": {
+    "episodes": 1,
+    "ex_passed": 1,
+    "performance_passed": 1,
+    "both_passed": 1,
+    "mean_speedup_vs_baseline": 1.8773,
+    "mean_work_ratio_vs_baseline": 1.0,
+    "mean_ratio_vs_gold": 0.9131,
+    "mean_score_v1": 0.6272
+   }
+  }
+ ],
+ "hardening": [
+  {
+   "full": {
+    "run": "ep01",
+    "stage": "multi",
+    "condition": null,
+    "model": "deepseek-v4-pro",
+    "source_run": "mt03",
+    "dialects": [
+     "postgres"
+    ],
+    "episodes": 25,
+    "graded": 25,
+    "passed": 18,
+    "ungraded": 0,
+    "legacy": true
+   },
+   "ablated": {
+    "run": "ep01-z0",
+    "stage": "multi",
+    "condition": null,
+    "model": "deepseek-v4-pro",
+    "source_run": "mt03-z0",
+    "dialects": [
+     "postgres"
+    ],
+    "episodes": 25,
+    "graded": 25,
+    "passed": 20,
+    "ungraded": 0,
+    "legacy": true
+   }
+  },
+  {
+   "full": {
+    "run": "ep01-x",
+    "stage": "multi",
+    "condition": "tools+ask",
+    "model": "deepseek-v4-pro",
+    "source_run": "mt03",
+    "dialects": [
+     "postgres"
+    ],
+    "episodes": 2,
+    "graded": 2,
+    "passed": 0,
+    "ungraded": 0,
+    "legacy": false
+   },
+   "ablated": {
+    "run": "ep01-z0-x",
+    "stage": "multi",
+    "condition": "tools+ask",
+    "model": "deepseek-v4-pro",
+    "source_run": "mt03-z0",
+    "dialects": [
+     "postgres"
+    ],
+    "episodes": 2,
+    "graded": 2,
+    "passed": 0,
+    "ungraded": 0,
+    "legacy": false
+   }
+  }
+ ],
+ "actions": [
+  {
+   "model": "deepseek-v4-flash",
+   "stage": "multi",
+   "tools": {
+    "get_schema": 31,
+    "sample_rows": 82,
+    "describe_table": 40,
+    "ask_user": 24,
+    "ask_selector": 27,
+    "execute_scratch": 801,
+    "compile_plsql": 26,
+    "submit": 31,
+    "reset_scratch": 62
+   }
+  },
+  {
+   "model": "deepseek-v4-pro",
+   "stage": "multi",
+   "tools": {
+    "get_schema": 38,
+    "sample_rows": 98,
+    "ask_user": 27,
+    "compile_plsql": 69,
+    "execute_scratch": 670,
+    "describe_table": 50,
+    "reset_scratch": 64,
+    "submit": 34,
+    "ask_selector": 19
+   }
+  },
+  {
+   "model": "deepseek-v4-pro",
+   "stage": "single",
+   "tools": {
+    "get_schema": 37,
+    "compile_plsql": 60,
+    "execute_scratch": 631,
+    "reset_scratch": 70,
+    "submit": 32,
+    "describe_table": 22,
+    "sample_rows": 52
+   }
+  }
+ ],
+ "interaction": [
+  {
+   "model": "deepseek-v4-flash",
+   "recovered": 50,
+   "oracle": 133,
+   "questions": 24,
+   "single": {
+    "passed": 0,
+    "episodes": 0,
+    "steps": 0
+   },
+   "multi": {
+    "passed": 14,
+    "episodes": 31,
+    "steps": 1124
+   }
+  },
+  {
+   "model": "deepseek-v4-pro",
+   "recovered": 70,
+   "oracle": 148,
+   "questions": 27,
+   "single": {
+    "passed": 30,
+    "episodes": 38,
+    "steps": 914
+   },
+   "multi": {
+    "passed": 28,
+    "episodes": 38,
+    "steps": 1076
+   }
+  }
+ ],
+ "attribution_summary": [
+  {
+   "model": "deepseek-v4-flash",
+   "stage": "multi",
+   "episodes": 31,
+   "failures": 17,
+   "spec": 17,
+   "impl": 0
+  },
+  {
+   "model": "deepseek-v4-pro",
+   "stage": "single",
+   "episodes": 38,
+   "failures": 8,
+   "spec": 0,
+   "impl": 8
+  },
+  {
+   "model": "deepseek-v4-pro",
+   "stage": "multi",
+   "episodes": 38,
+   "failures": 10,
+   "spec": 10,
+   "impl": 0
+  }
+ ],
+ "episodes_index": {
+  "ep-ora-a1-k--oracle_a1_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a1-k--oracle_a1_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-ora-a1-k--oracle_a1_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a1-k--oracle_a1_003": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a1-k--oracle_a1_004": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a1-kB--oracle_a1_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a1-kB--oracle_a1_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-ora-a1-kB--oracle_a1_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a1-kB--oracle_a1_003": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a1-kB--oracle_a1_004": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-ora-a1b2--oracle_a1_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-ora-a1b2--oracle_a1_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-ora-a1b2--oracle_a1_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a1b2--oracle_a1_003": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-ora-a1b2--oracle_a1_004": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a1b2--oracle_b2_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "b2",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-ora-a1b2--oracle_b2_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "b2",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-ora-a2-k--oracle_a2_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a2",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-ora-a2-k--oracle_a2_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a2",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-ora-a2-kB--oracle_a2_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a2",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-ora-a2-kB--oracle_a2_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a2",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-ora-a2a5-k--oracle_a3_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a2a5-k--oracle_a3_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a2a5-k--oracle_a3_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a2a5-k--oracle_a4_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a4",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-ora-a2a5-k--oracle_a4_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a4",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a2a5-k--oracle_a4_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a4",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-ora-a2a5-k--oracle_a5_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a5",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a2a5-k--oracle_a5_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a5",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a2a5-kB--oracle_a3_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a3",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a2a5-kB--oracle_a3_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a3",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a2a5-kB--oracle_a3_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a3",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a2a5-kB--oracle_a4_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a4",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a2a5-kB--oracle_a4_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a4",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a2a5-kB--oracle_a4_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a4",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-ora-a2a5-kB--oracle_a5_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a5",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-ora-a2a5-kB--oracle_a5_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "oracle",
+   "scenario": "a5",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-pg-a1b2--postgres_a1_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a1b2--postgres_a1_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a1b2--postgres_a1_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a1b2--postgres_a1_003": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a1b2--postgres_a1_004": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a1b2--postgres_b2_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b2",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-pg-a1b2-k--postgres_a1_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-pg-a1b2-k--postgres_a1_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a1b2-k--postgres_a1_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a1b2-k--postgres_a1_003": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a1b2-k--postgres_a1_004": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-pg-a1b2-k--postgres_b2_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "b2",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a1b2-kB--postgres_a1_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a1b2-kB--postgres_a1_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a1b2-kB--postgres_a1_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a1b2-kB--postgres_a1_003": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a1b2-kB--postgres_a1_004": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a1b2-kB--postgres_b2_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "b2",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a2a5-k--postgres_a2_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a2a5-k--postgres_a2_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a2a5-k--postgres_a3_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-pg-a2a5-k--postgres_a3_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-pg-a2a5-k--postgres_a3_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-pg-a2a5-k--postgres_a5_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a5",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a2a5-k--postgres_a5_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a5",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-pg-a2a5-kB--postgres_a2_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a2a5-kB--postgres_a2_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a2a5-kB--postgres_a3_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-pg-a2a5-kB--postgres_a3_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-pg-a2a5-kB--postgres_a3_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-pg-a2a5-kB--postgres_a5_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a5",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a2a5-kB--postgres_a5_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a5",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-pg-a4-k--postgres_a4_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a4-k--postgres_a4_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a4-k--postgres_a4_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep-pg-a4-kB--postgres_a4_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a4-kB--postgres_a4_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-a4-kB--postgres_a4_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-flash",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "tools+ask@B14+2L+6",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-b2-100--postgres_b2_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b2",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep-pg-b2-fw--postgres_b2_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b2",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_a2_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_a2_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_a2_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep01--postgres_a3_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep01--postgres_a3_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep01--postgres_a3_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep01--postgres_a4_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_a4_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_a4_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_a5_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a5",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_a5_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a5",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep01--postgres_b1_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_b1_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep01--postgres_b1_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_b3_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b3",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_b3_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b3",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_b3_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b3",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_b4_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b4",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_b4_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b4",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_b4_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b4",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep01--postgres_c1_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_c1_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_c1_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c1",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_c2_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c2",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01--postgres_c2_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c2",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-x--postgres_a3_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep01-x--postgres_a3_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "full",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep01-z0--postgres_a2_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_a2_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_a2_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_a3_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep01-z0--postgres_a3_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep01-z0--postgres_a3_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep01-z0--postgres_a4_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_a4_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_a4_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_a5_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a5",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_a5_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a5",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep01-z0--postgres_b1_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b1",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_b1_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b1",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_b1_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b1",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_b3_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b3",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_b3_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b3",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_b3_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b3",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_b4_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b4",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_b4_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b4",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_b4_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b4",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "ep01-z0--postgres_c1_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c1",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_c1_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c1",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_c1_002": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c1",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_c2_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c2",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0--postgres_c2_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c2",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": true,
+   "attribution": null
+  },
+  "ep01-z0-x--postgres_a3_000": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "ep01-z0-x--postgres_a3_001": {
+   "stage": "multi",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools+ask",
+   "tier": "no-contradiction",
+   "correct": false,
+   "attribution": "spec"
+  },
+  "sp-ora-a1b2-noTools--oracle_a1_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp-ora-a1b2-noTools--oracle_a1_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-ora-a1b2-noTools--oracle_a1_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp-ora-a1b2-noTools--oracle_a1_003": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp-ora-a1b2-noTools--oracle_a1_004": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp-ora-a1b2-noTools--oracle_b2_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "b2",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-ora-a1b2-noTools--oracle_b2_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "b2",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-ora-a1b2-tools--oracle_a1_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-ora-a1b2-tools--oracle_a1_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-ora-a1b2-tools--oracle_a1_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp-ora-a1b2-tools--oracle_a1_003": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-ora-a1b2-tools--oracle_a1_004": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "a1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-ora-a1b2-tools--oracle_b2_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "b2",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp-ora-a1b2-tools--oracle_b2_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "b2",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-ora-b2-fw--oracle_b2_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "oracle",
+   "scenario": "b2",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-pg-a1b2-noTools--postgres_a1_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp-pg-a1b2-noTools--postgres_a1_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp-pg-a1b2-noTools--postgres_a1_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-pg-a1b2-noTools--postgres_a1_003": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp-pg-a1b2-noTools--postgres_a1_004": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp-pg-a1b2-noTools--postgres_b2_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b2",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-pg-a1b2-tools--postgres_a1_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-pg-a1b2-tools--postgres_a1_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-pg-a1b2-tools--postgres_a1_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-pg-a1b2-tools--postgres_a1_003": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-pg-a1b2-tools--postgres_a1_004": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp-pg-a1b2-tools--postgres_b2_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b2",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp-pg-b2-100--postgres_b2_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b2",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp-pg-b2-fw--postgres_b2_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b2",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_a2_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp01-noTools--postgres_a2_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp01-noTools--postgres_a2_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_a3_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp01-noTools--postgres_a3_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp01-noTools--postgres_a3_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp01-noTools--postgres_a4_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_a4_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_a4_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_a5_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a5",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_a5_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a5",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_b1_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_b1_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_b1_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_b3_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b3",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_b3_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b3",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_b3_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b3",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_b4_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b4",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_b4_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b4",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_b4_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b4",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp01-noTools--postgres_c1_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_c1_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_c1_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c1",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_c2_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c2",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-noTools--postgres_c2_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c2",
+   "condition": "submit-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_a2_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_a2_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_a2_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a2",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_a3_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp01-tools--postgres_a3_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp01-tools--postgres_a3_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp01-tools--postgres_a4_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_a4_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_a4_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a4",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_a5_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a5",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp01-tools--postgres_a5_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a5",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_b1_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_b1_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_b1_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_b3_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b3",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_b3_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b3",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_b3_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b3",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_b4_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b4",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_b4_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b4",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_b4_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "b4",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp01-tools--postgres_c1_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_c1_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_c1_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c1",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_c2_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c2",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools--postgres_c2_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "c2",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  },
+  "sp01-tools-x--postgres_a3_000": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp01-tools-x--postgres_a3_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp01-tools-x--postgres_a3_002": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a3",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": false,
+   "attribution": "impl"
+  },
+  "sp01-tools-x--postgres_a5_001": {
+   "stage": "single",
+   "model": "deepseek-v4-pro",
+   "dialect": "postgres",
+   "scenario": "a5",
+   "condition": "tools-only",
+   "tier": "single-turn",
+   "correct": true,
+   "attribution": null
+  }
+ }
+}

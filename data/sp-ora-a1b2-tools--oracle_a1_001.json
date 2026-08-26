@@ -1,0 +1,252 @@
+{
+ "id": "sp-ora-a1b2-tools--oracle_a1_001",
+ "run": "sp-ora-a1b2-tools",
+ "task_id": "oracle_a1_001",
+ "stage": "single",
+ "condition": "tools-only",
+ "tier": "single-turn",
+ "scenario": "a1",
+ "dialect": "oracle",
+ "model": "deepseek-v4-pro",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "deepseek-v4-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 20,
+  "seconds": 192.8,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "describe_table": 2,
+   "execute_scratch": 13,
+   "compile_plsql": 2,
+   "reset_scratch": 1,
+   "submit": 1
+  }
+ },
+ "task": {
+  "prompt": "Write an Oracle PL/SQL procedure named sp. The procedure signature must have four input parameters in this order: para_RAM_MiB IN BINARY_FLOAT, para_WiFi IN VARCHAR2, para_used_kb IN BINARY_FLOAT, and para_Pixels IN VARCHAR2. All four are input parameters.\n\nThe procedure uses two tables: chip_model and screen_mode. It does not read or write the phone table. The chip_model columns used are Model_name, RAM_MiB, WiFi, and ROM_MiB. The screen_mode columns used are Pixels and used_kb. All table and column names should be treated using the exact mixed-case names shown in the schema.\n\nDeclare a local variable result_val as PLS_INTEGER and initialize it to 0. Declare a local variable status_text as VARCHAR2(4000) and initialize it to the literal 'pending'. Declare a local variable v_model_name with the same data type as the chip_model.Model_name column.\n\nDeclare a static updatable cursor named c_chip. The cursor reads only the Model_name column from chip_model. Its rows are restricted to chip_model rows where the WiFi column exactly equals the current value of para_WiFi. The cursor rows are ordered ascending by Model_name. The cursor is declared for update, so its current row can be updated positionally.\n\nAll rounding described below uses the Oracle ROUND function with default behavior.\n\nBegin the main conditional. Evaluate the following conditions strictly in order. Only the first condition that is true may execute; once a branch is executed, skip the remaining branches.\n\n1. If para_RAM_MiB is less than 0: set result_val to the Oracle ROUND of (para_RAM_MiB multiplied by negative 1). Then change RAM_MiB to result_val for every row in chip_model whose WiFi equals para_WiFi.\n\n2. Else if para_RAM_MiB is less than 10: set result_val to the Oracle ROUND of (para_RAM_MiB plus 5). Then remove every row from chip_model whose RAM_MiB equals para_RAM_MiB.\n\n3. Else if para_RAM_MiB is less than 20: set result_val to the Oracle ROUND of (para_RAM_MiB multiplied by 2). Then for every row in screen_mode whose Pixels equals para_Pixels, change used_kb to para_used_kb plus result_val.\n\n4. Else if para_RAM_MiB is less than 30: set result_val to the Oracle ROUND of (para_RAM_MiB minus 8). Then remove every row from screen_mode whose used_kb equals para_used_kb.\n\n5. Else: set result_val to the Oracle ROUND of (para_RAM_MiB divided by 2), and set status_text to the literal 'processed'.\n\nAfter the main conditional completes, execute the following steps in this exact order. Do not skip or reorder any of them.\n\na. For every row in chip_model whose RAM_MiB equals para_RAM_MiB, change WiFi to the concatenation of para_WiFi followed by the current value of status_text. At this point status_text is still 'pending' unless the final ELSE branch set it to 'processed'.\n\nb. Set result_val to the Oracle ROUND of (result_val plus 3).\n\nc. For every row in screen_mode whose used_kb equals para_used_kb, change Pixels to the concatenation of para_Pixels followed by the literal '_updated'.\n\nd. Remove every row from chip_model whose RAM_MiB is strictly greater than result_val.\n\ne. Set status_text to the literal 'active'.\n\nf. For every row in screen_mode whose Pixels equals para_Pixels, change used_kb to para_used_kb plus 12.\n\ng. For every row in chip_model whose WiFi equals para_WiFi, change RAM_MiB to the current value of result_val.\n\nh. Set result_val to the Oracle ROUND of (result_val minus 7).\n\ni. Remove every row from screen_mode whose Pixels equals the concatenation of para_Pixels followed by the literal '_old'.\n\nj. For every row in chip_model whose RAM_MiB equals para_RAM_MiB, change WiFi to the concatenation of para_WiFi followed by the literal '_final'.\n\nk. Set status_text to the literal 'completed'.\n\nl. For every row in screen_mode whose Pixels equals para_Pixels, change used_kb to para_used_kb multiplied by 3.\n\nm. Remove every row from chip_model where WiFi equals the concatenation of para_WiFi followed by the current value of status_text, and ROM_MiB is strictly less than the current value of result_val. At this step status_text is 'completed'.\n\nn. After the delete in step m, open the cursor c_chip. Then repeatedly fetch the next cursor row into v_model_name until there are no more rows. For each fetched row, update the current cursor row's ROM_MiB to its current ROM_MiB plus result_val, targeting only the current cursor row position. After the loop finishes, close the cursor. Because the cursor is opened after step m, any rows removed by step m are not processed by the cursor loop.\n\nThere is no exception handler, no explicit commit, and no rollback inside the procedure. Any SQL error that occurs is raised to the caller. If any update or delete condition matches no rows, that step simply affects zero rows.\n\nImplement this as an Oracle (PL/SQL) stored procedure named `sp` with the parameter list exactly `sp(para_RAM_MiB IN BINARY_FLOAT, para_WiFi    IN VARCHAR2, para_used_kb IN BINARY_FLOAT, para_Pixels  IN VARCHAR2)`. Return the complete stored procedure, and nothing else.\n",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable chip_model , columns = [ Model_name ( VARCHAR2 | primary key | values : X3 Advanced , X3 Basic ) , Launch_year ( NUMBER | values : 2002 ) , RAM_MiB ( NUMBER | values : 32 , 64 ) , ROM_MiB ( NUMBER | values : 32 , 48 ) , Slots ( VARCHAR2 | values : 1CFII,1SD ) , WiFi ( VARCHAR2 | values : No ) , Bluetooth ( VARCHAR2 | values : No ) ]\ntable phone , columns = [ Company_name ( VARCHAR2 | values : Sony Mobile Communications , LG Electronics ) , Hardware_Model_name ( VARCHAR2 | primary key | values : GT-I9100 , GT-I9300 ) , Accreditation_type ( VARCHAR2 | values : Full ) , Accreditation_level ( VARCHAR2 | values : joyn Hot Fixes ) , NUMBER ( VARCHAR2 | values : Approved (awarded 15.11.12) , Approved (awarded 19.11.12) ) , chip_model ( VARCHAR2 | values : X5 , X51v ) , screen_mode ( VARCHAR2 | values : 1 , 3 ) ]\ntable screen_mode , columns = [ Graphics_mode ( NUMBER | primary key | values : 0 , 1 ) , Char_cells ( VARCHAR2 | values : 80 × 32 , 40 × 32 ) , Pixels ( VARCHAR2 | values : 640 × 256 , 320 × 256 ) , Hardware_colours ( NUMBER | values : 2 , 4 ) , used_kb ( NUMBER | values : 20 ) , map ( VARCHAR2 | values : 3000–7FFF ) , Type ( VARCHAR2 | values : Graphics ) ]\nforeign keys : None"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "chip_model"
+   },
+   "result": "table chip_model , columns = [ Model_name ( VARCHAR2 | primary key | values : X3 Advanced , X3 Basic ) , Launch_year ( NUMBER | values : 2002 ) , RAM_MiB ( NUMBER | values : 32 , 64 ) , ROM_MiB ( NUMBER | values : 32 , 48 ) , Slots ( VARCHAR2 | values : 1CFII,1SD ) , WiFi ( VARCHAR2 | values : No ) , Bluetooth ( VARCHAR2 | values : No ) ]"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "screen_mode"
+   },
+   "result": "table screen_mode , columns = [ Graphics_mode ( NUMBER | primary key | values : 0 , 1 ) , Char_cells ( VARCHAR2 | values : 80 × 32 , 40 × 32 ) , Pixels ( VARCHAR2 | values : 640 × 256 , 320 × 256 ) , Hardware_colours ( NUMBER | values : 2 , 4 ) , used_kb ( NUMBER | values : 20 ) , map ( VARCHAR2 | values : 3000–7FFF ) , Type ( VARCHAR2 | values : Graphics ) ]"
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables"
+   },
+   "result": "TABLE_NAME\nLOGMNR_SESSION_EVOLVE$\nLOGMNR_GLOBAL$\nLOGMNR_PDB_INFO$\nLOGMNR_DID$\nLOGMNR_UID$\nLOGMNRGGC_GTLO\nLOGMNRGGC_GTCS\nLOGMNRC_DBNAME_UID_MAP\nLOGMNR_LOG$\nLOGMNR_PROCESSED_LOG$\nLOGMNR_SPILL$\nLOGMNR_AGE_SPILL$\nLOGMNR_RESTART_CKPT_TXINFO$\nLOGMNR_ERROR$\nLOGMNR_RESTART_CKPT$\nLOGMNR_FILTER$\nLOGMNR_SESSION_ACTIONS$\nLOGMNR_PARAMETER$\nLOGMNR_SESSION$\nLOGMNR_PROFILE_TABLE_STATS$\nLOGMNR_PROFILE_PLSQL_STATS$\nREDO_DB\nREDO_LOG\nROLLING$CONNECTIONS\nROLLING$DATABASES\nROLLING$DIRECTIVES\nROLLING$EVENTS\nROLLING$PARAMETERS\nROLLING$PLAN\nROLLING$STATISTICS\nROLLING$STATUS\nMVIEW$_ADV_WORKLOAD\nMVIEW$_ADV_BASETABLE\nMVIEW$_ADV_SQLDEPEND\nMVIEW$_ADV_PRETTY\nMVIEW$_ADV_TEMP\nMVIEW$_ADV_FILTER\nMVIEW$_ADV_LOG\nMVIEW$_ADV_FILTERINSTANCE\nMVIEW$_ADV_LEVEL\nMVIEW$_ADV_ROLLUP\nMVIEW$_ADV_AJG\nMVIEW$_ADV_FJG\nMVIEW$_ADV_GC\nMVIEW$_ADV_CLIQUE\nMVIEW$_ADV_ELIGIBLE\nMVIEW$_ADV_OUTPUT\nMVIEW$_ADV_EXCEPTIONS\nMVIEW$_ADV_PARAMETERS\nMVIEW$_ADV_INFO\n... (more rows not shown)"
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name, num_rows FROM all_tables WHERE lower(table_name) IN ('chip_model','screen_mode','phone')"
+   },
+   "result": "OWNER | TABLE_NAME | NUM_ROWS\nPHONE_1_ORWE7CD_0 | chip_model | 14\nPHONE_1_ORWE7CD_0 | screen_mode | 0\nPHONE_1_ORWE7CD_0 | phone | 8\nLC_PHONE_MARKET | phone | 34\nPHONE_1_EP965E5354 | chip_model | 14\nPHONE_1_EP965E5354 | phone | 8\nPHONE_1_EP965E5354 | screen_mode | 7\nPHONE_1 | chip_model | 14\nPHONE_1 | screen_mode | 7\nPHONE_1 | phone | 8\nPHONE_MARKET | phone | 5"
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT column_name FROM all_tab_columns WHERE table_name='chip_model' AND owner='PHONE_1_ORWE7CD_0'"
+   },
+   "result": "COLUMN_NAME\nModel_name\nLaunch_year\nRAM_MiB\nROM_MiB\nSlots\nWiFi\nBluetooth"
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM chip_model WHERE ROWNUM=1"
+   },
+   "result": "error: DatabaseError: ORA-00942: table or view does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"chip_model\" WHERE ROWNUM=1"
+   },
+   "result": "Model_name | Launch_year | RAM_MiB | ROM_MiB | Slots | WiFi | Bluetooth\nX5 | 2002 | 32 | 32 | 1CFII,1SD | No | No"
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "DECLARE\n  x BINARY_FLOAT := 5.5;\n  y PLS_INTEGER;\nBEGIN\n  y := ROUND(x);\n  DBMS_OUTPUT.PUT_LINE(y);\nEND;"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n  para_RAM_MiB IN BINARY_FLOAT,\n  para_WiFi     IN VARCHAR2,\n  para_used_kb  IN BINARY_FLOAT,\n  para_Pixels   IN VARCHAR2\n)\nIS\n  result_val   PLS_INTEGER := 0;\n  status_text  VARCHAR2(4000) := 'pending';\n  v_model_name \"chip_model\".\"Model_name\"%TYPE;\n\n  CURSOR c_chip IS\n    SELECT \"Model_name\"\n    FROM \"chip_model\"\n    WHERE \"WiFi\" = para_WiFi\n    ORDER BY \"Model_name\"\n    FOR UPDATE;\n\nBEGIN\n  IF para_RAM_MiB < 0 THEN\n    result_val := ROUND(para_RAM_MiB * (-1));\n    UPDATE \"chip_model\"\n       SET \"RAM_MiB\" = result_val\n     WHERE \"WiFi\" = para_WiFi;\n  ELSIF para_RAM_MiB < 10 THEN\n    result_val := ROUND(para_RAM_MiB + 5);\n    DELETE FROM \"chip_model\"\n     WHERE \"RAM_MiB\" = para_RAM_MiB;\n  ELSIF para_RAM_MiB < 20 THEN\n    result_val := ROUND(para_RAM_MiB * 2);\n    UPDATE \"screen_mode\"\n       SET \"used_kb\" = para_used_kb + result_val\n     WHERE \"Pixels\" = para_Pixels;\n  ELSIF para_RAM_MiB < 30 THEN\n    result_val := ROUND(para_RAM_MiB - 8);\n    DELETE FROM \"screen_mode\"\n     WHERE \"used_kb\" = para_used_kb;\n  ELSE\n    result_val := ROUND(para_RAM_MiB / 2);\n    status_text := 'processed';\n  END IF;\n\n  UPDATE \"chip_model\"\n     SET \"WiFi\" = para_WiFi || status_text\n   WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n  result_val := ROUND(result_val + 3);\n\n  UPDATE \"screen_mode\"\n     SET \"Pixels\" = para_Pixels || '_updated'\n   WHERE \"used_kb\" = para_used_kb;\n\n  DELETE FROM \"chip_model\"\n   WHERE \"RAM_MiB\" > result_val;\n\n  status_text := 'active';\n\n  UPDATE \"screen_mode\"\n     SET \"used_kb\" = para_used_kb + 12\n   WHERE \"Pixels\" = para_Pixels;\n\n  UPDATE \"chip_model\"\n     SET \"RAM_MiB\" = result_val\n   WHERE \"WiFi\" = para_WiFi;\n\n  result_val := ROUND(result_val - 7);\n\n  DELETE FROM \"screen_mode\"\n   WHERE \"Pixels\" = para_Pixels || '_old';\n\n  UPDATE \"chip_model\"\n     SET \"WiFi\" = para_WiFi || '_final'\n   WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n  status_text := 'completed';\n\n  UPDATE \"screen_mode\"\n     SET \"used_kb\" = para_used_kb * 3\n   WHERE \"Pixels\" = para_Pixels;\n\n  DELETE FROM \"chip_model\"\n   WHERE \"WiFi\" = para_WiFi || status_text\n     AND \"ROM_MiB\" < result_val;\n\n  OPEN c_chip;\n  LOOP\n    FETCH c_chip INTO v_model_name;\n    EXIT WHEN c_chip%NOTFOUND;\n    UPDATE \"chip_model\"\n       SET \"ROM_MiB\" = \"ROM_MiB\" + result_val\n     WHERE CURRENT OF c_chip;\n  END LOOP;\n  CLOSE c_chip;\n\nEND sp;\n/\n"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"chip_model\" ORDER BY \"Model_name\""
+   },
+   "result": "Model_name | Launch_year | RAM_MiB | ROM_MiB | Slots | WiFi | Bluetooth\nX3 Advanced | 2003 | 64 | 64 | 1SD | No | No\nX3 Basic | 2003 | 32 | 32 | 1SD | No | No\nX30 high-end | 2004 | 64 | 64 | 1SD | 802.11b | 1.1\nX30 low-end | 2004 | 32 | 32 | 1SD | No | No\nX30 mid-range | 2004 | 64 | 64 | 1SD | 802.11b | 1.1\nX3i | 2003 | 64 | 64 | 1SD | 802.11b | No\nX5 | 2002 | 32 | 32 | 1CFII,1SD | No | No\nX5 high end | 2002 | 64 | 48 | 1CFII,1SD | No | No\nX50 Advanced | 2004 | 64 | 128 | 1CFII,1SD | 802.11b | Yes\nX50 Standard | 2004 | 64 | 64 | 1CFII,1SD | No | Yes\nX50v | 2004 | 64 | 128 | 1CFII,1SD | 802.11b | 1.2\nX51 low-end | 2005 | 64 | 128 | 1CFII,1SD | No | 1.2\nX51 mid-range | 2005 | 64 | 128 | 1CFII,1SD | 802.11b | 1.2\nX51v | 2005 | 64 | 256 | 1CFII,1SD | 802.11b | 1.2"
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"screen_mode\" ORDER BY \"Graphics_mode\""
+   },
+   "result": "Graphics_mode | Char_cells | Pixels | Hardware_colours | used_kb | map | Type\n0 | 80 × 32 | 640 × 256 | 2 | 20 | 3000–7FFF | Graphics\n1 | 40 × 32 | 320 × 256 | 4 | 20 | 3000–7FFF | Graphics\n2 | 20 × 32 | 160 × 256 | 8 | 20 | 3000–7FFF | Graphics\n3 | 80 × 25 | 640 × 200 | 2 | 16 | 4000–7FFF | VARCHAR2(255)\n4 | 40 × 32 | 320 × 256 | 2 | 10 | 5800–7FFF | Graphics\n5 | 20 × 32 | 160 × 256 | 4 | 10 | 5800–7FFF | Graphics\n6 | 40 × 25 | 320 × 200 | 2 | 8 | 6000–7FFF | VARCHAR2(255)"
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n  para_RAM_MiB IN BINARY_FLOAT,\n  para_WiFi     IN VARCHAR2,\n  para_used_kb  IN BINARY_FLOAT,\n  para_Pixels   IN VARCHAR2\n)\nIS\n  result_val   PLS_INTEGER := 0;\n  status_text  VARCHAR2(4000) := 'pending';\n  v_model_name \"chip_model\".\"Model_name\"%TYPE;\n\n  CURSOR c_chip IS\n    SELECT \"Model_name\"\n    FROM \"chip_model\"\n    WHERE \"WiFi\" = para_WiFi\n    ORDER BY \"Model_name\"\n    FOR UPDATE;\n\nBEGIN\n  IF para_RAM_MiB < 0 THEN\n    result_val := ROUND(para_RAM_MiB * (-1));\n    UPDATE \"chip_model\"\n       SET \"RAM_MiB\" = result_val\n     WHERE \"WiFi\" = para_WiFi;\n  ELSIF para_RAM_MiB < 10 THEN\n    result_val := ROUND(para_RAM_MiB + 5);\n    DELETE FROM \"chip_model\"\n     WHERE \"RAM_MiB\" = para_RAM_MiB;\n  ELSIF para_RAM_MiB < 20 THEN\n    result_val := ROUND(para_RAM_MiB * 2);\n    UPDATE \"screen_mode\"\n       SET \"used_kb\" = para_used_kb + result_val\n     WHERE \"Pixels\" = para_Pixels;\n  ELSIF para_RAM_MiB < 30 THEN\n    result_val := ROUND(para_RAM_MiB - 8);\n    DELETE FROM \"screen_mode\"\n     WHERE \"used_kb\" = para_used_kb;\n  ELSE\n    result_val := ROUND(para_RAM_MiB / 2);\n    status_text := 'processed';\n  END IF;\n\n  UPDATE \"chip_model\"\n     SET \"WiFi\" = para_WiFi || status_text\n   WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n  result_val := ROUND(result_val + 3);\n\n  UPDATE \"screen_mode\"\n     SET \"Pixels\" = para_Pixels || '_updated'\n   WHERE \"used_kb\" = para_used_kb;\n\n  DELETE FROM \"chip_model\"\n   WHERE \"RAM_MiB\" > result_val;\n\n  status_text := 'active';\n\n  UPDATE \"screen_mode\"\n     SET \"used_kb\" = para_used_kb + 12\n   WHERE \"Pixels\" = para_Pixels;\n\n  UPDATE \"chip_model\"\n     SET \"RAM_MiB\" = result_val\n   WHERE \"WiFi\" = para_WiFi;\n\n  result_val := ROUND(result_val - 7);\n\n  DELETE FROM \"screen_mode\"\n   WHERE \"Pixels\" = para_Pixels || '_old';\n\n  UPDATE \"chip_model\"\n     SET \"WiFi\" = para_WiFi || '_final'\n   WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n  status_text := 'completed';\n\n  UPDATE \"screen_mode\"\n     SET \"used_kb\" = para_used_kb * 3\n   WHERE \"Pixels\" = para_Pixels;\n\n  DELETE FROM \"chip_model\"\n   WHERE \"WiFi\" = para_WiFi || status_text\n     AND \"ROM_MiB\" < result_val;\n\n  OPEN c_chip;\n  LOOP\n    FETCH c_chip INTO v_model_name;\n    EXIT WHEN c_chip%NOTFOUND;\n    UPDATE \"chip_model\"\n       SET \"ROM_MiB\" = \"ROM_MiB\" + result_val\n     WHERE CURRENT OF c_chip;\n  END LOOP;\n  CLOSE c_chip;\n\nEND sp;\n/\n"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(5.0f, 'No', 20.0f, '640 × 256')"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset"
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n  para_RAM_MiB IN BINARY_FLOAT,\n  para_WiFi     IN VARCHAR2,\n  para_used_kb  IN BINARY_FLOAT,\n  para_Pixels   IN VARCHAR2\n)\nIS\n  result_val   PLS_INTEGER := 0;\n  status_text  VARCHAR2(4000) := 'pending';\n  v_model_name \"chip_model\".\"Model_name\"%TYPE;\n\n  CURSOR c_chip IS\n    SELECT \"Model_name\"\n    FROM \"chip_model\"\n    WHERE \"WiFi\" = para_WiFi\n    ORDER BY \"Model_name\"\n    FOR UPDATE;\n\nBEGIN\n  IF para_RAM_MiB < 0 THEN\n    result_val := ROUND(para_RAM_MiB * (-1));\n    UPDATE \"chip_model\"\n       SET \"RAM_MiB\" = result_val\n     WHERE \"WiFi\" = para_WiFi;\n  ELSIF para_RAM_MiB < 10 THEN\n    result_val := ROUND(para_RAM_MiB + 5);\n    DELETE FROM \"chip_model\"\n     WHERE \"RAM_MiB\" = para_RAM_MiB;\n  ELSIF para_RAM_MiB < 20 THEN\n    result_val := ROUND(para_RAM_MiB * 2);\n    UPDATE \"screen_mode\"\n       SET \"used_kb\" = para_used_kb + result_val\n     WHERE \"Pixels\" = para_Pixels;\n  ELSIF para_RAM_MiB < 30 THEN\n    result_val := ROUND(para_RAM_MiB - 8);\n    DELETE FROM \"screen_mode\"\n     WHERE \"used_kb\" = para_used_kb;\n  ELSE\n    result_val := ROUND(para_RAM_MiB / 2);\n    status_text := 'processed';\n  END IF;\n\n  UPDATE \"chip_model\"\n     SET \"WiFi\" = para_WiFi || status_text\n   WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n  result_val := ROUND(result_val + 3);\n\n  UPDATE \"screen_mode\"\n     SET \"Pixels\" = para_Pixels || '_updated'\n   WHERE \"used_kb\" = para_used_kb;\n\n  DELETE FROM \"chip_model\"\n   WHERE \"RAM_MiB\" > result_val;\n\n  status_text := 'active';\n\n  UPDATE \"screen_mode\"\n     SET \"used_kb\" = para_used_kb + 12\n   WHERE \"Pixels\" = para_Pixels;\n\n  UPDATE \"chip_model\"\n     SET \"RAM_MiB\" = result_val\n   WHERE \"WiFi\" = para_WiFi;\n\n  result_val := ROUND(result_val - 7);\n\n  DELETE FROM \"screen_mode\"\n   WHERE \"Pixels\" = para_Pixels || '_old';\n\n  UPDATE \"chip_model\"\n     SET \"WiFi\" = para_WiFi || '_final'\n   WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n  status_text := 'completed';\n\n  UPDATE \"screen_mode\"\n     SET \"used_kb\" = para_used_kb * 3\n   WHERE \"Pixels\" = para_Pixels;\n\n  DELETE FROM \"chip_model\"\n   WHERE \"WiFi\" = para_WiFi || status_text\n     AND \"ROM_MiB\" < result_val;\n\n  OPEN c_chip;\n  LOOP\n    FETCH c_chip INTO v_model_name;\n    EXIT WHEN c_chip%NOTFOUND;\n    UPDATE \"chip_model\"\n       SET \"ROM_MiB\" = \"ROM_MiB\" + result_val\n     WHERE CURRENT OF c_chip;\n  END LOOP;\n  CLOSE c_chip;\n\nEND sp;\n/\n"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(-5.0, '802.11b', 20.0, '640 × 256')"
+   },
+   "result": "ok, 0 row(s) affected"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"Model_name\",\"RAM_MiB\",\"ROM_MiB\",\"WiFi\" FROM \"chip_model\" ORDER BY \"Model_name\""
+   },
+   "result": "Model_name | RAM_MiB | ROM_MiB | WiFi\nX30 high-end | 8 | 65 | 802.11b\nX30 mid-range | 8 | 65 | 802.11b\nX3i | 8 | 65 | 802.11b\nX50 Advanced | 8 | 129 | 802.11b\nX50v | 8 | 129 | 802.11b\nX51 mid-range | 8 | 129 | 802.11b\nX51v | 8 | 257 | 802.11b"
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n  para_RAM_MiB IN BINARY_FLOAT,\n  para_WiFi     IN VARCHAR2,\n  para_used_kb  IN BINARY_FLOAT,\n  para_Pixels   IN VARCHAR2\n)\nIS\n  result_val   PLS_INTEGER := 0;\n  status_text  VARCHAR2(4000) := 'pending';\n  v_model_name \"chip_model\".\"Model_name\"%TYPE;\n\n  CURSOR c_chip IS\n    SELECT \"Model_name\"\n    FROM \"chip_model\"\n    WHERE \"WiFi\" = para_WiFi\n    ORDER BY \"Model_name\"\n    FOR UPDATE;\n\nBEGIN\n  IF para_RAM_MiB < 0 THEN\n    result_val := ROUND(para_RAM_MiB * (-1));\n    UPDATE \"chip_model\"\n       SET \"RAM_MiB\" = result_val\n     WHERE \"WiFi\" = para_WiFi;\n  ELSIF para_RAM_MiB < 10 THEN\n    result_val := ROUND(para_RAM_MiB + 5);\n    DELETE FROM \"chip_model\"\n     WHERE \"RAM_MiB\" = para_RAM_MiB;\n  ELSIF para_RAM_MiB < 20 THEN\n    result_val := ROUND(para_RAM_MiB * 2);\n    UPDATE \"screen_mode\"\n       SET \"used_kb\" = para_used_kb + result_val\n     WHERE \"Pixels\" = para_Pixels;\n  ELSIF para_RAM_MiB < 30 THEN\n    result_val := ROUND(para_RAM_MiB - 8);\n    DELETE FROM \"screen_mode\"\n     WHERE \"used_kb\" = para_used_kb;\n  ELSE\n    result_val := ROUND(para_RAM_MiB / 2);\n    status_text := 'processed';\n  END IF;\n\n  UPDATE \"chip_model\"\n     SET \"WiFi\" = para_WiFi || status_text\n   WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n  result_val := ROUND(result_val + 3);\n\n  UPDATE \"screen_mode\"\n     SET \"Pixels\" = para_Pixels || '_updated'\n   WHERE \"used_kb\" = para_used_kb;\n\n  DELETE FROM \"chip_model\"\n   WHERE \"RAM_MiB\" > result_val;\n\n  status_text := 'active';\n\n  UPDATE \"screen_mode\"\n     SET \"used_kb\" = para_used_kb + 12\n   WHERE \"Pixels\" = para_Pixels;\n\n  UPDATE \"chip_model\"\n     SET \"RAM_MiB\" = result_val\n   WHERE \"WiFi\" = para_WiFi;\n\n  result_val := ROUND(result_val - 7);\n\n  DELETE FROM \"screen_mode\"\n   WHERE \"Pixels\" = para_Pixels || '_old';\n\n  UPDATE \"chip_model\"\n     SET \"WiFi\" = para_WiFi || '_final'\n   WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n  status_text := 'completed';\n\n  UPDATE \"screen_mode\"\n     SET \"used_kb\" = para_used_kb * 3\n   WHERE \"Pixels\" = para_Pixels;\n\n  DELETE FROM \"chip_model\"\n   WHERE \"WiFi\" = para_WiFi || status_text\n     AND \"ROM_MiB\" < result_val;\n\n  OPEN c_chip;\n  LOOP\n    FETCH c_chip INTO v_model_name;\n    EXIT WHEN c_chip%NOTFOUND;\n    UPDATE \"chip_model\"\n       SET \"ROM_MiB\" = \"ROM_MiB\" + result_val\n     WHERE CURRENT OF c_chip;\n  END LOOP;\n  CLOSE c_chip;\n\nEND sp;\n"
+   },
+   "result": "compiled",
+   "compiled": true
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n  para_RAM_MiB IN BINARY_FLOAT,\n  para_WiFi     IN VARCHAR2,\n  para_used_kb  IN BINARY_FLOAT,\n  para_Pixels   IN VARCHAR2\n)\nIS\n  result_val   PLS_INTEGER := 0;\n  status_text  VARCHAR2(4000) := 'pending';\n  v_model_name \"chip_model\".\"Model_name\"%TYPE;\n\n  CURSOR c_chip IS\n    SELECT \"Model_name\"\n    FROM \"chip_model\"\n    WHERE \"WiFi\" = para_WiFi\n    ORDER BY \"Model_name\"\n    FOR UPDATE;\n\nBEGIN\n  IF para_RAM_MiB < 0 THEN\n    result_val := ROUND(para_RAM_MiB * (-1));\n    UPDATE \"chip_model\"\n       SET \"RAM_MiB\" = result_val\n     WHERE \"WiFi\" = para_WiFi;\n  ELSIF para_RAM_MiB < 10 THEN\n    result_val := ROUND(para_RAM_MiB + 5);\n    DELETE FROM \"chip_model\"\n     WHERE \"RAM_MiB\" = para_RAM_MiB;\n  ELSIF para_RAM_MiB < 20 THEN\n    result_val := ROUND(para_RAM_MiB * 2);\n    UPDATE \"screen_mode\"\n       SET \"used_kb\" = para_used_kb + result_val\n     WHERE \"Pixels\" = para_Pixels;\n  ELSIF para_RAM_MiB < 30 THEN\n    result_val := ROUND(para_RAM_MiB - 8);\n    DELETE FROM \"screen_mode\"\n     WHERE \"used_kb\" = para_used_kb;\n  ELSE\n    result_val := ROUND(para_RAM_MiB / 2);\n    status_text := 'processed';\n  END IF;\n\n  UPDATE \"chip_model\"\n     SET \"WiFi\" = para_WiFi || status_text\n   WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n  result_val := ROUND(result_val + 3);\n\n  UPDATE \"screen_mode\"\n     SET \"Pixels\" = para_Pixels || '_updated'\n   WHERE \"used_kb\" = para_used_kb;\n\n  DELETE FROM \"chip_model\"\n   WHERE \"RAM_MiB\" > result_val;\n\n  status_text := 'active';\n\n  UPDATE \"screen_mode\"\n     SET \"used_kb\" = para_used_kb + 12\n   WHERE \"Pixels\" = para_Pixels;\n\n  UPDATE \"chip_model\"\n     SET \"RAM_MiB\" = result_val\n   WHERE \"WiFi\" = para_WiFi;\n\n  result_val := ROUND(result_val - 7);\n\n  DELETE FROM \"screen_mode\"\n   WHERE \"Pixels\" = para_Pixels || '_old';\n\n  UPDATE \"chip_model\"\n     SET \"WiFi\" = para_WiFi || '_final'\n   WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n  status_text := 'completed';\n\n  UPDATE \"screen_mode\"\n     SET \"used_kb\" = para_used_kb * 3\n   WHERE \"Pixels\" = para_Pixels;\n\n  DELETE FROM \"chip_model\"\n   WHERE \"WiFi\" = para_WiFi || status_text\n     AND \"ROM_MiB\" < result_val;\n\n  OPEN c_chip;\n  LOOP\n    FETCH c_chip INTO v_model_name;\n    EXIT WHEN c_chip%NOTFOUND;\n    UPDATE \"chip_model\"\n       SET \"ROM_MiB\" = \"ROM_MiB\" + result_val\n     WHERE CURRENT OF c_chip;\n  END LOOP;\n  CLOSE c_chip;\n\nEND sp;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n  para_RAM_MiB IN BINARY_FLOAT,\n  para_WiFi     IN VARCHAR2,\n  para_used_kb  IN BINARY_FLOAT,\n  para_Pixels   IN VARCHAR2\n)\nIS\n  result_val   PLS_INTEGER := 0;\n  status_text  VARCHAR2(4000) := 'pending';\n  v_model_name \"chip_model\".\"Model_name\"%TYPE;\n\n  CURSOR c_chip IS\n    SELECT \"Model_name\"\n    FROM \"chip_model\"\n    WHERE \"WiFi\" = para_WiFi\n    ORDER BY \"Model_name\"\n    FOR UPDATE;\n\nBEGIN\n  IF para_RAM_MiB < 0 THEN\n    result_val := ROUND(para_RAM_MiB * (-1));\n    UPDATE \"chip_model\"\n       SET \"RAM_MiB\" = result_val\n     WHERE \"WiFi\" = para_WiFi;\n  ELSIF para_RAM_MiB < 10 THEN\n    result_val := ROUND(para_RAM_MiB + 5);\n    DELETE FROM \"chip_model\"\n     WHERE \"RAM_MiB\" = para_RAM_MiB;\n  ELSIF para_RAM_MiB < 20 THEN\n    result_val := ROUND(para_RAM_MiB * 2);\n    UPDATE \"screen_mode\"\n       SET \"used_kb\" = para_used_kb + result_val\n     WHERE \"Pixels\" = para_Pixels;\n  ELSIF para_RAM_MiB < 30 THEN\n    result_val := ROUND(para_RAM_MiB - 8);\n    DELETE FROM \"screen_mode\"\n     WHERE \"used_kb\" = para_used_kb;\n  ELSE\n    result_val := ROUND(para_RAM_MiB / 2);\n    status_text := 'processed';\n  END IF;\n\n  UPDATE \"chip_model\"\n     SET \"WiFi\" = para_WiFi || status_text\n   WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n  result_val := ROUND(result_val + 3);\n\n  UPDATE \"screen_mode\"\n     SET \"Pixels\" = para_Pixels || '_updated'\n   WHERE \"used_kb\" = para_used_kb;\n\n  DELETE FROM \"chip_model\"\n   WHERE \"RAM_MiB\" > result_val;\n\n  status_text := 'active';\n\n  UPDATE \"screen_mode\"\n     SET \"used_kb\" = para_used_kb + 12\n   WHERE \"Pixels\" = para_Pixels;\n\n  UPDATE \"chip_model\"\n     SET \"RAM_MiB\" = result_val\n   WHERE \"WiFi\" = para_WiFi;\n\n  result_val := ROUND(result_val - 7);\n\n  DELETE FROM \"screen_mode\"\n   WHERE \"Pixels\" = para_Pixels || '_old';\n\n  UPDATE \"chip_model\"\n     SET \"WiFi\" = para_WiFi || '_final'\n   WHERE \"RAM_MiB\" = para_RAM_MiB;\n\n  status_text := 'completed';\n\n  UPDATE \"screen_mode\"\n     SET \"used_kb\" = para_used_kb * 3\n   WHERE \"Pixels\" = para_Pixels;\n\n  DELETE FROM \"chip_model\"\n   WHERE \"WiFi\" = para_WiFi || status_text\n     AND \"ROM_MiB\" < result_val;\n\n  OPEN c_chip;\n  LOOP\n    FETCH c_chip INTO v_model_name;\n    EXIT WHEN c_chip%NOTFOUND;\n    UPDATE \"chip_model\"\n       SET \"ROM_MiB\" = \"ROM_MiB\" + result_val\n     WHERE CURRENT OF c_chip;\n  END LOOP;\n  CLOSE c_chip;\n\nEND sp;"
+ },
+ "pair": null
+}
