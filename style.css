@@ -644,3 +644,19 @@ td.ovcell b { font-size: 13px; }
   .lb-label { font-size: 11.5px; }
   .lb-val { font-size: 11.5px; gap: 4px; }
 }
+
+/* ── v7: the merged Table 6 + paper figures ───────────────────────── */
+
+.t6 th.t6-group { font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-dim); border-bottom: none; padding-bottom: 2px; }
+.t6 tbody tr.t6-block th { text-align: left; background: var(--surface-2);
+  font-size: 12.5px; letter-spacing: .02em; padding: 8px 10px;
+  border-top: 2px solid var(--text-dim); }
+.t6 td.excell u { text-decoration: underline; text-underline-offset: 2px; }
+.t6 td.excell b { font-weight: 800; }
+
+.paperfig { margin: 12px 0 0; border: 1px solid var(--border); border-radius: 10px;
+  background: #fff; padding: 14px; }
+.paperfig img { display: block; width: 100%; height: auto; }
+
+.chip-spent { margin-left: auto; color: var(--text-dim); font-weight: 600; }

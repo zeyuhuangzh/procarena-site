@@ -1,0 +1,136 @@
+{
+ "id": "ora_direct_gpt-5.2_nob_20260829-0805--oracle_a5_003",
+ "run": "ora_direct_gpt-5.2_nob_20260829-0805",
+ "task_id": "oracle_a5_003",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "a5",
+ "dialect": "oracle",
+ "model": "gpt-5.2",
+ "model_label": "GPT-5.2",
+ "solver_id": "gpt-5.2",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 30.1,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 1,
+   "wasted_calls": 0,
+   "input_tokens": 1112,
+   "output_tokens": 1909,
+   "cached_input_tokens": 0,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 1112,
+   "max_input_tokens": 1112,
+   "cost_usd": 0.0,
+   "turns": 1,
+   "cache_sources": {
+    "reported": 1
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 1,
+    "wasted_calls": 0,
+    "input_tokens": 1112,
+    "output_tokens": 1909,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 1112,
+    "max_input_tokens": 1112,
+    "cost_usd": 0.0
+   }
+  }
+ },
+ "task": {
+  "prompt": "Write an Oracle PL/SQL stored procedure named sp with exactly this signature: sp(arg1 NUMBER, arg2 VARCHAR2, arg3 NUMBER, arg4 NUMBER). The names are placeholders; use positions. The first argument is the score threshold, the second is the grape name for the new row, the third is the price value used in the pricing rules, and the fourth is the number used for the delete comparison and for choosing the new row's price. Use the attached built-in functions from builtins.md as-is; don't reimplement them.\n\nWork on the wine listing. Consider every wine whose score is at least the first argument. Keep a running total starting at 0; for each considered row, add that row's price as it was before that row changed, then apply only the first match below:\n- grape starts with exact text prefix_ → set its price to the third argument\n- otherwise, wine number strictly less than the fourth argument → delete that row\n- otherwise, winery exactly Twomey → set its price to the third argument plus that row's original price\n- otherwise, cases greater than its score → set its price to the third argument plus that row's original price\n- otherwise, set its price to twice the third argument\n\nDeleted rows still count in the running total. If no rows match, leave existing rows unchanged and keep the running total at 0. After those changes and deletions are done, find the largest wine number still present; if none remain, use 1 for the new row, otherwise use that largest number plus 1. Then insert exactly one row with that number, score equal to the first argument plus 1, grape equal to exact text prefix_ followed immediately by the second argument, and price equal to the third argument when the running total is not greater than the fourth argument, or the third argument plus 1 when the running total is greater. Don't assign the other wine columns. Leave the transaction uncommitted and include no exception handler.\n\nReturn the complete stored procedure and nothing else.",
+  "materials": [
+   {
+    "file": "builtins.md",
+    "kind": "built-in function signatures",
+    "text": "# Built-in functions you may rely on\n\n- `instr`\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(arg1 NUMBER, arg2 VARCHAR2, arg3 NUMBER, arg4 NUMBER)\nAS\n  v_total     NUMBER := 0;\n  v_orig_price NUMBER;\n  v_max_no    NUMBER;\n  v_new_no    NUMBER;\n  v_new_price NUMBER;\n\n  CURSOR c_w IS\n    SELECT \"No\", \"Grape\", \"Winery\", \"Price\", \"Score\", \"Cases\"\n    FROM \"wine\"\n    WHERE \"Score\" >= arg1\n    FOR UPDATE OF \"Price\";\nBEGIN\n  FOR r IN c_w LOOP\n    v_orig_price := r.\"Price\";\n    v_total := v_total + v_orig_price;\n\n    IF instr(r.\"Grape\", 'prefix_') = 1 THEN\n      UPDATE \"wine\"\n      SET \"Price\" = arg3\n      WHERE CURRENT OF c_w;\n\n    ELSIF r.\"No\" < arg4 THEN\n      DELETE FROM \"wine\"\n      WHERE CURRENT OF c_w;\n\n    ELSIF r.\"Winery\" = 'Twomey' THEN\n      UPDATE \"wine\"\n      SET \"Price\" = arg3 + v_orig_price\n      WHERE CURRENT OF c_w;\n\n    ELSIF r.\"Cases\" > r.\"Score\" THEN\n      UPDATE \"wine\"\n      SET \"Price\" = arg3 + v_orig_price\n      WHERE CURRENT OF c_w;\n\n    ELSE\n      UPDATE \"wine\"\n      SET \"Price\" = 2 * arg3\n      WHERE CURRENT OF c_w;\n    END IF;\n  END LOOP;\n\n  SELECT MAX(\"No\")\n  INTO v_max_no\n  FROM \"wine\";\n\n  IF v_max_no IS NULL THEN\n    v_new_no := 1;\n  ELSE\n    v_new_no := v_max_no + 1;\n  END IF;\n\n  IF v_total > arg4 THEN\n    v_new_price := arg3 + 1;\n  ELSE\n    v_new_price := arg3;\n  END IF;\n\n  INSERT INTO \"wine\" (\"No\", \"Score\", \"Grape\", \"Price\")\n  VALUES (v_new_no, arg1 + 1, 'prefix_' || arg2, v_new_price);\nEND sp;\n/"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(arg1 NUMBER, arg2 VARCHAR2, arg3 NUMBER, arg4 NUMBER)\nAS\n  v_total     NUMBER := 0;\n  v_orig_price NUMBER;\n  v_max_no    NUMBER;\n  v_new_no    NUMBER;\n  v_new_price NUMBER;\n\n  CURSOR c_w IS\n    SELECT \"No\", \"Grape\", \"Winery\", \"Price\", \"Score\", \"Cases\"\n    FROM \"wine\"\n    WHERE \"Score\" >= arg1\n    FOR UPDATE OF \"Price\";\nBEGIN\n  FOR r IN c_w LOOP\n    v_orig_price := r.\"Price\";\n    v_total := v_total + v_orig_price;\n\n    IF instr(r.\"Grape\", 'prefix_') = 1 THEN\n      UPDATE \"wine\"\n      SET \"Price\" = arg3\n      WHERE CURRENT OF c_w;\n\n    ELSIF r.\"No\" < arg4 THEN\n      DELETE FROM \"wine\"\n      WHERE CURRENT OF c_w;\n\n    ELSIF r.\"Winery\" = 'Twomey' THEN\n      UPDATE \"wine\"\n      SET \"Price\" = arg3 + v_orig_price\n      WHERE CURRENT OF c_w;\n\n    ELSIF r.\"Cases\" > r.\"Score\" THEN\n      UPDATE \"wine\"\n      SET \"Price\" = arg3 + v_orig_price\n      WHERE CURRENT OF c_w;\n\n    ELSE\n      UPDATE \"wine\"\n      SET \"Price\" = 2 * arg3\n      WHERE CURRENT OF c_w;\n    END IF;\n  END LOOP;\n\n  SELECT MAX(\"No\")\n  INTO v_max_no\n  FROM \"wine\";\n\n  IF v_max_no IS NULL THEN\n    v_new_no := 1;\n  ELSE\n    v_new_no := v_max_no + 1;\n  END IF;\n\n  IF v_total > arg4 THEN\n    v_new_price := arg3 + 1;\n  ELSE\n    v_new_price := arg3;\n  END IF;\n\n  INSERT INTO \"wine\" (\"No\", \"Score\", \"Grape\", \"Price\")\n  VALUES (v_new_no, arg1 + 1, 'prefix_' || arg2, v_new_price);\nEND sp;\n/"
+ },
+ "pair": null
+}

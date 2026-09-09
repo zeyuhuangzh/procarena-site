@@ -1,0 +1,363 @@
+{
+ "id": "ora_interact-loc_glm-5.3_b6-2-3_20260830-1852--oracle_a5_003",
+ "run": "ora_interact-loc_glm-5.3_b6-2-3_20260830-1852",
+ "task_id": "oracle_a5_003",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "a5",
+ "dialect": "oracle",
+ "model": "glm-5.3",
+ "model_label": "GLM-5.3",
+ "solver_id": "glm-5.3",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "database state differs after call 1",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "spec",
+  "diagnosis": {
+   "kind": "state_differs",
+   "message": "call 1/7 CALL sp(87, 'A', 10, 0); -- database state differs; differing table(s): wine"
+  },
+  "recovered": 2,
+  "oracle_size": 4
+ },
+ "summary": {
+  "steps": 12,
+  "seconds": 170.9,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 1,
+   "off_oracle": 0
+  },
+  "recovered": 2,
+  "oracle_size": 4,
+  "entries_per_question": 1.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 1,
+   "ask_user": 1,
+   "ask_selector": 1,
+   "compile_plsql": 1,
+   "execute_scratch": 6,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 17.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 12.0,
+   "by_tool": {
+    "get_schema": 1.0,
+    "sample_rows": 0.5,
+    "ask_user": 2.0,
+    "ask_selector": 2.0,
+    "compile_plsql": 0.5,
+    "execute_scratch": 6.0,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 11,
+   "wasted_calls": 0,
+   "input_tokens": 38942,
+   "output_tokens": 5666,
+   "cached_input_tokens": 26688,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 12254,
+   "max_input_tokens": 5636,
+   "cost_usd": 0.0,
+   "turns": 11,
+   "cache_sources": {
+    "reported": 15
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 4,
+    "wasted_calls": 0,
+    "input_tokens": 3550,
+    "output_tokens": 2056,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 3550,
+    "max_input_tokens": 1407,
+    "cost_usd": 0.0011
+   },
+   "total": {
+    "calls": 15,
+    "wasted_calls": 0,
+    "input_tokens": 42492,
+    "output_tokens": 7722,
+    "cached_input_tokens": 26688,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 15804,
+    "max_input_tokens": 5636,
+    "cost_usd": 0.0011
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 0,
+   "blocked": 0,
+   "none": 0,
+   "items_used": [],
+   "inventory_size": 7
+  }
+ },
+ "task": {
+  "prompt": "Write an Oracle PL/SQL stored procedure named sp with exactly this signature: sp(arg1 NUMBER, arg2 VARCHAR2, arg3 NUMBER, arg4 NUMBER). The names are placeholders; use positions. The first argument is the score threshold, the second is the grape name for the new row, the third is the price value used in the pricing rules, and the fourth is the number used for the delete comparison and for choosing the new row's price. Use the attached built-in functions from builtins.md as-is; don't reimplement them.\n\nWork on the wine listing. Consider every wine whose score is at least the first argument. Each considered wine contributes the price it had before its rule was applied to the running total exactly once, and is then acted on by exactly one of the rules below, the first one that matches it.\n- grape starts with exact text prefix_ → set its price to the third argument\n- otherwise, wine number strictly less than the fourth argument → delete that row\n- otherwise, winery exactly Twomey → set its price based on the third argument\n- otherwise, apply the Hollander concession to that row\n- otherwise, set its price to twice the third argument\n\nDeleted rows still count in the running total. If no rows match, leave existing rows unchanged and keep the running total at 0. After those changes and deletions are done, find the largest wine number still present; if none remain, use 1 for the new row, otherwise use that largest number plus 1. Then insert exactly one row with that number, score equal to the first argument plus 1, grape equal to exact text prefix_ followed immediately by the second argument, and price equal to the third argument when the running total is not greater than the fourth argument, or the third argument plus 1 when the running total is greater. Don't assign the other wine columns. Leave the transaction uncommitted and include no exception handler.\n\nFor the otherwise case, set its price to 3 times the third argument.\n\nReturn the complete stored procedure and nothing else.",
+  "materials": [
+   {
+    "file": "builtins.md",
+    "kind": "built-in function signatures",
+    "text": "# Built-in functions you may rely on\n\n- `instr`\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "R1",
+   "op": "reasoning",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "How should the running total and rule application treat each considered row?",
+   "answer": "Set the running total to 0. For each considered row, add that row's price as it was before that row changed to the running total; then apply only the first matching rule below."
+  },
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": 3,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the Hollander concession?",
+   "answer": "The Hollander concession is the rule that, when a considered wine has cases greater than its score, sets that row's price to the third argument plus that row's original price."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 3,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What exact price is assigned for a row whose winery is exactly Twomey?",
+   "answer": "The price is set to the third argument plus that row's original price."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 1,
+   "refuted": 1,
+   "key": "whether the otherwise-case price is twice or three times the third argument",
+   "answer": "The rule list is correct: the otherwise-case price is twice the third argument, i.e. 2 * arg3. The '3 times' statement is wrong."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable appellations , columns = [ No ( NUMBER | primary key | values : 8 , 2 ) , Appelation ( VARCHAR2 | values : Chalone , Amador-Mendocino-Sonoma Counties ) , County ( VARCHAR2 | values : Napa , N/A ) , State ( VARCHAR2 | values : California , California ) , Area ( VARCHAR2 | values : North Coast , California ) , isAVA ( VARCHAR2 | values : Yes , Yes ) ]\ntable grapes , columns = [ ID ( NUMBER | primary key | values : 11 , 1 ) , Grape ( VARCHAR2 | values : Sangiovese , Mourvedre ) , Color ( VARCHAR2 | values : Red , White ) ]\ntable wine , columns = [ No ( NUMBER | primary key | values : 87 , 86 ) , Grape ( VARCHAR2 | values : Pinot Noir , Pinot Noir ) , Winery ( VARCHAR2 | values : Alma Rosa , Twomey ) , Appelation ( VARCHAR2 | values : Santa Lucia Highlands , Sonoma Coast ) , State ( VARCHAR2 | values : California , California ) , Name ( VARCHAR2 | values : Kali Hart , A by Acacia ) , Year ( NUMBER | values : 2008 , 2008 ) , Price ( NUMBER | values : 30 , 68 ) , Score ( NUMBER | values : 87 , 87 ) , Cases ( NUMBER | values : 833 , 500 ) , Drink ( VARCHAR2 | values : now , now ) ]\nforeign keys : None",
+   "spent": 1.0
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "wine"
+   },
+   "result": "No | Grape | Winery | Appelation | State | Name | Year | Price | Score | Cases | Drink\n78 | Pinot Noir | Kosta Browne | Sonoma Coast | California | Gaps Crown Vineyard | 2008 | 68 | 92 | 690 | now\n79 | Pinot Noir | Kosta Browne | Sonoma Coast | California | Pinot Noir | 2008 | 52 | 90 | 3554 | now\n80 | Pinot Noir | Rusack | Sta. Rita Hills | California | Reserve | 2008 | 40 | 89 | 340 | now\n81 | Pinot Noir | Acacia | California | California | A by Acacia | 2008 | 17 | 88 | 58231 | now\n82 | Pinot Noir | Alma Rosa | Sta. Rita Hills | California | La Encantada Vineyard | 2008 | 43 | 88 | 591 | now\n83 | Pinot Noir | Alma Rosa | Sta. Rita Hills | California | La Encantada Vineyard Clone 667 | 2008 | 43 | 88 | 358 | now\n84 | Pinot Noir | Artesa | Carneros | California | Estate Reserve | 2007 | 40 | 88 | 3527 | now\n85 | Pinot Noir | Robert Mondavi | Napa Valley | California | Carneros | 2008 | 28 | 88 | 30300 | now\n86 | Pinot Noir | Pfendler | Sonoma Coast | California | Pinot Noir | 2008 | 45 | 88 | 400 | now\n87 | Pinot Noir | Roar | Santa Lucia Highlands | California | Garys Vineyard | 2008 | 50 | 88 | 710 | now\n88 | Pinot Noir | Rusack | Santa Maria Valley | California | Pinot Noir | 2008 | 36 | 88 | 833 | now\n89 | Pinot Noir | Sequana | Santa Lucia Highlands | California | Sarmento Vineyard | 2008 | 32 | 88 | 500 | now\n90 | Pinot Noir | Spell | Sonoma Coast | California | Pinot Noir | 2008 | 30 | 88 | 170 | now\n91 | Pinot Noir | Twomey | Santa Barbara County | California | Pinot Noir | 2008 | 30 | 88 | 1510 | now\n92 | Pinot Noir | Alma Rosa | Sta. Rita Hills | California | Pinot Noir | 2008 | 32 | 87 | 4651 | now\n93 | Pinot Noir | Castle Rock | Central Coast | California | Pinot Noir | 2008 | 13 | 87 | 36000 | now\n94 | Pinot Noir | V. Sattui | Carneros | California | Henry Ranch | 2008 | 36 | 87 | 951 | now\n95 | Pinot Noir | Sebastiani | Carneros | California | Pinot Noir | 2008 | 24 | 87 | 720 | now\n96 | Pinot Noir | Talbott | Santa Lucia Highlands | California | Kali Hart | 2008 | 21 | 87 | 8000 | now\n97 | Pinot Noir | Tudor | Santa Lucia Highlands | California | Pinot Noir | 2007 | 40 | 87 | 3965 | now",
+   "spent": 1.5
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "Two points in the rule list are ambiguous to me. (1) For the rule \"winery exactly Twomey → set its price based on the third argument\": what exactly should the new price be? (2) The rule \"apply the Hollander concession to that row\": what does the Hollander concession do? I notice the closing line \"For the otherwise case, set its price to 3 times the third argument\" — does that define the Twomey case, or the Hollander concession case, or something else?"
+   },
+   "result": "The price is set to the third argument plus that row's original price.\n\nThe Hollander concession is the rule that, when a considered wine has cases greater than its score, sets that row's price to the third argument plus that row's original price.\n\nSorry -- I don't have anything more on that one.",
+   "spent": 3.5,
+   "revealed": [
+    "M1",
+    "J1"
+   ],
+   "suppressed": [
+    "C1"
+   ],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "options": [
+     1.5618759090665684,
+     "It corrects the final catch-all rule: any considered wine that reaches the last step (not deleted, grape doesn't start with prefix_, not Twomey, and its cases are not greater than its score) gets price = 3 × arg3 (instead of the 'twice' mentioned earlier).",
+     "It defines what to do when the Hollander concession's condition is not met, as a separate additional rule, and the 'twice' rule remains as-is for wines not matching any rule.",
+     "None of these is correct."
+    ],
+    "question": "The rule list ends with \"otherwise, set its price to twice the third argument\", but the closing line of the spec says \"For the otherwise case, set its price to 3 times the third argument.\" What does that closing line refer to?"
+   },
+   "result": "1",
+   "spent": 5.5,
+   "index": 1,
+   "options": [
+    "None of the following are correct.",
+    "1.5618759090665684",
+    "It corrects the final catch-all rule: any considered wine that reaches the last step (not deleted, grape doesn't start with prefix_, not Twomey, and its cases are not greater than its score) gets price = 3 × arg3 (instead of the 'twice' mentioned earlier).",
+    "It defines what to do when the Hollander concession's condition is not met, as a separate additional rule, and the 'twice' rule remains as-is for wines not matching any rule.",
+    "None of these is correct."
+   ],
+   "entry": "C1",
+   "status": "refuted",
+   "conflict_noted": true
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(arg1 NUMBER, arg2 VARCHAR2, arg3 NUMBER, arg4 NUMBER) AS\n  v_total  NUMBER := 0;\n  v_max    NUMBER;\n  v_newno  NUMBER;\n  v_price  NUMBER;\n  CURSOR c IS\n    SELECT \"No\", \"Grape\", \"Winery\", \"Price\", \"Score\", \"Cases\"\n      FROM \"wine\"\n     WHERE \"Score\" >= arg1\n       FOR UPDATE;\nBEGIN\n  FOR r IN c LOOP\n    v_total := v_total + r.\"Price\";\n    IF instr(r.\"Grape\", 'prefix_') = 1 THEN\n      UPDATE \"wine\" SET \"Price\" = arg3 WHERE \"No\" = r.\"No\";\n    ELSIF r.\"No\" < arg4 THEN\n      DELETE FROM \"wine\" WHERE \"No\" = r.\"No\";\n    ELSIF r.\"Winery\" = 'Twomey' THEN\n      UPDATE \"wine\" SET \"Price\" = arg3 + r.\"Price\" WHERE \"No\" = r.\"No\";\n    ELSIF r.\"Cases\" > r.\"Score\" THEN\n      UPDATE \"wine\" SET \"Price\" = arg3 + r.\"Price\" WHERE \"No\" = r.\"No\";\n    ELSE\n      UPDATE \"wine\" SET \"Price\" = 3 * arg3 WHERE \"No\" = r.\"No\";\n    END IF;\n  END LOOP;\n\n  IF v_total > arg4 THEN\n    v_price := arg3 + 1;\n  ELSE\n    v_price := arg3;\n  END IF;\n\n  SELECT MAX(\"No\") INTO v_max FROM \"wine\";\n  IF v_max IS NULL THEN\n    v_newno := 1;\n  ELSE\n    v_newno := v_max + 1;\n  END IF;\n\n  INSERT INTO \"wine\" (\"No\", \"Grape\", \"Score\", \"Price\")\n  VALUES (v_newno, 'prefix_' || arg2, arg1 + 1, v_price);\nEND;"
+   },
+   "result": "compiled",
+   "spent": 6.0,
+   "compiled": true
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(arg1 NUMBER, arg2 VARCHAR2, arg3 NUMBER, arg4 NUMBER) AS\n  v_total  NUMBER := 0;\n  v_max    NUMBER;\n  v_newno  NUMBER;\n  v_price  NUMBER;\n  CURSOR c IS\n    SELECT \"No\", \"Grape\", \"Winery\", \"Price\", \"Score\", \"Cases\"\n      FROM \"wine\"\n     WHERE \"Score\" >= arg1\n       FOR UPDATE;\nBEGIN\n  FOR r IN c LOOP\n    v_total := v_total + r.\"Price\";\n    IF instr(r.\"Grape\", 'prefix_') = 1 THEN\n      UPDATE \"wine\" SET \"Price\" = arg3 WHERE \"No\" = r.\"No\";\n    ELSIF r.\"No\" < arg4 THEN\n      DELETE FROM \"wine\" WHERE \"No\" = r.\"No\";\n    ELSIF r.\"Winery\" = 'Twomey' THEN\n      UPDATE \"wine\" SET \"Price\" = arg3 + r.\"Price\" WHERE \"No\" = r.\"No\";\n    ELSIF r.\"Cases\" > r.\"Score\" THEN\n      UPDATE \"wine\" SET \"Price\" = arg3 + r.\"Price\" WHERE \"No\" = r.\"No\";\n    ELSE\n      UPDATE \"wine\" SET \"Price\" = 3 * arg3 WHERE \"No\" = r.\"No\";\n    END IF;\n  END LOOP;\n\n  IF v_total > arg4 THEN\n    v_price := arg3 + 1;\n  ELSE\n    v_price := arg3;\n  END IF;\n\n  SELECT MAX(\"No\") INTO v_max FROM \"wine\";\n  IF v_max IS NULL THEN\n    v_newno := 1;\n  ELSE\n    v_newno := v_max + 1;\n  END IF;\n\n  INSERT INTO \"wine\" (\"No\", \"Grape\", \"Score\", \"Price\")\n  VALUES (v_newno, 'prefix_' || arg2, arg1 + 1, v_price);\nEND;"
+   },
+   "result": "ok, 0 row(s) affected",
+   "spent": 7.0
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(88, 'Zin', 100, 85)"
+   },
+   "result": "ok, 0 row(s) affected",
+   "spent": 8.0
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"No\", \"Grape\", \"Winery\", \"Price\", \"Score\", \"Cases\" FROM \"wine\" WHERE \"No\" >= 80 ORDER BY \"No\""
+   },
+   "result": "No | Grape | Winery | Price | Score | Cases\n85 | Pinot Noir | Robert Mondavi | 128 | 88 | 30300\n86 | Pinot Noir | Pfendler | 145 | 88 | 400\n87 | Pinot Noir | Roar | 150 | 88 | 710\n88 | Pinot Noir | Rusack | 136 | 88 | 833\n89 | Pinot Noir | Sequana | 132 | 88 | 500\n90 | Pinot Noir | Spell | 130 | 88 | 170\n91 | Pinot Noir | Twomey | 130 | 88 | 1510\n92 | Pinot Noir | Alma Rosa | 32 | 87 | 4651\n93 | Pinot Noir | Castle Rock | 13 | 87 | 36000\n94 | Pinot Noir | V. Sattui | 36 | 87 | 951\n95 | Pinot Noir | Sebastiani | 24 | 87 | 720\n96 | Pinot Noir | Talbott | 21 | 87 | 8000\n97 | Pinot Noir | Tudor | 40 | 87 | 3965\n98 | Pinot Noir | Twomey | 50 | 87 | 1255\n99 | Pinot Noir | Castle Rock | 18 | 86 | 2400\n100 | Pinot Noir | Talbott | 40 | 86 | 2500\n101 | Pinot Noir | Greg Norman California Estates | 15 | 85 | 25000\n102 | Syrah | Chalk Hill | 160 | 94 | 304\n103 | Syrah | DuMOL | 176 | 92 | 420\n104 | Merlot | Mirassou | 12 | 86 | 43321\n105 | Malbec | Red Rock | 11 | 86 | 16281\n106 | Cabernet Sauvingnon | Darioush | 325 | 96 | 698\n107 | Cabernet Sauvingnon | Darioush | 180 | 94 | 8783\n108 | Cabernet Sauvingnon | Lewis | 230 | 94 | 180\n109 | Cabernet Sauvingnon | Chimeney Rock | 215 | 93 | 958\n110 | Cabernet Sauvingnon | Chimeney Rock | 178 | 93 | 1952\n111 | Cabernet Sauvingnon | Peter Franus | 140 | 92 | 1369\n112 | Cabernet Sauvingnon | Turnbull | 140 | 91 | 10000\n113 | Cabernet Sauvingnon | Pott | 300 | 90 | 73\n114 | Cabernet Sauvingnon | Beringer | 127 | 88 | 44500\n115 | Cabernet Sauvingnon | Dry Creek | 25 | 87 | 15000\n116 | Grenache | Sine Qua Non | 300 | 97 | 202\n117 | Grenache | Herman Story | 136 | 93 | 398\n118 | Grenache | Villa Creek | 135 | 91 | 350\n119 | Grenache | Beckmen | 148 | 88 | 500\n120 | Grenache | Bella Victorian | 39 | 87 | 300\n121 | Grenache | Austine Hope | 42 | 87 | 566\n122 | Grenache | Jemrose | 38 | 87 | 275\n123 | Petite Sirah | Alta Colina | 148 | 91 | 123\n124 | Petite Sirah | Erna Schein | 148 | 91 | 312\n125 | Petite Sirah | Jaffurs | 134 | 90 | 501\n126 | Petite Sirah | Turley | 175 | 90 | 350\n127 | Petite Sirah | JC Cellars | 135 | 89 | 340\n128 | Petite Sirah | Parducci | 11 | 85 | 15340\n129 | Pinot Noir | A.P.Vin | 148 | 95 | 325\n130 | Pinot Noir | Siduri | 154 | 95 | 364\n131 | Pinot Noir | A.P.Vin | 148 | 94 | 200\n132 | Pinot Noir | Loring | 145 | 94 | 250\n133 | Pinot Noir | Loring | 145 | 94 | 200\n134 | Pinot Noir | Siduri | 151 | 94 | 298\n... (more rows not shown)",
+   "spent": 9.0
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"No\", \"Grape\", \"Score\", \"Price\" FROM \"wine\" ORDER BY \"No\" DESC FETCH FIRST 3 ROWS ONLY"
+   },
+   "result": "No | Grape | Score | Price\n500 | prefix_Zin | 89 | 101\n499 | Zinfandel | 86 | 25\n498 | Barbera | 87 | 17",
+   "spent": 10.0
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(999, 'X', 5, 0)"
+   },
+   "result": "ok, 0 row(s) affected",
+   "spent": 11.0
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"No\", \"Grape\", \"Score\", \"Price\" FROM \"wine\" WHERE \"Score\" = 1000 OR \"No\" > 500 ORDER BY \"No\""
+   },
+   "result": "No | Grape | Score | Price\n501 | prefix_X | 1000 | 5",
+   "spent": 12.0
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(arg1 NUMBER, arg2 VARCHAR2, arg3 NUMBER, arg4 NUMBER) AS\n  v_total  NUMBER := 0;\n  v_max    NUMBER;\n  v_newno  NUMBER;\n  v_price  NUMBER;\n  CURSOR c IS\n    SELECT \"No\", \"Grape\", \"Winery\", \"Price\", \"Score\", \"Cases\"\n      FROM \"wine\"\n     WHERE \"Score\" >= arg1\n       FOR UPDATE;\nBEGIN\n  FOR r IN c LOOP\n    v_total := v_total + r.\"Price\";\n    IF instr(r.\"Grape\", 'prefix_') = 1 THEN\n      UPDATE \"wine\" SET \"Price\" = arg3 WHERE \"No\" = r.\"No\";\n    ELSIF r.\"No\" < arg4 THEN\n      DELETE FROM \"wine\" WHERE \"No\" = r.\"No\";\n    ELSIF r.\"Winery\" = 'Twomey' THEN\n      UPDATE \"wine\" SET \"Price\" = arg3 + r.\"Price\" WHERE \"No\" = r.\"No\";\n    ELSIF r.\"Cases\" > r.\"Score\" THEN\n      UPDATE \"wine\" SET \"Price\" = arg3 + r.\"Price\" WHERE \"No\" = r.\"No\";\n    ELSE\n      UPDATE \"wine\" SET \"Price\" = 3 * arg3 WHERE \"No\" = r.\"No\";\n    END IF;\n  END LOOP;\n\n  IF v_total > arg4 THEN\n    v_price := arg3 + 1;\n  ELSE\n    v_price := arg3;\n  END IF;\n\n  SELECT MAX(\"No\") INTO v_max FROM \"wine\";\n  IF v_max IS NULL THEN\n    v_newno := 1;\n  ELSE\n    v_newno := v_max + 1;\n  END IF;\n\n  INSERT INTO \"wine\" (\"No\", \"Grape\", \"Score\", \"Price\")\n  VALUES (v_newno, 'prefix_' || arg2, arg1 + 1, v_price);\nEND;"
+   },
+   "result": "received",
+   "spent": 12.0,
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(arg1 NUMBER, arg2 VARCHAR2, arg3 NUMBER, arg4 NUMBER) AS\n  v_total  NUMBER := 0;\n  v_max    NUMBER;\n  v_newno  NUMBER;\n  v_price  NUMBER;\n  CURSOR c IS\n    SELECT \"No\", \"Grape\", \"Winery\", \"Price\", \"Score\", \"Cases\"\n      FROM \"wine\"\n     WHERE \"Score\" >= arg1\n       FOR UPDATE;\nBEGIN\n  FOR r IN c LOOP\n    v_total := v_total + r.\"Price\";\n    IF instr(r.\"Grape\", 'prefix_') = 1 THEN\n      UPDATE \"wine\" SET \"Price\" = arg3 WHERE \"No\" = r.\"No\";\n    ELSIF r.\"No\" < arg4 THEN\n      DELETE FROM \"wine\" WHERE \"No\" = r.\"No\";\n    ELSIF r.\"Winery\" = 'Twomey' THEN\n      UPDATE \"wine\" SET \"Price\" = arg3 + r.\"Price\" WHERE \"No\" = r.\"No\";\n    ELSIF r.\"Cases\" > r.\"Score\" THEN\n      UPDATE \"wine\" SET \"Price\" = arg3 + r.\"Price\" WHERE \"No\" = r.\"No\";\n    ELSE\n      UPDATE \"wine\" SET \"Price\" = 3 * arg3 WHERE \"No\" = r.\"No\";\n    END IF;\n  END LOOP;\n\n  IF v_total > arg4 THEN\n    v_price := arg3 + 1;\n  ELSE\n    v_price := arg3;\n  END IF;\n\n  SELECT MAX(\"No\") INTO v_max FROM \"wine\";\n  IF v_max IS NULL THEN\n    v_newno := 1;\n  ELSE\n    v_newno := v_max + 1;\n  END IF;\n\n  INSERT INTO \"wine\" (\"No\", \"Grape\", \"Score\", \"Price\")\n  VALUES (v_newno, 'prefix_' || arg2, arg1 + 1, v_price);\nEND;"
+ },
+ "pair": {
+  "single_run": "filtered-ora-a5",
+  "single_task": "oracle_a5_003"
+ }
+}

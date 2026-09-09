@@ -1,0 +1,130 @@
+{
+ "id": "ora_direct_gpt-5.2_nob_20260829-0805--oracle_a1_000",
+ "run": "ora_direct_gpt-5.2_nob_20260829-0805",
+ "task_id": "oracle_a1_000",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "a1",
+ "dialect": "oracle",
+ "model": "gpt-5.2",
+ "model_label": "GPT-5.2",
+ "solver_id": "gpt-5.2",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 27.4,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 1,
+   "wasted_calls": 0,
+   "input_tokens": 845,
+   "output_tokens": 1868,
+   "cached_input_tokens": 0,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 845,
+   "max_input_tokens": 845,
+   "cost_usd": 0.0,
+   "turns": 1,
+   "cache_sources": {
+    "reported": 1
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 1,
+    "wasted_calls": 0,
+    "input_tokens": 845,
+    "output_tokens": 1868,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 845,
+    "max_input_tokens": 845,
+    "cost_usd": 0.0
+   }
+  }
+ },
+ "task": {
+  "prompt": "Create an Oracle PL/SQL procedure named `sp` with exactly this signature: `sp(arg1 NUMBER, arg2 VARCHAR2, arg3 VARCHAR2, arg4 VARCHAR2)`. It returns nothing. arg1 is the age cutoff, arg2 is the driver name, arg3 is the party, arg4 is the home city.\n\nFirst, for drivers older than arg1, set driver name to arg2, bump years worked on their school-bus records by 1, and when arg3 isn't null and the driver party matches it, set those school-bus records' full-time flag to T.\n\nThen delete drivers with null party. After that, set home city to arg4 for the remaining drivers.\n\nIf arg3 isn't null, set party to arg3 for remaining drivers older than arg1, and set full-time flag to F on school-bus records for remaining drivers with party = arg3 and age <= arg1. Basically that's it.\n\nUse only driver records and school-bus records; do not read or change school records, and do not read or change the school-bus record's own ID. Do not commit or rollback, and do not define exception handlers. Return the complete stored procedure and nothing else.",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(arg1 NUMBER, arg2 VARCHAR2, arg3 VARCHAR2, arg4 VARCHAR2)\nAS\nBEGIN\n  UPDATE \"driver\" d\n     SET d.\"Name\" = arg2\n   WHERE d.\"Age\" > arg1;\n\n  UPDATE \"school_bus\" sb\n     SET sb.\"Years_Working\" = sb.\"Years_Working\" + 1\n   WHERE sb.\"Driver_ID\" IN (\n           SELECT d.\"Driver_ID\"\n             FROM \"driver\" d\n            WHERE d.\"Age\" > arg1\n         );\n\n  IF arg3 IS NOT NULL THEN\n    UPDATE \"school_bus\" sb\n       SET sb.\"If_full_time\" = 'T'\n     WHERE sb.\"Driver_ID\" IN (\n             SELECT d.\"Driver_ID\"\n               FROM \"driver\" d\n              WHERE d.\"Age\" > arg1\n                AND d.\"Party\" = arg3\n           );\n  END IF;\n\n  DELETE FROM \"driver\" d\n   WHERE d.\"Party\" IS NULL;\n\n  UPDATE \"driver\" d\n     SET d.\"Home_city\" = arg4;\n\n  IF arg3 IS NOT NULL THEN\n    UPDATE \"driver\" d\n       SET d.\"Party\" = arg3\n     WHERE d.\"Age\" > arg1;\n\n    UPDATE \"school_bus\" sb\n       SET sb.\"If_full_time\" = 'F'\n     WHERE sb.\"Driver_ID\" IN (\n             SELECT d.\"Driver_ID\"\n               FROM \"driver\" d\n              WHERE d.\"Party\" = arg3\n                AND d.\"Age\" <= arg1\n           );\n  END IF;\nEND sp;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(arg1 NUMBER, arg2 VARCHAR2, arg3 VARCHAR2, arg4 VARCHAR2)\nAS\nBEGIN\n  UPDATE \"driver\" d\n     SET d.\"Name\" = arg2\n   WHERE d.\"Age\" > arg1;\n\n  UPDATE \"school_bus\" sb\n     SET sb.\"Years_Working\" = sb.\"Years_Working\" + 1\n   WHERE sb.\"Driver_ID\" IN (\n           SELECT d.\"Driver_ID\"\n             FROM \"driver\" d\n            WHERE d.\"Age\" > arg1\n         );\n\n  IF arg3 IS NOT NULL THEN\n    UPDATE \"school_bus\" sb\n       SET sb.\"If_full_time\" = 'T'\n     WHERE sb.\"Driver_ID\" IN (\n             SELECT d.\"Driver_ID\"\n               FROM \"driver\" d\n              WHERE d.\"Age\" > arg1\n                AND d.\"Party\" = arg3\n           );\n  END IF;\n\n  DELETE FROM \"driver\" d\n   WHERE d.\"Party\" IS NULL;\n\n  UPDATE \"driver\" d\n     SET d.\"Home_city\" = arg4;\n\n  IF arg3 IS NOT NULL THEN\n    UPDATE \"driver\" d\n       SET d.\"Party\" = arg3\n     WHERE d.\"Age\" > arg1;\n\n    UPDATE \"school_bus\" sb\n       SET sb.\"If_full_time\" = 'F'\n     WHERE sb.\"Driver_ID\" IN (\n             SELECT d.\"Driver_ID\"\n               FROM \"driver\" d\n              WHERE d.\"Party\" = arg3\n                AND d.\"Age\" <= arg1\n           );\n  END IF;\nEND sp;"
+ },
+ "pair": null
+}

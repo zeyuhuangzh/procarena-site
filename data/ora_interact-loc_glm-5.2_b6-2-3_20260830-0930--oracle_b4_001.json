@@ -1,0 +1,241 @@
+{
+ "id": "ora_interact-loc_glm-5.2_b6-2-3_20260830-0930--oracle_b4_001",
+ "run": "ora_interact-loc_glm-5.2_b6-2-3_20260830-0930",
+ "task_id": "oracle_b4_001",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "b4",
+ "dialect": "oracle",
+ "model": "glm-5.2",
+ "model_label": "GLM-5.2",
+ "solver_id": "glm-5.2",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 0,
+  "oracle_size": 5
+ },
+ "summary": {
+  "steps": 3,
+  "seconds": 18.1,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 5,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "describe_table": 1,
+   "compile_plsql": 1,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 19.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 1.0,
+   "by_tool": {
+    "describe_table": 0.5,
+    "compile_plsql": 0.5,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 3,
+   "wasted_calls": 0,
+   "input_tokens": 7075,
+   "output_tokens": 1381,
+   "cached_input_tokens": 6323,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 752,
+   "max_input_tokens": 2955,
+   "cost_usd": 0.0,
+   "turns": 3,
+   "cache_sources": {
+    "reported": 3
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 3,
+    "wasted_calls": 0,
+    "input_tokens": 7075,
+    "output_tokens": 1381,
+    "cached_input_tokens": 6323,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 752,
+    "max_input_tokens": 2955,
+    "cost_usd": 0.0
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 0,
+   "blocked": 0,
+   "none": 0,
+   "items_used": [],
+   "inventory_size": 10
+  }
+ },
+ "task": {
+  "prompt": "Complete the missing block in the attached incomplete procedure. Keep the procedure named `sp` with exactly the signature `sp(VARCHAR2, VARCHAR2, NUMBER, NUMBER)`; the four arguments are, in order, the election cycle, the registration integer, the treasurer vote, and the advisor. Only fill in the TODO inside the first cursor loop; leave everything else in the file exactly as written.\n\nFor each voting record that cursor returns, process it on the golden-row basis. The record's registration integer must end up as the second argument concatenated with its fetched election cycle; if the fetched treasurer vote strictly equals the third argument — neither is null and the numbers are equal — that same registration integer must additionally have the fetched secretary vote appended to it, so the append applies after the initial concatenation, under Oracle concatenation semantics. If the fetched treasurer vote is null and the third argument is not null, the record's treasurer vote must be updated. The record's president vote must be the third argument whenever the fetched election cycle and the first argument are null-safe equal — both null, or both non-null and equal.\n\nDo not add exception handling, COMMIT, or ROLLBACK. Return the completed stored procedure and nothing else.",
+  "materials": [
+   {
+    "file": "incomplete_procedure.sql",
+    "kind": "incomplete procedure",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_Election_Cycle VARCHAR2, para_Registration_integer VARCHAR2, para_Treasurer_Vote NUMBER, para_Advisor NUMBER) IS\n    CURSOR ref_cursor1 IS SELECT * FROM \"Voting_record\" FOR UPDATE;\n    CURSOR ref_cursor2 IS SELECT * FROM \"Student\" FOR UPDATE;\n    rec1 ref_cursor1%ROWTYPE;\n    rec2 ref_cursor2%ROWTYPE;\nBEGIN\n    INSERT INTO \"Voting_record\" (\"Election_Cycle\") VALUES (para_Election_Cycle);\n    OPEN ref_cursor1;\n    LOOP\n        FETCH ref_cursor1 INTO rec1;-- TODO: Handle each voting record fetched by the second cursor loop: update its registration from the parameters, backfill the treasurer vote when appropriate, and propagate the vote to rows for the matching election cycle.\n\n    END LOOP;\n    CLOSE ref_cursor1;\n    IF para_Treasurer_Vote > 50 THEN\n        DELETE FROM \"Voting_record\" vr WHERE vr.\"StuID\" IN (SELECT s.\"StuID\" FROM \"Student\" s WHERE s.\"Advisor\" = para_Advisor);\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN ref_cursor2%NOTFOUND;\n            IF rec2.\"Advisor\" = para_Advisor THEN\n                DELETE FROM \"Student\" WHERE CURRENT OF ref_cursor2;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END IF;\nEND;"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "S1",
+   "op": "commonsense",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "How does Oracle concatenation treat NULL values?",
+   "answer": "In Oracle, concatenation treats a NULL operand as an empty string, so a null election cycle contributes no characters and appending a null secretary vote appends nothing."
+  },
+  {
+   "id": "R1",
+   "op": "reasoning",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "When do I set the record's president vote to the third argument?",
+   "answer": "Evaluate the fetched election cycle against the first argument with null-safe equality: both null is a match; both non-null and equal is a match; exactly one null (or non-null unequal) is not a match. On match only, set the record's president vote to the third argument."
+  },
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the golden-row basis?",
+   "answer": "It means the record's values must be treated as the exact values the cursor returned when the row was fetched; any later changes to that row are ignored while processing this block."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What value must the record's treasurer vote be updated to?",
+   "answer": "The record's treasurer vote must be set to the third argument."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Which cursor loop should the TODO block be completed in?",
+   "answer": "The correct statement is the one saying the TODO is in the first cursor loop; that is the true value. The second cursor loop in the rewritten comment is the introduced inconsistency."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Voting_record"
+   },
+   "result": "table Voting_record , columns = [ StuID ( NUMBER | primary key | values : 1005 , 1004 ) , Registration_integer ( VARCHAR2 | values : 08/30/2014 , 08/30/2015 ) , Election_Cycle ( VARCHAR2 | values : Spring , Fall ) , President_Vote ( NUMBER | values : 1004 , 1004 ) , Vice_President_Vote ( NUMBER | values : 1007 , 1007 ) , Secretary_Vote ( NUMBER | values : 1010 , 1010 ) , Treasurer_Vote ( NUMBER | values : 1035 , 1035 ) , Class_President_Vote ( NUMBER | values : 1031 , 1021 ) , Class_Senator_Vote ( NUMBER | values : 1028 , 1028 ) ]",
+   "spent": 0.5
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Election_Cycle VARCHAR2, para_Registration_integer VARCHAR2, para_Treasurer_Vote NUMBER, para_Advisor NUMBER) IS\n    CURSOR ref_cursor1 IS SELECT * FROM \"Voting_record\" FOR UPDATE;\n    CURSOR ref_cursor2 IS SELECT * FROM \"Student\" FOR UPDATE;\n    rec1 ref_cursor1%ROWTYPE;\n    rec2 ref_cursor2%ROWTYPE;\nBEGIN\n    INSERT INTO \"Voting_record\" (\"Election_Cycle\") VALUES (para_Election_Cycle);\n    OPEN ref_cursor1;\n    LOOP\n        FETCH ref_cursor1 INTO rec1;\n        EXIT WHEN ref_cursor1%NOTFOUND;\n\n        IF rec1.\"Treasurer_Vote\" IS NOT NULL\n           AND para_Treasurer_Vote IS NOT NULL\n           AND rec1.\"Treasurer_Vote\" = para_Treasurer_Vote THEN\n            UPDATE \"Voting_record\"\n               SET \"Registration_integer\" = para_Registration_integer || rec1.\"Election_Cycle\" || rec1.\"Secretary_Vote\"\n             WHERE CURRENT OF ref_cursor1;\n        ELSE\n            UPDATE \"Voting_record\"\n               SET \"Registration_integer\" = para_Registration_integer || rec1.\"Election_Cycle\"\n             WHERE CURRENT OF ref_cursor1;\n        END IF;\n\n        IF rec1.\"Treasurer_Vote\" IS NULL AND para_Treasurer_Vote IS NOT NULL THEN\n            UPDATE \"Voting_record\"\n               SET \"Treasurer_Vote\" = para_Treasurer_Vote\n             WHERE CURRENT OF ref_cursor1;\n        END IF;\n\n        IF rec1.\"Election_Cycle\" IS NULL AND para_Election_Cycle IS NULL\n           OR (rec1.\"Election_Cycle\" IS NOT NULL AND para_Election_Cycle IS NOT NULL\n               AND rec1.\"Election_Cycle\" = para_Election_Cycle) THEN\n            UPDATE \"Voting_record\"\n               SET \"President_Vote\" = para_Treasurer_Vote\n             WHERE CURRENT OF ref_cursor1;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor1;\n    IF para_Treasurer_Vote > 50 THEN\n        DELETE FROM \"Voting_record\" vr WHERE vr.\"StuID\" IN (SELECT s.\"StuID\" FROM \"Student\" s WHERE s.\"Advisor\" = para_Advisor);\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN ref_cursor2%NOTFOUND;\n            IF rec2.\"Advisor\" = para_Advisor THEN\n                DELETE FROM \"Student\" WHERE CURRENT OF ref_cursor2;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END IF;\nEND;"
+   },
+   "result": "compiled",
+   "spent": 1.0,
+   "compiled": true
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_Election_Cycle VARCHAR2, para_Registration_integer VARCHAR2, para_Treasurer_Vote NUMBER, para_Advisor NUMBER) IS\n    CURSOR ref_cursor1 IS SELECT * FROM \"Voting_record\" FOR UPDATE;\n    CURSOR ref_cursor2 IS SELECT * FROM \"Student\" FOR UPDATE;\n    rec1 ref_cursor1%ROWTYPE;\n    rec2 ref_cursor2%ROWTYPE;\nBEGIN\n    INSERT INTO \"Voting_record\" (\"Election_Cycle\") VALUES (para_Election_Cycle);\n    OPEN ref_cursor1;\n    LOOP\n        FETCH ref_cursor1 INTO rec1;\n        EXIT WHEN ref_cursor1%NOTFOUND;\n\n        IF rec1.\"Treasurer_Vote\" IS NOT NULL\n           AND para_Treasurer_Vote IS NOT NULL\n           AND rec1.\"Treasurer_Vote\" = para_Treasurer_Vote THEN\n            UPDATE \"Voting_record\"\n               SET \"Registration_integer\" = para_Registration_integer || rec1.\"Election_Cycle\" || rec1.\"Secretary_Vote\"\n             WHERE CURRENT OF ref_cursor1;\n        ELSE\n            UPDATE \"Voting_record\"\n               SET \"Registration_integer\" = para_Registration_integer || rec1.\"Election_Cycle\"\n             WHERE CURRENT OF ref_cursor1;\n        END IF;\n\n        IF rec1.\"Treasurer_Vote\" IS NULL AND para_Treasurer_Vote IS NOT NULL THEN\n            UPDATE \"Voting_record\"\n               SET \"Treasurer_Vote\" = para_Treasurer_Vote\n             WHERE CURRENT OF ref_cursor1;\n        END IF;\n\n        IF rec1.\"Election_Cycle\" IS NULL AND para_Election_Cycle IS NULL\n           OR (rec1.\"Election_Cycle\" IS NOT NULL AND para_Election_Cycle IS NOT NULL\n               AND rec1.\"Election_Cycle\" = para_Election_Cycle) THEN\n            UPDATE \"Voting_record\"\n               SET \"President_Vote\" = para_Treasurer_Vote\n             WHERE CURRENT OF ref_cursor1;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor1;\n    IF para_Treasurer_Vote > 50 THEN\n        DELETE FROM \"Voting_record\" vr WHERE vr.\"StuID\" IN (SELECT s.\"StuID\" FROM \"Student\" s WHERE s.\"Advisor\" = para_Advisor);\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN ref_cursor2%NOTFOUND;\n            IF rec2.\"Advisor\" = para_Advisor THEN\n                DELETE FROM \"Student\" WHERE CURRENT OF ref_cursor2;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END IF;\nEND;"
+   },
+   "result": "received",
+   "spent": 1.0,
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_Election_Cycle VARCHAR2, para_Registration_integer VARCHAR2, para_Treasurer_Vote NUMBER, para_Advisor NUMBER) IS\n    CURSOR ref_cursor1 IS SELECT * FROM \"Voting_record\" FOR UPDATE;\n    CURSOR ref_cursor2 IS SELECT * FROM \"Student\" FOR UPDATE;\n    rec1 ref_cursor1%ROWTYPE;\n    rec2 ref_cursor2%ROWTYPE;\nBEGIN\n    INSERT INTO \"Voting_record\" (\"Election_Cycle\") VALUES (para_Election_Cycle);\n    OPEN ref_cursor1;\n    LOOP\n        FETCH ref_cursor1 INTO rec1;\n        EXIT WHEN ref_cursor1%NOTFOUND;\n\n        IF rec1.\"Treasurer_Vote\" IS NOT NULL\n           AND para_Treasurer_Vote IS NOT NULL\n           AND rec1.\"Treasurer_Vote\" = para_Treasurer_Vote THEN\n            UPDATE \"Voting_record\"\n               SET \"Registration_integer\" = para_Registration_integer || rec1.\"Election_Cycle\" || rec1.\"Secretary_Vote\"\n             WHERE CURRENT OF ref_cursor1;\n        ELSE\n            UPDATE \"Voting_record\"\n               SET \"Registration_integer\" = para_Registration_integer || rec1.\"Election_Cycle\"\n             WHERE CURRENT OF ref_cursor1;\n        END IF;\n\n        IF rec1.\"Treasurer_Vote\" IS NULL AND para_Treasurer_Vote IS NOT NULL THEN\n            UPDATE \"Voting_record\"\n               SET \"Treasurer_Vote\" = para_Treasurer_Vote\n             WHERE CURRENT OF ref_cursor1;\n        END IF;\n\n        IF rec1.\"Election_Cycle\" IS NULL AND para_Election_Cycle IS NULL\n           OR (rec1.\"Election_Cycle\" IS NOT NULL AND para_Election_Cycle IS NOT NULL\n               AND rec1.\"Election_Cycle\" = para_Election_Cycle) THEN\n            UPDATE \"Voting_record\"\n               SET \"President_Vote\" = para_Treasurer_Vote\n             WHERE CURRENT OF ref_cursor1;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor1;\n    IF para_Treasurer_Vote > 50 THEN\n        DELETE FROM \"Voting_record\" vr WHERE vr.\"StuID\" IN (SELECT s.\"StuID\" FROM \"Student\" s WHERE s.\"Advisor\" = para_Advisor);\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN ref_cursor2%NOTFOUND;\n            IF rec2.\"Advisor\" = para_Advisor THEN\n                DELETE FROM \"Student\" WHERE CURRENT OF ref_cursor2;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END IF;\nEND;"
+ },
+ "pair": {
+  "single_run": "filtered-ora-b4",
+  "single_task": "oracle_b4_001"
+ }
+}

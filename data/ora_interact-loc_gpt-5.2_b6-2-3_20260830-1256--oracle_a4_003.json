@@ -1,0 +1,498 @@
+{
+ "id": "ora_interact-loc_gpt-5.2_b6-2-3_20260830-1256--oracle_a4_003",
+ "run": "ora_interact-loc_gpt-5.2_b6-2-3_20260830-1256",
+ "task_id": "oracle_a4_003",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "a4",
+ "dialect": "oracle",
+ "model": "gpt-5.2",
+ "model_label": "GPT-5.2",
+ "solver_id": "gpt-5.2",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 4,
+  "oracle_size": 6
+ },
+ "summary": {
+  "steps": 20,
+  "seconds": 626.0,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 2,
+   "gated": 0,
+   "ask_selector": 2,
+   "off_oracle": 1
+  },
+  "recovered": 4,
+  "oracle_size": 6,
+  "entries_per_question": 1.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 2,
+   "describe_table": 2,
+   "sample_rows": 2,
+   "execute_scratch": 6,
+   "ask_user": 2,
+   "ask_selector": 2,
+   "compile_plsql": 3,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 21.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 19.5,
+   "by_tool": {
+    "get_schema": 2.0,
+    "describe_table": 1.0,
+    "sample_rows": 1.0,
+    "execute_scratch": 6.0,
+    "ask_user": 4.0,
+    "ask_selector": 4.0,
+    "compile_plsql": 1.5,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 18,
+   "wasted_calls": 0,
+   "input_tokens": 83199,
+   "output_tokens": 34041,
+   "cached_input_tokens": 53888,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 29311,
+   "max_input_tokens": 7198,
+   "cost_usd": 0.0,
+   "turns": 18,
+   "cache_sources": {
+    "reported": 27
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 9,
+    "wasted_calls": 0,
+    "input_tokens": 8538,
+    "output_tokens": 6078,
+    "cached_input_tokens": 1024,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 7514,
+    "max_input_tokens": 1723,
+    "cost_usd": 0.0029
+   },
+   "total": {
+    "calls": 27,
+    "wasted_calls": 0,
+    "input_tokens": 91737,
+    "output_tokens": 40119,
+    "cached_input_tokens": 54912,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 36825,
+    "max_input_tokens": 7198,
+    "cost_usd": 0.0029
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 0,
+   "blocked": 0,
+   "none": 1,
+   "items_used": [],
+   "inventory_size": 6
+  }
+ },
+ "task": {
+  "prompt": "We need a procedure that records an election outcome and applies the resulting city-code changes to students. Name it sp, with exactly sp(arg1 NUMBER, arg2 NUMBER, arg3 NUMBER, arg4 VARCHAR2): arg1 is the presidential vote, arg2 is the class-president vote, arg3 is the treasurer vote, and arg4 is the city code to apply. Fill the attached template by replacing the slots with the SQL the slot dictionary specifies. Don't add, remove, or reorder any statements, and leave the code outside the slots untouched. Return the complete stored procedure and nothing else.",
+  "materials": [
+   {
+    "file": "template.sql",
+    "kind": "template",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_President_Vote NUMBER, para_Class_President_Vote NUMBER, para_Treasurer_Vote NUMBER, para_city_code VARCHAR2) IS\n v_next_stuid NUMBER;\n CURSOR ref_cursor1 IS SELECT * FROM \"Voting_record\" WHERE \"Treasurer_Vote\" < para_Treasurer_Vote AND (\"President_Vote\" <> \"Vice_President_Vote\" OR \"Secretary_Vote\" <> \"Treasurer_Vote\") FOR UPDATE;\n CURSOR ref_cursor2 IS SELECT * FROM \"Student\" FOR UPDATE;\n rec1 ref_cursor1%ROWTYPE;\n rec2 ref_cursor2%ROWTYPE;\nBEGIN\n SELECT NVL(MAX(\"StuID\"), 0) + 1 INTO v_next_stuid FROM \"Voting_record\";\n INSERT INTO \"Voting_record\" (\"StuID\", \"President_Vote\", \"Class_President_Vote\") VALUES (v_next_stuid, para_President_Vote, para_Class_President_Vote);\n UPDATE \"Student\" SET {SLOT_1} = {SLOT_2} WHERE {SLOT_3};\n IF {SLOT_4} THEN\n   UPDATE \"Student\" SET {SLOT_5} = {SLOT_6}\n   WHERE {SLOT_7};\n   OPEN ref_cursor1;\n   LOOP\n     FETCH ref_cursor1 INTO rec1;\n     EXIT WHEN ref_cursor1%NOTFOUND;\n     DELETE FROM \"Voting_record\" WHERE CURRENT OF ref_cursor1;\n   END LOOP;\n   CLOSE ref_cursor1;\n   UPDATE \"Student\" stu\n   SET {SLOT_8} = {SLOT_9}\n   WHERE {SLOT_10};\n ELSE\n   OPEN ref_cursor2;\n   LOOP\n     FETCH ref_cursor2 INTO rec2;\n     EXIT WHEN ref_cursor2%NOTFOUND;\n     UPDATE \"Student\" SET {SLOT_11} = {SLOT_12} WHERE CURRENT OF ref_cursor2;\n   END LOOP;\n   CLOSE ref_cursor2;\n END IF;\nEND;"
+   },
+   {
+    "file": "slots.md",
+    "kind": "slot dictionary",
+    "text": "## Slots\n\n### {SLOT_1}\nKind: target\n\nWhat: The column being set is the Cairnwick turn target.\n\n### {SLOT_3}\nKind: predicate\n\nWhat: Match the student whose student ID is the generated student ID, per ordinary SQL UPDATE semantics.\n\n### {SLOT_4}\nKind: condition\n\nWhat: The first argument equals the second argument. This decides which branch of the IF runs.\n\n### {SLOT_5}\nKind: target\n\nWhat: The column being set is the student's city code.\n\n### {SLOT_6}\nKind: value\n\nWhat: The value to put there is the Cairnwick turn value.\n\n### {SLOT_7}\nKind: predicate\n\nWhat: Match students whose ID appears in at least one voting record where the record's treasurer vote is strictly less than the third argument and, for that same record, either its president vote differs from its vice-president vote or its secretary vote differs from its treasurer vote. The deletion in the same branch must not destroy the evidence that identifies these students.\n\n### {SLOT_8}\nKind: target\n\nWhat: The column being set is the student's city code.\n\n### {SLOT_9}\nKind: value\n\nWhat: The value to put there is the fourth argument (the city-code value passed in).\n\n### {SLOT_10}\nKind: predicate\n\nWhat: Match students for which no voting record has the same student ID as that student. That includes students with no voting record at all and students whose only voting records were just deleted.\n\n### {SLOT_12}\nKind: value\n\nWhat: The value to put there is the Cairnwick turn value.\n\n### Note\n\nFor {SLOT_8}, the column being set is the student's student ID."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "S1",
+   "op": "commonsense",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What happens if an UPDATE's WHERE clause matches no rows?",
+   "answer": "In SQL, an UPDATE that matches no rows succeeds and affects no rows."
+  },
+  {
+   "id": "R1",
+   "op": "reasoning",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Should the predicate read the voting records before or after the deletion in the same branch?",
+   "answer": "Evaluate the predicate against the voting records before the deletion in the same branch removes them, not after the deletion; otherwise the deletion would destroy the very records that identify these students."
+  },
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": 11,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is a Cairnwick turn?",
+   "answer": "A Cairnwick turn is setting the student's city-code column to the fourth argument, i.e. the city-code value passed in."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 11,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is {SLOT_2}?",
+   "answer": "### {SLOT_2}\nKind: value\n\nWhat: The value to put there is the fourth argument (the city-code value passed in)."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": 11,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is {SLOT_11}?",
+   "answer": "### {SLOT_11}\nKind: target\n\nWhat: The column being set is the student's city code."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": 12,
+   "via": "ask_selector",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Does {SLOT_8} set the student's city code or the student's student ID?",
+   "answer": "The main entry is correct: {SLOT_8} sets the student's city code. The closing note's 'student's student ID' is wrong; the student ID is used only to match students, not as the column set by {SLOT_8}."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Student , columns = [ StuID ( NUMBER | primary key | values : 1015 , 1005 ) , LName ( VARCHAR2 | values : Smith , Leighton ) , Fname ( VARCHAR2 | values : Eric , Steven ) , Age ( NUMBER | values : 18 , 22 ) , Sex ( VARCHAR2 | values : M , F ) , Major ( NUMBER | values : 600 , 600 ) , Advisor ( NUMBER | values : 8741 , 7271 ) , city_code ( VARCHAR2 | values : HKG , PIT ) ]\ntable Voting_record , columns = [ StuID ( NUMBER | primary key | values : 1005 , 1001 ) , Registration_integer ( VARCHAR2 | values : 08/30/2012 , 08/30/2014 ) , Election_Cycle ( VARCHAR2 | values : Fall , Fall ) , President_Vote ( NUMBER | values : 1004 , 1004 ) , Vice_President_Vote ( NUMBER | values : 1017 , 1007 ) , Secretary_Vote ( NUMBER | values : 1020 , 1020 ) , Treasurer_Vote ( NUMBER | values : 1035 , 1035 ) , Class_President_Vote ( NUMBER | values : 1031 , 1001 ) , Class_Senator_Vote ( NUMBER | values : 1028 , 1028 ) ]\nforeign keys : None",
+   "spent": 1.0
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Student"
+   },
+   "result": "table Student , columns = [ StuID ( NUMBER | primary key | values : 1015 , 1005 ) , LName ( VARCHAR2 | values : Smith , Leighton ) , Fname ( VARCHAR2 | values : Eric , Steven ) , Age ( NUMBER | values : 18 , 22 ) , Sex ( VARCHAR2 | values : M , F ) , Major ( NUMBER | values : 600 , 600 ) , Advisor ( NUMBER | values : 8741 , 7271 ) , city_code ( VARCHAR2 | values : HKG , PIT ) ]",
+   "spent": 1.5
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Voting_record"
+   },
+   "result": "table Voting_record , columns = [ StuID ( NUMBER | primary key | values : 1005 , 1001 ) , Registration_integer ( VARCHAR2 | values : 08/30/2012 , 08/30/2014 ) , Election_Cycle ( VARCHAR2 | values : Fall , Fall ) , President_Vote ( NUMBER | values : 1004 , 1004 ) , Vice_President_Vote ( NUMBER | values : 1017 , 1007 ) , Secretary_Vote ( NUMBER | values : 1020 , 1020 ) , Treasurer_Vote ( NUMBER | values : 1035 , 1035 ) , Class_President_Vote ( NUMBER | values : 1031 , 1001 ) , Class_Senator_Vote ( NUMBER | values : 1028 , 1028 ) ]",
+   "spent": 2.0
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Student",
+    "limit": 20
+   },
+   "result": "StuID | LName | Fname | Age | Sex | Major | Advisor | city_code\n1001 | Smith | Linda | 18 | F | 600 | 1121 | BAL\n1002 | Kim | Tracy | 19 | F | 600 | 7712 | HKG\n1003 | Jones | Shiela | 21 | F | 600 | 7792 | WAS\n1004 | Kumar | Dinesh | 20 | M | 600 | 8423 | CHI\n1005 | Gompers | Paul | 26 | M | 600 | 1121 | YYZ\n1006 | Schultz | Andy | 18 | M | 600 | 1148 | BAL\n1007 | Apap | Lisa | 18 | F | 600 | 8918 | PIT\n1008 | Nelson | Jandy | 20 | F | 600 | 9172 | BAL\n1009 | Tai | Eric | 19 | M | 600 | 2192 | YYZ\n1010 | Lee | Derek | 17 | M | 600 | 2192 | HOU\n1011 | Adams | David | 22 | M | 600 | 1148 | PHL\n1012 | Davis | Steven | 20 | M | 600 | 7723 | PIT\n1014 | Norris | Charles | 18 | M | 600 | 8741 | DAL\n1015 | Lee | Susan | 16 | F | 600 | 8721 | HKG\n1016 | Schwartz | Mark | 17 | M | 600 | 2192 | DET\n1017 | Wilson | Bruce | 27 | M | 600 | 1148 | LON\n1018 | Leighton | Michael | 20 | M | 600 | 1121 | PIT\n1019 | Pang | Arthur | 18 | M | 600 | 2192 | WAS\n1020 | Thornton | Ian | 22 | M | 520 | 7271 | NYC\n1021 | Andreou | George | 19 | M | 520 | 8722 | NYC",
+   "spent": 2.5
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Voting_record",
+    "limit": 20
+   },
+   "result": "StuID | Registration_integer | Election_Cycle | President_Vote | Vice_President_Vote | Secretary_Vote | Treasurer_Vote | Class_President_Vote | Class_Senator_Vote\n1001 | 08/30/2015 | Spring | 1004 | 1007 | 1010 | 1035 | 1001 | 1028\n1002 | 08/30/2014 | Spring | 1014 | 1007 | 1020 | 1025 | 1021 | 1028\n1003 | 08/30/2013 | Spring | 1004 | 1017 | 1030 | 1035 | 1031 | 1028\n1004 | 08/30/2013 | Spring | 1024 | 1017 | 1020 | 1035 | 1011 | 1028\n1005 | 08/30/2012 | Spring | 1024 | 1017 | 1010 | 1035 | 1021 | 1028\n1001 | 08/30/2015 | Fall | 1004 | 1007 | 1010 | 1035 | 1021 | 1028\n1002 | 08/30/2014 | Fall | 1004 | 1007 | 1020 | 1035 | 1021 | 1028\n1003 | 08/30/2013 | Fall | 1004 | 1017 | 1020 | 1035 | 1031 | 1028\n1004 | 08/30/2013 | Fall | 1024 | 1017 | 1020 | 1035 | 1011 | 1018\n1005 | 08/30/2012 | Fall | 1024 | 1017 | 1010 | 1035 | 1021 | 1028",
+   "spent": 3.0
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT DISTINCT \"city_code\" FROM \"Student\" ORDER BY 1"
+   },
+   "result": "city_code\nATL\nBAL\nBOS\nCHI\nDAL\nDET\nHKG\nHOU\nLON\nLOS\nNAR\nNYC\nPEK\nPHL\nPIT\nROC\nSFO\nWAS\nYYZ",
+   "spent": 4.0
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT MAX(\"StuID\") max_student, MIN(\"StuID\") min_student, COUNT(*) cnt FROM \"Student\""
+   },
+   "result": "MAX_STUDENT | MIN_STUDENT | CNT\n1035 | 1001 | 34",
+   "spent": 5.0
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT MAX(\"StuID\") max_vr, MIN(\"StuID\") min_vr, COUNT(*) cnt FROM \"Voting_record\""
+   },
+   "result": "MAX_VR | MIN_VR | CNT\n1005 | 1001 | 10",
+   "spent": 6.0
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Student , columns = [ StuID ( NUMBER | primary key | values : 1015 , 1005 ) , LName ( VARCHAR2 | values : Smith , Leighton ) , Fname ( VARCHAR2 | values : Eric , Steven ) , Age ( NUMBER | values : 18 , 22 ) , Sex ( VARCHAR2 | values : M , F ) , Major ( NUMBER | values : 600 , 600 ) , Advisor ( NUMBER | values : 8741 , 7271 ) , city_code ( VARCHAR2 | values : HKG , PIT ) ]\ntable Voting_record , columns = [ StuID ( NUMBER | primary key | values : 1005 , 1001 ) , Registration_integer ( VARCHAR2 | values : 08/30/2012 , 08/30/2014 ) , Election_Cycle ( VARCHAR2 | values : Fall , Fall ) , President_Vote ( NUMBER | values : 1004 , 1004 ) , Vice_President_Vote ( NUMBER | values : 1017 , 1007 ) , Secretary_Vote ( NUMBER | values : 1020 , 1020 ) , Treasurer_Vote ( NUMBER | values : 1035 , 1035 ) , Class_President_Vote ( NUMBER | values : 1031 , 1001 ) , Class_Senator_Vote ( NUMBER | values : 1028 , 1028 ) ]\nforeign keys : None",
+   "spent": 7.0
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT constraint_name, constraint_type, search_condition FROM user_constraints WHERE table_name = 'Student'"
+   },
+   "result": "(CONSTRAINT_NAME | CONSTRAINT_TYPE | SEARCH_CONDITION)\n(no rows)",
+   "spent": 8.0
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "In the template, {SLOT_2}/{SLOT_6}/{SLOT_12} require the “Cairnwick turn value”, and {SLOT_1}/{SLOT_11} refer to the “Cairnwick turn target” column. In our schema, Student only has \"city_code\" as a plausible target. What exact column name and what exact value (literal/parameter) should be used for the Cairnwick turn target/value?"
+   },
+   "result": "### {SLOT_2}\nKind: value\n\nWhat: The value to put there is the fourth argument (the city-code value passed in).\n\n### {SLOT_11}\nKind: target\n\nWhat: The column being set is the student's city code.\n\nA Cairnwick turn is setting the student's city-code column to the fourth argument, i.e. the city-code value passed in.",
+   "spent": 10.0,
+   "revealed": [
+    "M1",
+    "M2",
+    "J1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "Template has: UPDATE \"Student\" stu SET {SLOT_8} = {SLOT_9} ... Slots.md says {SLOT_8} target is student's city code, but Note says {SLOT_8} is student's student ID. Which is correct?",
+    "options": [
+     "None of these is correct",
+     "{SLOT_8} should be \"city_code\"",
+     "{SLOT_8} should be \"StuID\""
+    ]
+   },
+   "result": "3",
+   "spent": 12.0,
+   "index": 3,
+   "options": [
+    "None of the following are correct.",
+    "None of these is correct",
+    "{SLOT_8} should be \"city_code\"",
+    "{SLOT_8} should be \"StuID\""
+   ],
+   "entry": "C1",
+   "status": "revealed",
+   "conflict_noted": true
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "Clarification: In ELSE-branch you confirmed {SLOT_8} should be \"StuID\". But slots.md says {SLOT_9} value is the 4th argument (para_city_code, a VARCHAR2 city code). Setting \"StuID\" to a city-code string would fail at runtime. What should {SLOT_9} be when {SLOT_8} is \"StuID\" (e.g., v_next_stuid, or something else)?"
+   },
+   "result": "Sorry -- I don't have anything more on that one.",
+   "spent": 14.0,
+   "revealed": [],
+   "suppressed": [],
+   "unmatched": [
+    "What should {SLOT_9} be when {SLOT_8} is 'StuID'?"
+   ],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 1,
+    "items": []
+   }
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT constraint_name, constraint_type, search_condition FROM user_constraints WHERE table_name = 'Voting_record'"
+   },
+   "result": "(CONSTRAINT_NAME | CONSTRAINT_TYPE | SEARCH_CONDITION)\n(no rows)",
+   "spent": 15.0
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_President_Vote NUMBER, para_Class_President_Vote NUMBER, para_Treasurer_Vote NUMBER, para_city_code VARCHAR2) IS\n v_next_stuid NUMBER;\n CURSOR ref_cursor1 IS SELECT * FROM \"Voting_record\" WHERE \"Treasurer_Vote\" < para_Treasurer_Vote AND (\"President_Vote\" <> \"Vice_President_Vote\" OR \"Secretary_Vote\" <> \"Treasurer_Vote\") FOR UPDATE;\n CURSOR ref_cursor2 IS SELECT * FROM \"Student\" FOR UPDATE;\n rec1 ref_cursor1%ROWTYPE;\n rec2 ref_cursor2%ROWTYPE;\nBEGIN\n SELECT NVL(MAX(\"StuID\"), 0) + 1 INTO v_next_stuid FROM \"Voting_record\";\n INSERT INTO \"Voting_record\" (\"StuID\", \"President_Vote\", \"Class_President_Vote\") VALUES (v_next_stuid, para_President_Vote, para_Class_President_Vote);\n UPDATE \"Student\" SET \"city_code\" = para_city_code WHERE \"StuID\" = v_next_stuid;\n IF para_President_Vote = para_Class_President_Vote THEN\n   UPDATE \"Student\" SET \"city_code\" = para_city_code\n   WHERE \"StuID\" IN (\n     SELECT vr.\"StuID\"\n     FROM \"Voting_record\" vr\n     WHERE vr.\"Treasurer_Vote\" < para_Treasurer_Vote\n       AND (vr.\"President_Vote\" <> vr.\"Vice_President_Vote\" OR vr.\"Secretary_Vote\" <> vr.\"Treasurer_Vote\")\n   );\n   OPEN ref_cursor1;\n   LOOP\n     FETCH ref_cursor1 INTO rec1;\n     EXIT WHEN ref_cursor1%NOTFOUND;\n     DELETE FROM \"Voting_record\" WHERE CURRENT OF ref_cursor1;\n   END LOOP;\n   CLOSE ref_cursor1;\n   UPDATE \"Student\" stu\n   SET \"city_code\" = para_city_code\n   WHERE NOT EXISTS (\n     SELECT 1\n     FROM \"Voting_record\" vr\n     WHERE vr.\"StuID\" = stu.\"StuID\"\n   );\n ELSE\n   OPEN ref_cursor2;\n   LOOP\n     FETCH ref_cursor2 INTO rec2;\n     EXIT WHEN ref_cursor2%NOTFOUND;\n     UPDATE \"Student\" SET \"city_code\" = para_city_code WHERE CURRENT OF ref_cursor2;\n   END LOOP;\n   CLOSE ref_cursor2;\n END IF;\nEND;"
+   },
+   "result": "compiled",
+   "spent": 15.5,
+   "compiled": true
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_President_Vote NUMBER, para_Class_President_Vote NUMBER, para_Treasurer_Vote NUMBER, para_city_code VARCHAR2) IS\n v_next_stuid NUMBER;\n CURSOR ref_cursor1 IS SELECT * FROM \"Voting_record\" WHERE \"Treasurer_Vote\" < para_Treasurer_Vote AND (\"President_Vote\" <> \"Vice_President_Vote\" OR \"Secretary_Vote\" <> \"Treasurer_Vote\") FOR UPDATE;\n CURSOR ref_cursor2 IS SELECT * FROM \"Student\" FOR UPDATE;\n rec1 ref_cursor1%ROWTYPE;\n rec2 ref_cursor2%ROWTYPE;\nBEGIN\n SELECT NVL(MAX(\"StuID\"), 0) + 1 INTO v_next_stuid FROM \"Voting_record\";\n INSERT INTO \"Voting_record\" (\"StuID\", \"President_Vote\", \"Class_President_Vote\") VALUES (v_next_stuid, para_President_Vote, para_Class_President_Vote);\n UPDATE \"Student\" SET \"city_code\" = para_city_code WHERE \"StuID\" = v_next_stuid;\n IF para_President_Vote = para_Class_President_Vote THEN\n   UPDATE \"Student\" SET \"city_code\" = para_city_code\n   WHERE \"StuID\" IN (\n     SELECT vr.\"StuID\"\n     FROM \"Voting_record\" vr\n     WHERE vr.\"Treasurer_Vote\" < para_Treasurer_Vote\n       AND (vr.\"President_Vote\" <> vr.\"Vice_President_Vote\" OR vr.\"Secretary_Vote\" <> vr.\"Treasurer_Vote\")\n   );\n   OPEN ref_cursor1;\n   LOOP\n     FETCH ref_cursor1 INTO rec1;\n     EXIT WHEN ref_cursor1%NOTFOUND;\n     DELETE FROM \"Voting_record\" WHERE CURRENT OF ref_cursor1;\n   END LOOP;\n   CLOSE ref_cursor1;\n   UPDATE \"Student\" stu\n   SET \"city_code\" = para_city_code\n   WHERE NOT EXISTS (\n     SELECT 1\n     FROM \"Voting_record\" vr\n     WHERE vr.\"StuID\" = stu.\"StuID\"\n   );\n ELSE\n   OPEN ref_cursor2;\n   LOOP\n     FETCH ref_cursor2 INTO rec2;\n     EXIT WHEN ref_cursor2%NOTFOUND;\n     UPDATE \"Student\" SET \"city_code\" = para_city_code WHERE CURRENT OF ref_cursor2;\n   END LOOP;\n   CLOSE ref_cursor2;\n END IF;\nEND;"
+   },
+   "result": "compiled",
+   "spent": 16.0,
+   "compiled": true
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables"
+   },
+   "result": "TABLE_NAME\nLOGMNR_SESSION_EVOLVE$\nLOGMNR_GLOBAL$\nLOGMNR_PDB_INFO$\nLOGMNR_DID$\nLOGMNR_UID$\nLOGMNRGGC_GTLO\nLOGMNRGGC_GTCS\nLOGMNRC_DBNAME_UID_MAP\nLOGMNR_LOG$\nLOGMNR_PROCESSED_LOG$\nLOGMNR_SPILL$\nLOGMNR_AGE_SPILL$\nLOGMNR_RESTART_CKPT_TXINFO$\nLOGMNR_ERROR$\nLOGMNR_RESTART_CKPT$\nLOGMNR_FILTER$\nLOGMNR_SESSION_ACTIONS$\nLOGMNR_PARAMETER$\nLOGMNR_SESSION$\nLOGMNR_PROFILE_TABLE_STATS$\nLOGMNR_PROFILE_PLSQL_STATS$\nREDO_DB\nREDO_LOG\nROLLING$CONNECTIONS\nROLLING$DATABASES\nROLLING$DIRECTIVES\nROLLING$EVENTS\nROLLING$PARAMETERS\nROLLING$PLAN\nROLLING$STATISTICS\nROLLING$STATUS\nMVIEW$_ADV_WORKLOAD\nMVIEW$_ADV_BASETABLE\nMVIEW$_ADV_SQLDEPEND\nMVIEW$_ADV_PRETTY\nMVIEW$_ADV_TEMP\nMVIEW$_ADV_FILTER\nMVIEW$_ADV_LOG\nMVIEW$_ADV_FILTERINSTANCE\nMVIEW$_ADV_LEVEL\nMVIEW$_ADV_ROLLUP\nMVIEW$_ADV_AJG\nMVIEW$_ADV_FJG\nMVIEW$_ADV_GC\nMVIEW$_ADV_CLIQUE\nMVIEW$_ADV_ELIGIBLE\nMVIEW$_ADV_OUTPUT\nMVIEW$_ADV_EXCEPTIONS\nMVIEW$_ADV_PARAMETERS\nMVIEW$_ADV_INFO\n... (more rows not shown)",
+   "spent": 17.0
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "To avoid runtime type issues: in UPDATE \"Student\" stu SET {SLOT_8} = {SLOT_9}, if {SLOT_8} is \"StuID\", what should the assigned value {SLOT_9} actually be?",
+    "options": [
+     "None of these is correct",
+     "para_city_code",
+     "v_next_stuid",
+     "para_President_Vote",
+     "para_Class_President_Vote",
+     "para_Treasurer_Vote"
+    ]
+   },
+   "result": "1",
+   "spent": 19.0,
+   "index": 1,
+   "options": [
+    "None of the following are correct.",
+    "None of these is correct",
+    "para_city_code",
+    "v_next_stuid",
+    "para_President_Vote"
+   ],
+   "entry": null,
+   "status": "off_oracle",
+   "conflict_noted": false
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_President_Vote NUMBER, para_Class_President_Vote NUMBER, para_Treasurer_Vote NUMBER, para_city_code VARCHAR2) IS\n v_next_stuid NUMBER;\n CURSOR ref_cursor1 IS SELECT * FROM \"Voting_record\" WHERE \"Treasurer_Vote\" < para_Treasurer_Vote AND (\"President_Vote\" <> \"Vice_President_Vote\" OR \"Secretary_Vote\" <> \"Treasurer_Vote\") FOR UPDATE;\n CURSOR ref_cursor2 IS SELECT * FROM \"Student\" FOR UPDATE;\n rec1 ref_cursor1%ROWTYPE;\n rec2 ref_cursor2%ROWTYPE;\nBEGIN\n SELECT NVL(MAX(\"StuID\"), 0) + 1 INTO v_next_stuid FROM \"Voting_record\";\n INSERT INTO \"Voting_record\" (\"StuID\", \"President_Vote\", \"Class_President_Vote\") VALUES (v_next_stuid, para_President_Vote, para_Class_President_Vote);\n UPDATE \"Student\" SET \"city_code\" = para_city_code WHERE \"StuID\" = v_next_stuid;\n IF para_President_Vote = para_Class_President_Vote THEN\n   UPDATE \"Student\" SET \"city_code\" = para_city_code\n   WHERE \"StuID\" IN (\n     SELECT vr.\"StuID\"\n     FROM \"Voting_record\" vr\n     WHERE vr.\"Treasurer_Vote\" < para_Treasurer_Vote\n       AND (vr.\"President_Vote\" <> vr.\"Vice_President_Vote\" OR vr.\"Secretary_Vote\" <> vr.\"Treasurer_Vote\")\n   );\n   OPEN ref_cursor1;\n   LOOP\n     FETCH ref_cursor1 INTO rec1;\n     EXIT WHEN ref_cursor1%NOTFOUND;\n     DELETE FROM \"Voting_record\" WHERE CURRENT OF ref_cursor1;\n   END LOOP;\n   CLOSE ref_cursor1;\n   UPDATE \"Student\" stu\n   SET \"city_code\" = para_city_code\n   WHERE NOT EXISTS (\n     SELECT 1\n     FROM \"Voting_record\" vr\n     WHERE vr.\"StuID\" = stu.\"StuID\"\n   );\n ELSE\n   OPEN ref_cursor2;\n   LOOP\n     FETCH ref_cursor2 INTO rec2;\n     EXIT WHEN ref_cursor2%NOTFOUND;\n     UPDATE \"Student\" SET \"city_code\" = para_city_code WHERE CURRENT OF ref_cursor2;\n   END LOOP;\n   CLOSE ref_cursor2;\n END IF;\nEND;"
+   },
+   "result": "compiled",
+   "spent": 19.5,
+   "compiled": true
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_President_Vote NUMBER, para_Class_President_Vote NUMBER, para_Treasurer_Vote NUMBER, para_city_code VARCHAR2) IS\n v_next_stuid NUMBER;\n CURSOR ref_cursor1 IS SELECT * FROM \"Voting_record\" WHERE \"Treasurer_Vote\" < para_Treasurer_Vote AND (\"President_Vote\" <> \"Vice_President_Vote\" OR \"Secretary_Vote\" <> \"Treasurer_Vote\") FOR UPDATE;\n CURSOR ref_cursor2 IS SELECT * FROM \"Student\" FOR UPDATE;\n rec1 ref_cursor1%ROWTYPE;\n rec2 ref_cursor2%ROWTYPE;\nBEGIN\n SELECT NVL(MAX(\"StuID\"), 0) + 1 INTO v_next_stuid FROM \"Voting_record\";\n INSERT INTO \"Voting_record\" (\"StuID\", \"President_Vote\", \"Class_President_Vote\") VALUES (v_next_stuid, para_President_Vote, para_Class_President_Vote);\n UPDATE \"Student\" SET \"city_code\" = para_city_code WHERE \"StuID\" = v_next_stuid;\n IF para_President_Vote = para_Class_President_Vote THEN\n   UPDATE \"Student\" SET \"city_code\" = para_city_code\n   WHERE \"StuID\" IN (\n     SELECT \"StuID\"\n     FROM \"Voting_record\"\n     WHERE \"Treasurer_Vote\" < para_Treasurer_Vote\n       AND (\"President_Vote\" <> \"Vice_President_Vote\" OR \"Secretary_Vote\" <> \"Treasurer_Vote\")\n   );\n   OPEN ref_cursor1;\n   LOOP\n     FETCH ref_cursor1 INTO rec1;\n     EXIT WHEN ref_cursor1%NOTFOUND;\n     DELETE FROM \"Voting_record\" WHERE CURRENT OF ref_cursor1;\n   END LOOP;\n   CLOSE ref_cursor1;\n   UPDATE \"Student\" stu\n   SET \"city_code\" = para_city_code\n   WHERE NOT EXISTS (\n     SELECT 1\n     FROM \"Voting_record\" vr\n     WHERE vr.\"StuID\" = stu.\"StuID\"\n   );\n ELSE\n   OPEN ref_cursor2;\n   LOOP\n     FETCH ref_cursor2 INTO rec2;\n     EXIT WHEN ref_cursor2%NOTFOUND;\n     UPDATE \"Student\" SET \"city_code\" = para_city_code WHERE CURRENT OF ref_cursor2;\n   END LOOP;\n   CLOSE ref_cursor2;\n END IF;\nEND;"
+   },
+   "result": "received",
+   "spent": 19.5,
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_President_Vote NUMBER, para_Class_President_Vote NUMBER, para_Treasurer_Vote NUMBER, para_city_code VARCHAR2) IS\n v_next_stuid NUMBER;\n CURSOR ref_cursor1 IS SELECT * FROM \"Voting_record\" WHERE \"Treasurer_Vote\" < para_Treasurer_Vote AND (\"President_Vote\" <> \"Vice_President_Vote\" OR \"Secretary_Vote\" <> \"Treasurer_Vote\") FOR UPDATE;\n CURSOR ref_cursor2 IS SELECT * FROM \"Student\" FOR UPDATE;\n rec1 ref_cursor1%ROWTYPE;\n rec2 ref_cursor2%ROWTYPE;\nBEGIN\n SELECT NVL(MAX(\"StuID\"), 0) + 1 INTO v_next_stuid FROM \"Voting_record\";\n INSERT INTO \"Voting_record\" (\"StuID\", \"President_Vote\", \"Class_President_Vote\") VALUES (v_next_stuid, para_President_Vote, para_Class_President_Vote);\n UPDATE \"Student\" SET \"city_code\" = para_city_code WHERE \"StuID\" = v_next_stuid;\n IF para_President_Vote = para_Class_President_Vote THEN\n   UPDATE \"Student\" SET \"city_code\" = para_city_code\n   WHERE \"StuID\" IN (\n     SELECT \"StuID\"\n     FROM \"Voting_record\"\n     WHERE \"Treasurer_Vote\" < para_Treasurer_Vote\n       AND (\"President_Vote\" <> \"Vice_President_Vote\" OR \"Secretary_Vote\" <> \"Treasurer_Vote\")\n   );\n   OPEN ref_cursor1;\n   LOOP\n     FETCH ref_cursor1 INTO rec1;\n     EXIT WHEN ref_cursor1%NOTFOUND;\n     DELETE FROM \"Voting_record\" WHERE CURRENT OF ref_cursor1;\n   END LOOP;\n   CLOSE ref_cursor1;\n   UPDATE \"Student\" stu\n   SET \"city_code\" = para_city_code\n   WHERE NOT EXISTS (\n     SELECT 1\n     FROM \"Voting_record\" vr\n     WHERE vr.\"StuID\" = stu.\"StuID\"\n   );\n ELSE\n   OPEN ref_cursor2;\n   LOOP\n     FETCH ref_cursor2 INTO rec2;\n     EXIT WHEN ref_cursor2%NOTFOUND;\n     UPDATE \"Student\" SET \"city_code\" = para_city_code WHERE CURRENT OF ref_cursor2;\n   END LOOP;\n   CLOSE ref_cursor2;\n END IF;\nEND;"
+ },
+ "pair": {
+  "single_run": "filtered-ora-a4",
+  "single_task": "oracle_a4_003"
+ }
+}

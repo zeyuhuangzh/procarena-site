@@ -1,0 +1,519 @@
+{
+ "id": "pg_interact-loc_glm-5.2_b6-2-3_20260828-0615--postgres_b1_000",
+ "run": "pg_interact-loc_glm-5.2_b6-2-3_20260828-0615",
+ "task_id": "postgres_b1_000",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "b1",
+ "dialect": "postgres",
+ "model": "glm-5.2",
+ "model_label": "GLM-5.2",
+ "solver_id": "glm-5.2",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 7,
+  "oracle_size": 7
+ },
+ "summary": {
+  "steps": 23,
+  "seconds": 223.8,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 3,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 7,
+  "oracle_size": 7,
+  "entries_per_question": 2.33,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "describe_table": 3,
+   "sample_rows": 3,
+   "ask_user": 3,
+   "compile_plsql": 2,
+   "execute_scratch": 9,
+   "reset_scratch": 1,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 23.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 20.5,
+   "by_tool": {
+    "get_schema": 1.0,
+    "describe_table": 1.5,
+    "sample_rows": 1.5,
+    "ask_user": 6.0,
+    "compile_plsql": 1.0,
+    "execute_scratch": 9.0,
+    "reset_scratch": 0.5,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 16,
+   "wasted_calls": 0,
+   "input_tokens": 120204,
+   "output_tokens": 8544,
+   "cached_input_tokens": 108169,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 12035,
+   "max_input_tokens": 11419,
+   "cost_usd": 0.0,
+   "turns": 16,
+   "cache_sources": {
+    "reported": 22
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 6,
+    "wasted_calls": 0,
+    "input_tokens": 4729,
+    "output_tokens": 2218,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 4729,
+    "max_input_tokens": 1135,
+    "cost_usd": 0.0013
+   },
+   "total": {
+    "calls": 22,
+    "wasted_calls": 0,
+    "input_tokens": 124933,
+    "output_tokens": 10762,
+    "cached_input_tokens": 108169,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 16764,
+    "max_input_tokens": 11419,
+    "cost_usd": 0.0013
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 0,
+   "blocked": 0,
+   "none": 0,
+   "items_used": [],
+   "inventory_size": 7
+  }
+ },
+ "task": {
+  "prompt": "Please take current_procedure.sql as the current version and apply the attached change_request.md to it. Keep the interface fixed as sp(arg1 integer, arg2 text, arg3 integer, arg4 text, arg5 integer): the first argument is the student identifier, the second is the student gender/status text carried by the interface, the third is the restaurant-kind identifier, the fourth is the restaurant-kind description text or pattern, and the fifth is the numeric rating value used by the procedure. Don’t make unrelated behavior changes. Return the complete PostgreSQL PL/pgSQL stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "current_procedure.sql",
+    "kind": "current procedure",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_StuID integer, para_Sex text, para_ResTypeID integer, para_ResTypeDescription text, para_Rating integer) LANGUAGE plpgsql AS\n$$\nDECLARE\n    cur REFCURSOR;\n    rec RECORD;\n    temp_num INTEGER;\n    temp_text TEXT;\n    row_count INTEGER;\n    flag INTEGER;\nBEGIN\n    temp_num := 0;\n    temp_text := '';\n    row_count := 0;\n    flag := 0;\n    IF para_StuID < 10 THEN\n        UPDATE \"Student\" SET \"Sex\" = 'INACTIVE' WHERE \"StuID\" < para_StuID;\n        flag := 1;\n    ELSIF para_StuID < 25 THEN\n        OPEN cur FOR SELECT \"ResTypeID\", \"ResTypeDescription\" FROM \"Restaurant_Type\" WHERE \"ResTypeID\" > para_ResTypeID AND \"ResTypeDescription\" LIKE para_ResTypeDescription FOR UPDATE;\n        flag := 2;\n    ELSIF para_StuID < 40 THEN\n        OPEN cur FOR SELECT \"Rating\" FROM \"Restaurant\" WHERE \"Rating\" BETWEEN para_Rating AND para_Rating * 2;\n        flag := 3;\n    ELSE\n        OPEN cur FOR SELECT \"StuID\", \"Sex\" FROM \"Student\" WHERE \"StuID\" > para_StuID / 2;\n        flag := 4;\n    END IF;\n    IF flag = 2 OR flag = 3 OR flag = 4 THEN\n        LOOP\n            FETCH cur INTO rec;\n            EXIT WHEN NOT FOUND;\n            row_count := row_count + 1;\n            IF flag = 2 THEN\n                IF rec.\"ResTypeID\" < 50 THEN\n                    UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'COMPLETED' WHERE CURRENT OF cur;\n                ELSE\n                    temp_num := temp_num + rec.\"ResTypeID\";\n                END IF;\n            ELSIF flag = 3 THEN\n                IF rec.\"Rating\" > 100 THEN\n                    temp_text := 'OVER_LIMIT';\n                ELSIF rec.\"Rating\" > 50 THEN\n                    temp_text := 'WITHIN_RANGE';\n                ELSE\n                    temp_text := 'BELOW_MIN';\n                END IF;\n            ELSIF flag = 4 THEN\n                IF rec.\"StuID\" % 2 = 0 THEN\n                    temp_num := temp_num + 1;\n                END IF;\n            END IF;\n        END LOOP;\n        CLOSE cur;\n    END IF;\n    IF flag = 1 THEN\n        DELETE FROM \"Restaurant_Type\" WHERE \"ResTypeID\" < para_ResTypeID;\n    ELSIF flag = 2 AND temp_num > 100 THEN\n        UPDATE \"Restaurant\" SET \"Rating\" = \"Rating\" - 10 WHERE \"Rating\" > 200;\n    ELSIF flag = 3 AND temp_text = 'OVER_LIMIT' THEN\n        DELETE FROM \"Restaurant\" WHERE \"Rating\" > 150;\n    ELSIF flag = 4 AND temp_num > 5 THEN\n        UPDATE \"Student\" SET \"Sex\" = 'PROCESSED' WHERE \"StuID\" < para_StuID;\n    ELSE\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'DEFAULT' WHERE \"ResTypeID\" IS NULL;\n    END IF;\nEND;\n$$;"
+   },
+   {
+    "file": "change_request.md",
+    "kind": "change request",
+    "text": "Summary: Expand the procedure's branch-specific side effects so early student runs also mark affected restaurant types, mid-range restaurant runs adjust and audit over-limit ratings, restaurant-type scans handle no matches, and high student-identifier runs update even students and related fallback data.\n\nIn the path where the first argument is at least 45, evaluate the Harbor badge pass as each fetched student is encountered.\n\nIn the path taken when the first argument is below 10, restaurant types whose identifiers are smaller than the third argument must also be given the description 'DEFAULT' as part of that path. In the path where the first argument is at least 25 and below 40, after the restaurants to be scanned for the existing rating range have been selected, run the Copper-awning pass. While that branch is scanning its fetched restaurants, keep a count of fetched ratings greater than 100, and use that count when deciding the later over-limit removal: restaurants rated greater than 150 must be removed when the count shows the removal should run, even if the last fetched rating was not greater than 100. In the restaurant-type cursor path, where the first argument is at least 10 and below 25, honor the Lantern shelf rule. In the path where the first argument is at least 40, evaluate the Harbor badge pass as each fetched student is encountered. Once that scan is complete, if the count of those even students is greater than 0, those same even students greater than half the first argument must have their academic major set to the fifth argument, and the affected restaurant ratings must be set to exactly the fifth argument. If the count is 0 instead, apply the Ash-bell rule."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": 9,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what is the Copper-awning pass?",
+   "answer": "In the path where the first argument is at least 25 and below 40, after the restaurants to be scanned for the existing rating range have been selected, every restaurant whose rating is greater than 200 must have its rating reduced by 15."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": 9,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what is the Lantern shelf rule?",
+   "answer": "In the restaurant-type cursor path, where the first argument is at least 10 and below 25, if the cursor fetches no restaurant types numbered greater than the third argument with a description fitting the fourth argument as a pattern, the restaurant type numbered exactly as the third argument must end with the description 'NO_MATCH'."
+  },
+  {
+   "id": "J3",
+   "op": "jargon",
+   "revealed_at": 8,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what is the Harbor badge pass?",
+   "answer": "In the path where the first argument is at least 40, each fetched student whose identifier is even and greater than half the first argument must also have their gender status set to 'PROCESSED' and their city code set to 'EVEN' when that student is encountered."
+  },
+  {
+   "id": "J4",
+   "op": "jargon",
+   "revealed_at": 9,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what is the Ash-bell rule?",
+   "answer": "If the count is 0 instead, the restaurant type numbered exactly as the third argument must have its description set to 'NO_EVEN_STUDENTS'."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 10,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what count condition triggers the later over-limit removal",
+   "answer": "The over-limit removal is triggered when the count of fetched ratings greater than 100 is greater than 0."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": 10,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "which restaurant ratings are affected in the high-first-argument branch",
+   "answer": "Every restaurant whose rating is less than the fifth argument must have its rating set to exactly the fifth argument."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": 8,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "whether the Harbor badge pass is evaluated when the first argument is at least 40 or at least 45",
+   "answer": "The original detailed statement is right: the Harbor badge pass is evaluated when the first argument is at least 40."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Restaurant , columns = [ ResID ( integer | primary key | values : 2 , 2 ) , ResName ( text | values : PROCESSED , PROCESSED ) , Address ( text | values : 3233 St Paul St, Baltimore, MD 21218 , 3233 St Paul St, Baltimore, MD 21218 ) , Rating ( integer | values : 13 , 4 ) ]\ntable Restaurant_Type , columns = [ ResTypeID ( integer | primary key | values : 1 , 1 ) , ResTypeName ( text | values : Sandwich , Sandwich ) , ResTypeDescription ( text | values : Classic Chinese cooking. , Classic Chinese cooking. ) ]\ntable Student , columns = [ StuID ( integer | primary key | values : 1012 , 1014 ) , LName ( text | values : Wilson , Smith ) , Fname ( text | values : Susan , Andy ) , Age ( integer | values : 20 , 19 ) , Sex ( text | values : M , M ) , Major ( integer | values : 600 , 600 ) , Advisor ( integer | values : 1121 , 1121 ) , city_code ( text | values : NYC , BAL ) ]\ntable Type_Of_Restaurant , columns = [ ResID ( integer | primary key | values : 2 , 2 ) , ResTypeID ( integer | values : 2 , 2 ) ]\ntable Visits_Restaurant , columns = [ StuID ( integer | primary key | values : 1001 , 1001 ) , ResID ( integer | values : 1 , 1 ) , Time ( timestamp without time zone | values : 2017-10-08T13:00:30 , 2017-10-09T18:15:00 ) , Spent ( real | values : 6.53 , 13.2 ) ]\nforeign keys : None",
+   "spent": 1.0
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Student"
+   },
+   "result": "table Student , columns = [ StuID ( integer | primary key | values : 1012 , 1014 ) , LName ( text | values : Wilson , Smith ) , Fname ( text | values : Susan , Andy ) , Age ( integer | values : 20 , 19 ) , Sex ( text | values : M , M ) , Major ( integer | values : 600 , 600 ) , Advisor ( integer | values : 1121 , 1121 ) , city_code ( text | values : NYC , BAL ) ]",
+   "spent": 1.5
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Restaurant"
+   },
+   "result": "table Restaurant , columns = [ ResID ( integer | primary key | values : 2 , 2 ) , ResName ( text | values : PROCESSED , PROCESSED ) , Address ( text | values : 3233 St Paul St, Baltimore, MD 21218 , 3233 St Paul St, Baltimore, MD 21218 ) , Rating ( integer | values : 13 , 4 ) ]",
+   "spent": 2.0
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "Restaurant_Type"
+   },
+   "result": "table Restaurant_Type , columns = [ ResTypeID ( integer | primary key | values : 1 , 1 ) , ResTypeName ( text | values : Sandwich , Sandwich ) , ResTypeDescription ( text | values : Classic Chinese cooking. , Classic Chinese cooking. ) ]",
+   "spent": 2.5
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "limit": 10,
+    "table": "Student"
+   },
+   "result": "StuID | LName | Fname | Age | Sex | Major | Advisor | city_code\n1001 | Smith | Linda | 18 | F | 600 | 1121 | BAL\n1002 | Kim | Tracy | 19 | F | 600 | 7712 | HKG\n1003 | Jones | Shiela | 21 | F | 600 | 7792 | WAS\n1004 | Kumar | Dinesh | 20 | M | 600 | 8423 | CHI\n1005 | Gompers | Paul | 26 | M | 600 | 1121 | YYZ\n1006 | Schultz | Andy | 18 | M | 600 | 1148 | BAL\n1007 | Apap | Lisa | 18 | F | 600 | 8918 | PIT\n1008 | Nelson | Jandy | 20 | F | 600 | 9172 | BAL\n1009 | Tai | Eric | 19 | M | 600 | 2192 | YYZ\n1010 | Lee | Derek | 17 | M | 600 | 2192 | HOU",
+   "spent": 3.0
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "limit": 10,
+    "table": "Restaurant"
+   },
+   "result": "ResID | ResName | Address | Rating\n1 | Subway | 3233 St Paul St, Baltimore, MD 21218 | 3\n2 | Honeygrow | 3212 St Paul St, Baltimore, MD 21218 | 4",
+   "spent": 3.5
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "limit": 10,
+    "table": "Restaurant_Type"
+   },
+   "result": "ResTypeID | ResTypeName | ResTypeDescription\n1 | Sandwich | Simplest there is.\n2 | Stir-fry | Classic Chinese cooking.",
+   "spent": 4.0
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "The change request mentions two different threshold conditions for the \"Harbor badge pass\":\n\n1. \"In the path where the first argument is at least 45, evaluate the Harbor badge pass as each fetched student is encountered.\"\n2. \"In the path where the first argument is at least 40, evaluate the Harbor badge pass as each fetched student is encountered. Once that scan is complete...\"\n\nThe current procedure has a single branch for StuID >= 40 (flag=4). Are these two statements referring to the same code path (the existing StuID >= 40 branch), with \"at least 45\" being an error or shorthand for \"at least 40\"? Or do I need to split the StuID >= 40 branch into two sub-branches: one for 40-44 and one for >= 45, each with a separate Harbor badge pass?"
+   },
+   "result": "The original detailed statement is right: the Harbor badge pass is evaluated when the first argument is at least 40.\n\nIn the path where the first argument is at least 40, each fetched student whose identifier is even and greater than half the first argument must also have their gender status set to 'PROCESSED' and their city code set to 'EVEN' when that student is encountered.",
+   "spent": 6.0,
+   "revealed": [
+    "C1",
+    "J3"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "The change request mentions several named rules whose exact behavior I need to confirm. Could you tell me the specific database actions for each of these:\n\n1. \"Lantern shelf rule\" (in the restaurant-type cursor path, StuID 10-24): What exactly should this do? The existing code in that path already updates ResTypeDescription to 'COMPLETED' for ResTypeID < 50 and accumulates temp_num otherwise. Should the Lantern shelf rule modify this behavior, or is it an additional action?\n\n2. \"Ash-bell rule\" (when count of even students is 0, in the StuID >= 40 path): What database action should this perform?\n\n3. \"Copper-awning pass\" (in the StuID 25-39 path, after restaurants are selected but before scanning): What database action should this perform?"
+   },
+   "result": "In the restaurant-type cursor path, where the first argument is at least 10 and below 25, if the cursor fetches no restaurant types numbered greater than the third argument with a description fitting the fourth argument as a pattern, the restaurant type numbered exactly as the third argument must end with the description 'NO_MATCH'.\n\nIf the count is 0 instead, the restaurant type numbered exactly as the third argument must have its description set to 'NO_EVEN_STUDENTS'.\n\nIn the path where the first argument is at least 25 and below 40, after the restaurants to be scanned for the existing rating range have been selected, every restaurant whose rating is greater than 200 must have its rating reduced by 15.",
+   "spent": 8.0,
+   "revealed": [
+    "J2",
+    "J4",
+    "J1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "For the StuID 25-39 path (flag=3), the change request says: \"use that count when deciding the later over-limit removal: restaurants rated greater than 150 must be removed when the count shows the removal should run, even if the last fetched rating was not greater than 100.\"\n\nThe current code checks `temp_text = 'OVER_LIMIT'` (which was set when the last fetched rating > 100). Should the new condition be `count_of_ratings_gt_100 > 0`? That is, if at least one fetched rating was > 100, proceed with the DELETE?\n\nAlso, for the StuID >= 40 path: \"the affected restaurant ratings must be set to exactly the fifth argument\" — does this mean UPDATE Restaurant SET Rating = para_Rating (all restaurants), or only restaurants matching some criterion (e.g., those with Rating > 200, or some other filter)?"
+   },
+   "result": "The over-limit removal is triggered when the count of fetched ratings greater than 100 is greater than 0.\n\nEvery restaurant whose rating is less than the fifth argument must have its rating set to exactly the fifth argument.",
+   "spent": 10.0,
+   "revealed": [
+    "M1",
+    "M2"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_StuID integer, para_Sex text, para_ResTypeID integer, para_ResTypeDescription text, para_Rating integer) LANGUAGE plpgsql AS\n$$\nDECLARE\n    cur REFCURSOR;\n    rec RECORD;\n    temp_num INTEGER;\n    temp_text TEXT;\n    row_count INTEGER;\n    flag INTEGER;\n    over_limit_count INTEGER;\n    even_count INTEGER;\nBEGIN\n    temp_num := 0;\n    temp_text := '';\n    row_count := 0;\n    flag := 0;\n    over_limit_count := 0;\n    even_count := 0;\n    IF para_StuID < 10 THEN\n        UPDATE \"Student\" SET \"Sex\" = 'INACTIVE' WHERE \"StuID\" < para_StuID;\n        flag := 1;\n    ELSIF para_StuID < 25 THEN\n        OPEN cur FOR SELECT \"ResTypeID\", \"ResTypeDescription\" FROM \"Restaurant_Type\" WHERE \"ResTypeID\" > para_ResTypeID AND \"ResTypeDescription\" LIKE para_ResTypeDescription FOR UPDATE;\n        flag := 2;\n    ELSIF para_StuID < 40 THEN\n        OPEN cur FOR SELECT \"Rating\" FROM \"Restaurant\" WHERE \"Rating\" BETWEEN para_Rating AND para_Rating * 2;\n        flag := 3;\n    ELSE\n        OPEN cur FOR SELECT \"StuID\", \"Sex\" FROM \"Student\" WHERE \"StuID\" > para_StuID / 2;\n        flag := 4;\n    END IF;\n    IF flag = 2 OR flag = 3 OR flag = 4 THEN\n        LOOP\n            FETCH cur INTO rec;\n            EXIT WHEN NOT FOUND;\n            row_count := row_count + 1;\n            IF flag = 2 THEN\n                IF rec.\"ResTypeID\" < 50 THEN\n                    UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'COMPLETED' WHERE CURRENT OF cur;\n                ELSE\n                    temp_num := temp_num + rec.\"ResTypeID\";\n                END IF;\n            ELSIF flag = 3 THEN\n                IF rec.\"Rating\" > 200 THEN\n                    UPDATE \"Restaurant\" SET \"Rating\" = \"Rating\" - 15 WHERE \"Rating\" > 200;\n                END IF;\n                IF rec.\"Rating\" > 100 THEN\n                    over_limit_count := over_limit_count + 1;\n                    temp_text := 'OVER_LIMIT';\n                ELSIF rec.\"Rating\" > 50 THEN\n                    temp_text := 'WITHIN_RANGE';\n                ELSE\n                    temp_text := 'BELOW_MIN';\n                END IF;\n            ELSIF flag = 4 THEN\n                IF rec.\"StuID\" % 2 = 0 THEN\n                    temp_num := temp_num + 1;\n                    even_count := even_count + 1;\n                    IF rec.\"StuID\" > para_StuID / 2 THEN\n                        UPDATE \"Student\" SET \"Sex\" = 'PROCESSED', \"city_code\" = 'EVEN' WHERE CURRENT OF cur;\n                    END IF;\n                END IF;\n            END IF;\n        END LOOP;\n        CLOSE cur;\n    END IF;\n    IF flag = 1 THEN\n        DELETE FROM \"Restaurant_Type\" WHERE \"ResTypeID\" < para_ResTypeID;\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'DEFAULT' WHERE \"ResTypeID\" < para_ResTypeID;\n    ELSIF flag = 2 AND temp_num > 100 THEN\n        UPDATE \"Restaurant\" SET \"Rating\" = \"Rating\" - 10 WHERE \"Rating\" > 200;\n    ELSIF flag = 3 AND over_limit_count > 0 THEN\n        DELETE FROM \"Restaurant\" WHERE \"Rating\" > 150;\n    ELSIF flag = 4 AND even_count > 0 THEN\n        UPDATE \"Student\" SET \"Major\" = para_Rating WHERE \"StuID\" % 2 = 0 AND \"StuID\" > para_StuID / 2;\n        UPDATE \"Restaurant\" SET \"Rating\" = para_Rating WHERE \"Rating\" < para_Rating;\n    ELSIF flag = 4 AND even_count = 0 THEN\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'NO_EVEN_STUDENTS' WHERE \"ResTypeID\" = para_ResTypeID;\n    ELSE\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'DEFAULT' WHERE \"ResTypeID\" IS NULL;\n    END IF;\n    -- Lantern shelf rule: no matches in flag=2 path\n    IF flag = 2 AND row_count = 0 THEN\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'NO_MATCH' WHERE \"ResTypeID\" = para_ResTypeID;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "spent": 10.5,
+   "compiled": true
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_StuID integer, para_Sex text, para_ResTypeID integer, para_ResTypeDescription text, para_Rating integer) LANGUAGE plpgsql AS\n$$\nDECLARE\n    cur REFCURSOR;\n    rec RECORD;\n    temp_num INTEGER;\n    temp_text TEXT;\n    row_count INTEGER;\n    flag INTEGER;\n    over_limit_count INTEGER;\n    even_count INTEGER;\nBEGIN\n    temp_num := 0;\n    temp_text := '';\n    row_count := 0;\n    flag := 0;\n    over_limit_count := 0;\n    even_count := 0;\n    IF para_StuID < 10 THEN\n        UPDATE \"Student\" SET \"Sex\" = 'INACTIVE' WHERE \"StuID\" < para_StuID;\n        flag := 1;\n    ELSIF para_StuID < 25 THEN\n        OPEN cur FOR SELECT \"ResTypeID\", \"ResTypeDescription\" FROM \"Restaurant_Type\" WHERE \"ResTypeID\" > para_ResTypeID AND \"ResTypeDescription\" LIKE para_ResTypeDescription FOR UPDATE;\n        flag := 2;\n    ELSIF para_StuID < 40 THEN\n        OPEN cur FOR SELECT \"Rating\" FROM \"Restaurant\" WHERE \"Rating\" BETWEEN para_Rating AND para_Rating * 2;\n        flag := 3;\n    ELSE\n        OPEN cur FOR SELECT \"StuID\", \"Sex\" FROM \"Student\" WHERE \"StuID\" > para_StuID / 2;\n        flag := 4;\n    END IF;\n    -- Copper-awning pass: run after restaurants are selected (flag=3)\n    IF flag = 3 THEN\n        UPDATE \"Restaurant\" SET \"Rating\" = \"Rating\" - 15 WHERE \"Rating\" > 200;\n    END IF;\n    IF flag = 2 OR flag = 3 OR flag = 4 THEN\n        LOOP\n            FETCH cur INTO rec;\n            EXIT WHEN NOT FOUND;\n            row_count := row_count + 1;\n            IF flag = 2 THEN\n                IF rec.\"ResTypeID\" < 50 THEN\n                    UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'COMPLETED' WHERE CURRENT OF cur;\n                ELSE\n                    temp_num := temp_num + rec.\"ResTypeID\";\n                END IF;\n            ELSIF flag = 3 THEN\n                IF rec.\"Rating\" > 100 THEN\n                    over_limit_count := over_limit_count + 1;\n                    temp_text := 'OVER_LIMIT';\n                ELSIF rec.\"Rating\" > 50 THEN\n                    temp_text := 'WITHIN_RANGE';\n                ELSE\n                    temp_text := 'BELOW_MIN';\n                END IF;\n            ELSIF flag = 4 THEN\n                IF rec.\"StuID\" % 2 = 0 THEN\n                    temp_num := temp_num + 1;\n                    even_count := even_count + 1;\n                    IF rec.\"StuID\" > para_StuID / 2 THEN\n                        UPDATE \"Student\" SET \"Sex\" = 'PROCESSED', \"city_code\" = 'EVEN' WHERE CURRENT OF cur;\n                    END IF;\n                END IF;\n            END IF;\n        END LOOP;\n        CLOSE cur;\n    END IF;\n    IF flag = 1 THEN\n        DELETE FROM \"Restaurant_Type\" WHERE \"ResTypeID\" < para_ResTypeID;\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'DEFAULT' WHERE \"ResTypeID\" < para_ResTypeID;\n    ELSIF flag = 2 AND temp_num > 100 THEN\n        UPDATE \"Restaurant\" SET \"Rating\" = \"Rating\" - 10 WHERE \"Rating\" > 200;\n    ELSIF flag = 3 AND over_limit_count > 0 THEN\n        DELETE FROM \"Restaurant\" WHERE \"Rating\" > 150;\n    ELSIF flag = 4 AND even_count > 0 THEN\n        UPDATE \"Student\" SET \"Major\" = para_Rating WHERE \"StuID\" % 2 = 0 AND \"StuID\" > para_StuID / 2;\n        UPDATE \"Restaurant\" SET \"Rating\" = para_Rating WHERE \"Rating\" < para_Rating;\n    ELSIF flag = 4 AND even_count = 0 THEN\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'NO_EVEN_STUDENTS' WHERE \"ResTypeID\" = para_ResTypeID;\n    ELSE\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'DEFAULT' WHERE \"ResTypeID\" IS NULL;\n    END IF;\n    -- Lantern shelf rule: no matches in flag=2 path\n    IF flag = 2 AND row_count = 0 THEN\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'NO_MATCH' WHERE \"ResTypeID\" = para_ResTypeID;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "spent": 11.0,
+   "compiled": true
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(5, 'F', 1, '%', 10);"
+   },
+   "result": "error: [42883] procedure sp(integer, unknown, integer, unknown, integer) does not exist",
+   "spent": 12.0
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_StuID integer, para_Sex text, para_ResTypeID integer, para_ResTypeDescription text, para_Rating integer) LANGUAGE plpgsql AS\n$$\nDECLARE\n    cur REFCURSOR;\n    rec RECORD;\n    temp_num INTEGER;\n    temp_text TEXT;\n    row_count INTEGER;\n    flag INTEGER;\n    over_limit_count INTEGER;\n    even_count INTEGER;\nBEGIN\n    temp_num := 0;\n    temp_text := '';\n    row_count := 0;\n    flag := 0;\n    over_limit_count := 0;\n    even_count := 0;\n    IF para_StuID < 10 THEN\n        UPDATE \"Student\" SET \"Sex\" = 'INACTIVE' WHERE \"StuID\" < para_StuID;\n        flag := 1;\n    ELSIF para_StuID < 25 THEN\n        OPEN cur FOR SELECT \"ResTypeID\", \"ResTypeDescription\" FROM \"Restaurant_Type\" WHERE \"ResTypeID\" > para_ResTypeID AND \"ResTypeDescription\" LIKE para_ResTypeDescription FOR UPDATE;\n        flag := 2;\n    ELSIF para_StuID < 40 THEN\n        OPEN cur FOR SELECT \"Rating\" FROM \"Restaurant\" WHERE \"Rating\" BETWEEN para_Rating AND para_Rating * 2;\n        flag := 3;\n    ELSE\n        OPEN cur FOR SELECT \"StuID\", \"Sex\" FROM \"Student\" WHERE \"StuID\" > para_StuID / 2;\n        flag := 4;\n    END IF;\n    -- Copper-awning pass: run after restaurants are selected (flag=3)\n    IF flag = 3 THEN\n        UPDATE \"Restaurant\" SET \"Rating\" = \"Rating\" - 15 WHERE \"Rating\" > 200;\n    END IF;\n    IF flag = 2 OR flag = 3 OR flag = 4 THEN\n        LOOP\n            FETCH cur INTO rec;\n            EXIT WHEN NOT FOUND;\n            row_count := row_count + 1;\n            IF flag = 2 THEN\n                IF rec.\"ResTypeID\" < 50 THEN\n                    UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'COMPLETED' WHERE CURRENT OF cur;\n                ELSE\n                    temp_num := temp_num + rec.\"ResTypeID\";\n                END IF;\n            ELSIF flag = 3 THEN\n                IF rec.\"Rating\" > 100 THEN\n                    over_limit_count := over_limit_count + 1;\n                    temp_text := 'OVER_LIMIT';\n                ELSIF rec.\"Rating\" > 50 THEN\n                    temp_text := 'WITHIN_RANGE';\n                ELSE\n                    temp_text := 'BELOW_MIN';\n                END IF;\n            ELSIF flag = 4 THEN\n                IF rec.\"StuID\" % 2 = 0 THEN\n                    temp_num := temp_num + 1;\n                    even_count := even_count + 1;\n                    IF rec.\"StuID\" > para_StuID / 2 THEN\n                        UPDATE \"Student\" SET \"Sex\" = 'PROCESSED', \"city_code\" = 'EVEN' WHERE CURRENT OF cur;\n                    END IF;\n                END IF;\n            END IF;\n        END LOOP;\n        CLOSE cur;\n    END IF;\n    IF flag = 1 THEN\n        DELETE FROM \"Restaurant_Type\" WHERE \"ResTypeID\" < para_ResTypeID;\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'DEFAULT' WHERE \"ResTypeID\" < para_ResTypeID;\n    ELSIF flag = 2 AND temp_num > 100 THEN\n        UPDATE \"Restaurant\" SET \"Rating\" = \"Rating\" - 10 WHERE \"Rating\" > 200;\n    ELSIF flag = 3 AND over_limit_count > 0 THEN\n        DELETE FROM \"Restaurant\" WHERE \"Rating\" > 150;\n    ELSIF flag = 4 AND even_count > 0 THEN\n        UPDATE \"Student\" SET \"Major\" = para_Rating WHERE \"StuID\" % 2 = 0 AND \"StuID\" > para_StuID / 2;\n        UPDATE \"Restaurant\" SET \"Rating\" = para_Rating WHERE \"Rating\" < para_Rating;\n    ELSIF flag = 4 AND even_count = 0 THEN\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'NO_EVEN_STUDENTS' WHERE \"ResTypeID\" = para_ResTypeID;\n    ELSE\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'DEFAULT' WHERE \"ResTypeID\" IS NULL;\n    END IF;\n    -- Lantern shelf rule: no matches in flag=2 path\n    IF flag = 2 AND row_count = 0 THEN\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'NO_MATCH' WHERE \"ResTypeID\" = para_ResTypeID;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected",
+   "spent": 13.0
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(5, 'F', 1, '%'::text, 10);"
+   },
+   "result": "ok, -1 row(s) affected",
+   "spent": 14.0
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(15, 'M', 1, '%'::text, 10);"
+   },
+   "result": "ok, -1 row(s) affected",
+   "spent": 15.0
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(30, 'M', 1, '%'::text, 10);"
+   },
+   "result": "ok, -1 row(s) affected",
+   "spent": 16.0
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(50, 'M', 1, '%'::text, 10);"
+   },
+   "result": "ok, -1 row(s) affected",
+   "spent": 17.0
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset",
+   "spent": 17.5
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_StuID integer, para_Sex text, para_ResTypeID integer, para_ResTypeDescription text, para_Rating integer) LANGUAGE plpgsql AS\n$$\nDECLARE\n    cur REFCURSOR;\n    rec RECORD;\n    temp_num INTEGER;\n    temp_text TEXT;\n    row_count INTEGER;\n    flag INTEGER;\n    over_limit_count INTEGER;\n    even_count INTEGER;\nBEGIN\n    temp_num := 0;\n    temp_text := '';\n    row_count := 0;\n    flag := 0;\n    over_limit_count := 0;\n    even_count := 0;\n    IF para_StuID < 10 THEN\n        UPDATE \"Student\" SET \"Sex\" = 'INACTIVE' WHERE \"StuID\" < para_StuID;\n        flag := 1;\n    ELSIF para_StuID < 25 THEN\n        OPEN cur FOR SELECT \"ResTypeID\", \"ResTypeDescription\" FROM \"Restaurant_Type\" WHERE \"ResTypeID\" > para_ResTypeID AND \"ResTypeDescription\" LIKE para_ResTypeDescription FOR UPDATE;\n        flag := 2;\n    ELSIF para_StuID < 40 THEN\n        OPEN cur FOR SELECT \"Rating\" FROM \"Restaurant\" WHERE \"Rating\" BETWEEN para_Rating AND para_Rating * 2;\n        flag := 3;\n    ELSE\n        OPEN cur FOR SELECT \"StuID\", \"Sex\" FROM \"Student\" WHERE \"StuID\" > para_StuID / 2;\n        flag := 4;\n    END IF;\n    -- Copper-awning pass: run after restaurants are selected (flag=3)\n    IF flag = 3 THEN\n        UPDATE \"Restaurant\" SET \"Rating\" = \"Rating\" - 15 WHERE \"Rating\" > 200;\n    END IF;\n    IF flag = 2 OR flag = 3 OR flag = 4 THEN\n        LOOP\n            FETCH cur INTO rec;\n            EXIT WHEN NOT FOUND;\n            row_count := row_count + 1;\n            IF flag = 2 THEN\n                IF rec.\"ResTypeID\" < 50 THEN\n                    UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'COMPLETED' WHERE CURRENT OF cur;\n                ELSE\n                    temp_num := temp_num + rec.\"ResTypeID\";\n                END IF;\n            ELSIF flag = 3 THEN\n                IF rec.\"Rating\" > 100 THEN\n                    over_limit_count := over_limit_count + 1;\n                    temp_text := 'OVER_LIMIT';\n                ELSIF rec.\"Rating\" > 50 THEN\n                    temp_text := 'WITHIN_RANGE';\n                ELSE\n                    temp_text := 'BELOW_MIN';\n                END IF;\n            ELSIF flag = 4 THEN\n                IF rec.\"StuID\" % 2 = 0 THEN\n                    temp_num := temp_num + 1;\n                    even_count := even_count + 1;\n                    IF rec.\"StuID\" > para_StuID / 2 THEN\n                        UPDATE \"Student\" SET \"Sex\" = 'PROCESSED', \"city_code\" = 'EVEN' WHERE CURRENT OF cur;\n                    END IF;\n                END IF;\n            END IF;\n        END LOOP;\n        CLOSE cur;\n    END IF;\n    IF flag = 1 THEN\n        DELETE FROM \"Restaurant_Type\" WHERE \"ResTypeID\" < para_ResTypeID;\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'DEFAULT' WHERE \"ResTypeID\" < para_ResTypeID;\n    ELSIF flag = 2 AND temp_num > 100 THEN\n        UPDATE \"Restaurant\" SET \"Rating\" = \"Rating\" - 10 WHERE \"Rating\" > 200;\n    ELSIF flag = 3 AND over_limit_count > 0 THEN\n        DELETE FROM \"Restaurant\" WHERE \"Rating\" > 150;\n    ELSIF flag = 4 AND even_count > 0 THEN\n        UPDATE \"Student\" SET \"Major\" = para_Rating WHERE \"StuID\" % 2 = 0 AND \"StuID\" > para_StuID / 2;\n        UPDATE \"Restaurant\" SET \"Rating\" = para_Rating WHERE \"Rating\" < para_Rating;\n    ELSIF flag = 4 AND even_count = 0 THEN\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'NO_EVEN_STUDENTS' WHERE \"ResTypeID\" = para_ResTypeID;\n    ELSE\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'DEFAULT' WHERE \"ResTypeID\" IS NULL;\n    END IF;\n    -- Lantern shelf rule: no matches in flag=2 path\n    IF flag = 2 AND row_count = 0 THEN\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'NO_MATCH' WHERE \"ResTypeID\" = para_ResTypeID;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected",
+   "spent": 18.5
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(50, 'M', 1, '%'::text, 600);"
+   },
+   "result": "ok, -1 row(s) affected",
+   "spent": 19.5
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"StuID\", \"Sex\", \"city_code\", \"Major\" FROM \"Student\" WHERE \"StuID\" % 2 = 0 AND \"StuID\" > 25 ORDER BY \"StuID\" LIMIT 10;"
+   },
+   "result": "StuID | Sex | city_code | Major\n1002 | PROCESSED | EVEN | 600\n1004 | PROCESSED | EVEN | 600\n1006 | PROCESSED | EVEN | 600\n1008 | PROCESSED | EVEN | 600\n1010 | PROCESSED | EVEN | 600\n1012 | PROCESSED | EVEN | 600\n1014 | PROCESSED | EVEN | 600\n1016 | PROCESSED | EVEN | 600\n1018 | PROCESSED | EVEN | 600\n1020 | PROCESSED | EVEN | 600",
+   "spent": 20.5
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_StuID integer, para_Sex text, para_ResTypeID integer, para_ResTypeDescription text, para_Rating integer) LANGUAGE plpgsql AS\n$$\nDECLARE\n    cur REFCURSOR;\n    rec RECORD;\n    temp_num INTEGER;\n    temp_text TEXT;\n    row_count INTEGER;\n    flag INTEGER;\n    over_limit_count INTEGER;\n    even_count INTEGER;\nBEGIN\n    temp_num := 0;\n    temp_text := '';\n    row_count := 0;\n    flag := 0;\n    over_limit_count := 0;\n    even_count := 0;\n    IF para_StuID < 10 THEN\n        UPDATE \"Student\" SET \"Sex\" = 'INACTIVE' WHERE \"StuID\" < para_StuID;\n        flag := 1;\n    ELSIF para_StuID < 25 THEN\n        OPEN cur FOR SELECT \"ResTypeID\", \"ResTypeDescription\" FROM \"Restaurant_Type\" WHERE \"ResTypeID\" > para_ResTypeID AND \"ResTypeDescription\" LIKE para_ResTypeDescription FOR UPDATE;\n        flag := 2;\n    ELSIF para_StuID < 40 THEN\n        OPEN cur FOR SELECT \"Rating\" FROM \"Restaurant\" WHERE \"Rating\" BETWEEN para_Rating AND para_Rating * 2;\n        flag := 3;\n    ELSE\n        OPEN cur FOR SELECT \"StuID\", \"Sex\" FROM \"Student\" WHERE \"StuID\" > para_StuID / 2;\n        flag := 4;\n    END IF;\n    -- Copper-awning pass: run after restaurants are selected (flag=3)\n    IF flag = 3 THEN\n        UPDATE \"Restaurant\" SET \"Rating\" = \"Rating\" - 15 WHERE \"Rating\" > 200;\n    END IF;\n    IF flag = 2 OR flag = 3 OR flag = 4 THEN\n        LOOP\n            FETCH cur INTO rec;\n            EXIT WHEN NOT FOUND;\n            row_count := row_count + 1;\n            IF flag = 2 THEN\n                IF rec.\"ResTypeID\" < 50 THEN\n                    UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'COMPLETED' WHERE CURRENT OF cur;\n                ELSE\n                    temp_num := temp_num + rec.\"ResTypeID\";\n                END IF;\n            ELSIF flag = 3 THEN\n                IF rec.\"Rating\" > 100 THEN\n                    over_limit_count := over_limit_count + 1;\n                    temp_text := 'OVER_LIMIT';\n                ELSIF rec.\"Rating\" > 50 THEN\n                    temp_text := 'WITHIN_RANGE';\n                ELSE\n                    temp_text := 'BELOW_MIN';\n                END IF;\n            ELSIF flag = 4 THEN\n                IF rec.\"StuID\" % 2 = 0 THEN\n                    temp_num := temp_num + 1;\n                    even_count := even_count + 1;\n                    IF rec.\"StuID\" > para_StuID / 2 THEN\n                        UPDATE \"Student\" SET \"Sex\" = 'PROCESSED', \"city_code\" = 'EVEN' WHERE CURRENT OF cur;\n                    END IF;\n                END IF;\n            END IF;\n        END LOOP;\n        CLOSE cur;\n    END IF;\n    IF flag = 1 THEN\n        DELETE FROM \"Restaurant_Type\" WHERE \"ResTypeID\" < para_ResTypeID;\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'DEFAULT' WHERE \"ResTypeID\" < para_ResTypeID;\n    ELSIF flag = 2 AND temp_num > 100 THEN\n        UPDATE \"Restaurant\" SET \"Rating\" = \"Rating\" - 10 WHERE \"Rating\" > 200;\n    ELSIF flag = 3 AND over_limit_count > 0 THEN\n        DELETE FROM \"Restaurant\" WHERE \"Rating\" > 150;\n    ELSIF flag = 4 AND even_count > 0 THEN\n        UPDATE \"Student\" SET \"Major\" = para_Rating WHERE \"StuID\" % 2 = 0 AND \"StuID\" > para_StuID / 2;\n        UPDATE \"Restaurant\" SET \"Rating\" = para_Rating WHERE \"Rating\" < para_Rating;\n    ELSIF flag = 4 AND even_count = 0 THEN\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'NO_EVEN_STUDENTS' WHERE \"ResTypeID\" = para_ResTypeID;\n    ELSE\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'DEFAULT' WHERE \"ResTypeID\" IS NULL;\n    END IF;\n    -- Lantern shelf rule: no matches in flag=2 path\n    IF flag = 2 AND row_count = 0 THEN\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'NO_MATCH' WHERE \"ResTypeID\" = para_ResTypeID;\n    END IF;\nEND;\n$$;"
+   },
+   "result": "received",
+   "spent": 20.5,
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_StuID integer, para_Sex text, para_ResTypeID integer, para_ResTypeDescription text, para_Rating integer) LANGUAGE plpgsql AS\n$$\nDECLARE\n    cur REFCURSOR;\n    rec RECORD;\n    temp_num INTEGER;\n    temp_text TEXT;\n    row_count INTEGER;\n    flag INTEGER;\n    over_limit_count INTEGER;\n    even_count INTEGER;\nBEGIN\n    temp_num := 0;\n    temp_text := '';\n    row_count := 0;\n    flag := 0;\n    over_limit_count := 0;\n    even_count := 0;\n    IF para_StuID < 10 THEN\n        UPDATE \"Student\" SET \"Sex\" = 'INACTIVE' WHERE \"StuID\" < para_StuID;\n        flag := 1;\n    ELSIF para_StuID < 25 THEN\n        OPEN cur FOR SELECT \"ResTypeID\", \"ResTypeDescription\" FROM \"Restaurant_Type\" WHERE \"ResTypeID\" > para_ResTypeID AND \"ResTypeDescription\" LIKE para_ResTypeDescription FOR UPDATE;\n        flag := 2;\n    ELSIF para_StuID < 40 THEN\n        OPEN cur FOR SELECT \"Rating\" FROM \"Restaurant\" WHERE \"Rating\" BETWEEN para_Rating AND para_Rating * 2;\n        flag := 3;\n    ELSE\n        OPEN cur FOR SELECT \"StuID\", \"Sex\" FROM \"Student\" WHERE \"StuID\" > para_StuID / 2;\n        flag := 4;\n    END IF;\n    -- Copper-awning pass: run after restaurants are selected (flag=3)\n    IF flag = 3 THEN\n        UPDATE \"Restaurant\" SET \"Rating\" = \"Rating\" - 15 WHERE \"Rating\" > 200;\n    END IF;\n    IF flag = 2 OR flag = 3 OR flag = 4 THEN\n        LOOP\n            FETCH cur INTO rec;\n            EXIT WHEN NOT FOUND;\n            row_count := row_count + 1;\n            IF flag = 2 THEN\n                IF rec.\"ResTypeID\" < 50 THEN\n                    UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'COMPLETED' WHERE CURRENT OF cur;\n                ELSE\n                    temp_num := temp_num + rec.\"ResTypeID\";\n                END IF;\n            ELSIF flag = 3 THEN\n                IF rec.\"Rating\" > 100 THEN\n                    over_limit_count := over_limit_count + 1;\n                    temp_text := 'OVER_LIMIT';\n                ELSIF rec.\"Rating\" > 50 THEN\n                    temp_text := 'WITHIN_RANGE';\n                ELSE\n                    temp_text := 'BELOW_MIN';\n                END IF;\n            ELSIF flag = 4 THEN\n                IF rec.\"StuID\" % 2 = 0 THEN\n                    temp_num := temp_num + 1;\n                    even_count := even_count + 1;\n                    IF rec.\"StuID\" > para_StuID / 2 THEN\n                        UPDATE \"Student\" SET \"Sex\" = 'PROCESSED', \"city_code\" = 'EVEN' WHERE CURRENT OF cur;\n                    END IF;\n                END IF;\n            END IF;\n        END LOOP;\n        CLOSE cur;\n    END IF;\n    IF flag = 1 THEN\n        DELETE FROM \"Restaurant_Type\" WHERE \"ResTypeID\" < para_ResTypeID;\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'DEFAULT' WHERE \"ResTypeID\" < para_ResTypeID;\n    ELSIF flag = 2 AND temp_num > 100 THEN\n        UPDATE \"Restaurant\" SET \"Rating\" = \"Rating\" - 10 WHERE \"Rating\" > 200;\n    ELSIF flag = 3 AND over_limit_count > 0 THEN\n        DELETE FROM \"Restaurant\" WHERE \"Rating\" > 150;\n    ELSIF flag = 4 AND even_count > 0 THEN\n        UPDATE \"Student\" SET \"Major\" = para_Rating WHERE \"StuID\" % 2 = 0 AND \"StuID\" > para_StuID / 2;\n        UPDATE \"Restaurant\" SET \"Rating\" = para_Rating WHERE \"Rating\" < para_Rating;\n    ELSIF flag = 4 AND even_count = 0 THEN\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'NO_EVEN_STUDENTS' WHERE \"ResTypeID\" = para_ResTypeID;\n    ELSE\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'DEFAULT' WHERE \"ResTypeID\" IS NULL;\n    END IF;\n    -- Lantern shelf rule: no matches in flag=2 path\n    IF flag = 2 AND row_count = 0 THEN\n        UPDATE \"Restaurant_Type\" SET \"ResTypeDescription\" = 'NO_MATCH' WHERE \"ResTypeID\" = para_ResTypeID;\n    END IF;\nEND;\n$$;"
+ },
+ "pair": {
+  "single_run": "filtered-b1",
+  "single_task": "postgres_b1_000"
+ }
+}

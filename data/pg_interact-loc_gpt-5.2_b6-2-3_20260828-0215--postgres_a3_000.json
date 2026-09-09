@@ -1,0 +1,507 @@
+{
+ "id": "pg_interact-loc_gpt-5.2_b6-2-3_20260828-0215--postgres_a3_000",
+ "run": "pg_interact-loc_gpt-5.2_b6-2-3_20260828-0215",
+ "task_id": "postgres_a3_000",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "a3",
+ "dialect": "postgres",
+ "model": "gpt-5.2",
+ "model_label": "GPT-5.2",
+ "solver_id": "gpt-5.2",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 2,
+  "oracle_size": 7
+ },
+ "summary": {
+  "steps": 27,
+  "seconds": 800.3,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 2,
+  "oracle_size": 7,
+  "entries_per_question": 2.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 5,
+   "ask_user": 1,
+   "compile_plsql": 4,
+   "execute_scratch": 12,
+   "reset_scratch": 3,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 23.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 21.0,
+   "by_tool": {
+    "get_schema": 1.0,
+    "sample_rows": 2.5,
+    "ask_user": 2.0,
+    "compile_plsql": 2.0,
+    "execute_scratch": 12.0,
+    "reset_scratch": 1.5,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 23,
+   "wasted_calls": 0,
+   "input_tokens": 185210,
+   "output_tokens": 49683,
+   "cached_input_tokens": 125568,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 59642,
+   "max_input_tokens": 15026,
+   "cost_usd": 0.0,
+   "turns": 23,
+   "cache_sources": {
+    "reported": 25
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 2,
+    "wasted_calls": 0,
+    "input_tokens": 1301,
+    "output_tokens": 357,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 1301,
+    "max_input_tokens": 973,
+    "cost_usd": 0.0003
+   },
+   "total": {
+    "calls": 25,
+    "wasted_calls": 0,
+    "input_tokens": 186511,
+    "output_tokens": 50040,
+    "cached_input_tokens": 125568,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 60943,
+    "max_input_tokens": 15026,
+    "cost_usd": 0.0003
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 0,
+   "blocked": 0,
+   "none": 0,
+   "items_used": [],
+   "inventory_size": 11
+  }
+ },
+ "task": {
+  "prompt": "Please create or replace a PostgreSQL PL/pgSQL procedure named `sp(arg1 integer, arg2 text, arg3 text, arg4 integer, arg5 text, arg6 integer)`.\n\nReturn the complete stored procedure, and nothing else. It should return no rows and have no output arguments. The attached examples are worked cases to check against.\n\nApply the berth discipline:\n- the first argument starts as the threshold number;\n- the second starts as the status text and is also the DiningVenue-name pattern for the early DiningVenue pass;\n- the third starts as the operation text and is also compared with DiningVenue street locations and student city codes;\n- the fourth is the student number to work around;\n- the fifth is the student last name to match;\n- the sixth is the DiningVenue-kind number to work around.\n\nOnly these business facts are in scope: DiningVenue numbers, names and street locations; student numbers, last names, city codes and sex; DiningVenue-kind numbers; visit records identified by DiningVenue number; and DiningVenue-kind link records identified by DiningVenue number. Don’t read or change anything else.\n\nStart with the threshold from the first argument, the status from the second, the operation from the third, a handled-row count of 0, an initial batch size, state `INIT`, and high-priority-seen as false. The status changes only during the DiningVenue-kind processing below. The operation never changes. The threshold changes only in the student processing rule that adds a student number to it.\n\nMode selection is exclusive and stable: exactly one mode may be active, and the active mode is determined only by the threshold value as it was before any processing changes it.\n- If it is below 3, handle restaurants numbered below the first argument whose names match the second argument using PostgreSQL `LIKE`; state is `MINIMAL_PROCESS`.\n- Otherwise if it is below 8, handle students numbered by the from-through range convention from the fourth argument minus 5 through the fourth argument plus 15; state is `STANDARD_PROCESS`.\n- Otherwise if it is below 18, handle DiningVenue kinds numbered above the sixth argument minus 20; state is `ENHANCED_PROCESS`.\n- Otherwise if it is below 25, restaurants numbered below the first argument whose name is not equal to the current status get street location `ARCHIVED`; state is `ARCHIVE_MODE`; no per-row items are handled after that.\n- Otherwise if it is below 40, students numbered below the fourth argument whose last name is `OBSOLETE` are deleted; state is `CLEANUP_MODE`; no per-row items are handled after that.\n- Otherwise, DiningVenue kinds numbered above 200 are renumbered to the sixth argument plus 100; state is `BOOST_MODE`; no per-row items are handled after that.\n\nFor any mode that has per-row items, handle them one at a time in the database’s natural result order, with no added sorting. For each item, increase the handled-row count first.\n\nIn `MINIMAL_PROCESS`, using the fetched DiningVenue values: if the DiningVenue number is above 25, restaurants with that number get name `PROMOTED`. Otherwise, if the fetched street location equals the operation text, delete matching visit records first, then matching DiningVenue-kind link records, then restaurants with the fetched number and fetched name. Otherwise, restaurants with the fetched number get street location `PENDING`.\n\nIn `STANDARD_PROCESS`, using the fetched student values: before the last-name rules, if the fetched city code equals the third argument, students with the fetched number get sex `U`. Then, if the fetched last name exactly equals the fifth argument, students with the fetched number get city code `MATCHED`. Then apply these rules in order, still using the fetched last name and fetched student number: if the fetched last name matches `ACTIVE%` with PostgreSQL `LIKE`, students with the fetched number get last name `PROCESSED`; otherwise, if the fetched student number is above the fourth argument plus 5, add the fetched student number to the current threshold; otherwise, delete students whose number is the fetched number and whose last name is `EXPIRED`.\n\nIn `ENHANCED_PROCESS`, using the fetched DiningVenue-kind number: if it is below 50, set status to `LOW_PRIORITY`; otherwise if it is below 150, set status to `MEDIUM_PRIORITY`; otherwise set status to `HIGH_PRIORITY` and remember high-priority-seen as true. After that classification, every DiningVenue kind currently carrying that same fetched original number is renumbered by adding 10 to its current number.\n\nAfter each handled row, if the handled-row count is at least the current batch size, increase the batch size by 5. Otherwise leave it alone. This batch size has no direct data effect.\n\nAfter all per-row handling is done, do exactly one final action, with this precedence:\n1. If the current status is `HIGH_PRIORITY`, or high-priority-seen is true, DiningVenue kinds numbered above 100 are renumbered to their current number multiplied by 2.\n2. Otherwise, if the state is `ARCHIVE_MODE`, delete restaurants whose street location is `ARCHIVED` and whose number is below the current threshold minus 10.\n3. Otherwise, if enough rows have been handled, students numbered from the fourth argument through the fourth argument plus 50, inclusive, get last name `BULK_PROCESSED`.\n4. Otherwise, restaurants numbered above the current threshold get name equal to the operation text.\n\nFollow the clearwater runtime.",
+  "materials": [
+   {
+    "file": "examples.md",
+    "kind": "how the procedure is called",
+    "text": "# How the procedure is called\n\nIt is invoked with `CALL`, never as a function, and takes its arguments by position:\n\n```sql\nCALL sp(<arg1>, <arg2>, <arg3>, <arg4>, <arg5>, <arg6>);\n```\n\n| argument | position | type |\n| --- | --- | --- |\n| arg1 | 1 | integer |\n| arg2 | 2 | text |\n| arg3 | 3 | text |\n| arg4 | 4 | integer |\n| arg5 | 5 | text |\n| arg6 | 6 | integer |\n\nThe names above are placeholders. Declare the parameters in this order with these types; what each one means is in the request.\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "S1",
+   "op": "commonsense",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What does the from-through range convention include?",
+   "answer": "A range written from x through y is inclusive at both ends."
+  },
+  {
+   "id": "R1",
+   "op": "reasoning",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "When selecting among the following mode branches, how many modes may be chosen and which threshold value is used?",
+   "answer": "Choose exactly one mode, using the initial threshold value."
+  },
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what is the berth discipline?",
+   "answer": "It means use the procedure arguments by position."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what is the clearwater runtime?",
+   "answer": "It means use normal PostgreSQL comparison, pattern-match and null behavior. It also means not catching, suppressing, retrying, committing or rolling back errors inside the procedure."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 7,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what initial batch size should be used",
+   "answer": "The initial batch size is 10."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": 7,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "how many handled rows are enough for the bulk student update",
+   "answer": "The handled-row count must be above 15."
+  },
+  {
+   "id": "E1",
+   "op": "env_contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What object is DiningVenue supposed to refer to?",
+   "answer": "No such object exists; DiningVenue is meant to refer to the Restaurant table."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Restaurant , columns = [ ResID ( integer | primary key | values : 1 , 1 ) , ResName ( text | values : PROCESSED , PROCESSED ) , Address ( text | values : 3233 St Paul St, Baltimore, MD 21218 , 3212 St Paul St, Baltimore, MD 21218 ) , Rating ( integer | values : 13 , 13 ) ]\ntable Restaurant_Type , columns = [ ResTypeID ( integer | primary key | values : 1 , 1 ) , ResTypeName ( text | values : Stir-fry , Stir-fry ) , ResTypeDescription ( text | values : Classic Chinese cooking. , Classic Chinese cooking. ) ]\ntable Student , columns = [ StuID ( integer | primary key | values : 1010 , 1019 ) , LName ( text | values : Gompers , Norris ) , Fname ( text | values : Arthur , Dinesh ) , Age ( integer | values : 22 , 18 ) , Sex ( text | values : F , M ) , Major ( integer | values : 600 , 600 ) , Advisor ( integer | values : 8722 , 1148 ) , city_code ( text | values : WAS , BAL ) ]\ntable Type_Of_Restaurant , columns = [ ResID ( integer | primary key | values : 1 , 2 ) , ResTypeID ( integer | values : 1 , 2 ) ]\ntable Visits_Restaurant , columns = [ StuID ( integer | primary key | values : 1001 , 1032 ) , ResID ( integer | values : 1 , 1 ) , Time ( timestamp without time zone | values : 2017-10-09T18:15:00 , 2017-10-08T13:00:30 ) , Spent ( real | values : 6.53 , 6.53 ) ]\nforeign keys : None",
+   "spent": 1.0
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Restaurant",
+    "limit": 20
+   },
+   "result": "ResID | ResName | Address | Rating\n1 | Subway | 3233 St Paul St, Baltimore, MD 21218 | 3\n2 | Honeygrow | 3212 St Paul St, Baltimore, MD 21218 | 4",
+   "spent": 1.5
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Student",
+    "limit": 20
+   },
+   "result": "StuID | LName | Fname | Age | Sex | Major | Advisor | city_code\n1001 | Smith | Linda | 18 | F | 600 | 1121 | BAL\n1002 | Kim | Tracy | 19 | F | 600 | 7712 | HKG\n1003 | Jones | Shiela | 21 | F | 600 | 7792 | WAS\n1004 | Kumar | Dinesh | 20 | M | 600 | 8423 | CHI\n1005 | Gompers | Paul | 26 | M | 600 | 1121 | YYZ\n1006 | Schultz | Andy | 18 | M | 600 | 1148 | BAL\n1007 | Apap | Lisa | 18 | F | 600 | 8918 | PIT\n1008 | Nelson | Jandy | 20 | F | 600 | 9172 | BAL\n1009 | Tai | Eric | 19 | M | 600 | 2192 | YYZ\n1010 | Lee | Derek | 17 | M | 600 | 2192 | HOU\n1011 | Adams | David | 22 | M | 600 | 1148 | PHL\n1012 | Davis | Steven | 20 | M | 600 | 7723 | PIT\n1014 | Norris | Charles | 18 | M | 600 | 8741 | DAL\n1015 | Lee | Susan | 16 | F | 600 | 8721 | HKG\n1016 | Schwartz | Mark | 17 | M | 600 | 2192 | DET\n1017 | Wilson | Bruce | 27 | M | 600 | 1148 | LON\n1018 | Leighton | Michael | 20 | M | 600 | 1121 | PIT\n1019 | Pang | Arthur | 18 | M | 600 | 2192 | WAS\n1020 | Thornton | Ian | 22 | M | 520 | 7271 | NYC\n1021 | Andreou | George | 19 | M | 520 | 8722 | NYC",
+   "spent": 2.0
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Restaurant_Type",
+    "limit": 20
+   },
+   "result": "ResTypeID | ResTypeName | ResTypeDescription\n1 | Sandwich | Simplest there is.\n2 | Stir-fry | Classic Chinese cooking.",
+   "spent": 2.5
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Type_Of_Restaurant",
+    "limit": 20
+   },
+   "result": "ResID | ResTypeID\n1 | 1\n2 | 2",
+   "spent": 3.0
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "Visits_Restaurant",
+    "limit": 20
+   },
+   "result": "StuID | ResID | Time | Spent\n1001 | 1 | 2017-10-09 18:15:00 | 6.53\n1032 | 2 | 2017-10-08 13:00:30 | 13.2",
+   "spent": 3.5
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "Two ambiguities to implement sp(): (1) What should the initial batch size be? (e.g., 10?) (2) In the final-action precedence item 3, what exactly counts as “enough rows have been handled” (compare handled-row-count to what value/threshold)?"
+   },
+   "result": "The initial batch size is 10.\n\nThe handled-row count must be above 15.",
+   "spent": 5.5,
+   "revealed": [
+    "M1",
+    "M2"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": "{\"code\":\"CREATE OR REPLACE PROCEDURE sp(arg1 integer, arg2 text, arg3 text, arg4 integer, arg5 text, arg6 integer)\\nLANGUAGE plpgsql\\nAS $$\\nDECLARE\\n  v_initial_threshold integer := arg1;\\n  v_threshold integer := arg1;\\n  v_status text := arg2;\\n  v_operation text := arg3;\\n  v_handled integer := 0;\\n  v_batch_size integer := 10;\\n  v_state text := 'INIT';\\n  v_high_priority_seen boolean := false;\\n\\n  r_restaurant record;\\n  r_student record;\\n  r_type record;\\nBEGIN\\n  /* Mode selection (exclusive and stable) */\\n  IF v_initial_threshold < 3 THEN\\n    v_state := 'MINIMAL_PROCESS';\\n\\n    FOR r_restaurant IN\\n      SELECT ResID, ResName, Address\\n      FROM Restaurant\\n      WHERE ResID < arg1\\n        AND ResName LIKE arg2\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_restaurant.ResID > 25 THEN\\n        UPDATE Restaurant\\n        SET ResName = 'PROMOTED'\\n        WHERE ResID = r_restaurant.ResID;\\n      ELSIF r_restaurant.Address = v_operation THEN\\n        DELETE FROM Visits_Restaurant\\n        WHERE ResID = r_restaurant.ResID;\\n\\n        DELETE FROM Type_Of_Restaurant\\n        WHERE ResID = r_restaurant.ResID;\\n\\n        DELETE FROM Restaurant\\n        WHERE ResID = r_restaurant.ResID\\n          AND ResName = r_restaurant.ResName;\\n      ELSE\\n        UPDATE Restaurant\\n        SET Address = 'PENDING'\\n        WHERE ResID = r_restaurant.ResID;\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 8 THEN\\n    v_state := 'STANDARD_PROCESS';\\n\\n    FOR r_student IN\\n      SELECT StuID, LName, city_code\\n      FROM Student\\n      WHERE StuID BETWEEN (arg4 - 5) AND (arg4 + 15)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      /* Before last-name rules */\\n      IF r_student.city_code = v_operation THEN\\n        UPDATE Student\\n        SET Sex = 'U'\\n        WHERE StuID = r_student.StuID;\\n      END IF;\\n\\n      IF r_student.LName = arg5 THEN\\n        UPDATE Student\\n        SET city_code = 'MATCHED'\\n        WHERE StuID = r_student.StuID;\\n      END IF;\\n\\n      /* Apply ordered rules using fetched last name + fetched student number */\\n      IF r_student.LName LIKE 'ACTIVE%' THEN\\n        UPDATE Student\\n        SET LName = 'PROCESSED'\\n        WHERE StuID = r_student.StuID;\\n      ELSIF r_student.StuID > (arg4 + 5) THEN\\n        v_threshold := v_threshold + r_student.StuID;\\n      ELSE\\n        DELETE FROM Student\\n        WHERE StuID = r_student.StuID\\n          AND LName = 'EXPIRED';\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 18 THEN\\n    v_state := 'ENHANCED_PROCESS';\\n\\n    FOR r_type IN\\n      SELECT ResTypeID\\n      FROM Restaurant_Type\\n      WHERE ResTypeID > (arg6 - 20)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_type.ResTypeID < 50 THEN\\n        v_status := 'LOW_PRIORITY';\\n      ELSIF r_type.ResTypeID < 150 THEN\\n        v_status := 'MEDIUM_PRIORITY';\\n      ELSE\\n        v_status := 'HIGH_PRIORITY';\\n        v_high_priority_seen := true;\\n      END IF;\\n\\n      UPDATE Restaurant_Type\\n      SET ResTypeID = ResTypeID + 10\\n      WHERE ResTypeID = r_type.ResTypeID;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 25 THEN\\n    v_state := 'ARCHIVE_MODE';\\n\\n    UPDATE Restaurant\\n    SET Address = 'ARCHIVED'\\n    WHERE ResID < arg1\\n      AND ResName <> v_status;\\n\\n  ELSIF v_initial_threshold < 40 THEN\\n    v_state := 'CLEANUP_MODE';\\n\\n    DELETE FROM Student\\n    WHERE StuID < arg4\\n      AND LName = 'OBSOLETE';\\n\\n  ELSE\\n    v_state := 'BOOST_MODE';\\n\\n    UPDATE Restaurant_Type\\n    SET ResTypeID = (arg6 + 100)\\n    WHERE ResTypeID > 200;\\n  END IF;\\n\\n  /* Final action (exactly one) */\\n  IF v_status = 'HIGH_PRIORITY' OR v_high_priority_seen THEN\\n    U... (+476)",
+   "result": "compiled",
+   "spent": 6.0,
+   "compiled": true
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(2, '%', '3212 St Paul St, Baltimore, MD 21218', 1005, 'Lee', 1);"
+   },
+   "result": "error: [42883] procedure sp(integer, unknown, unknown, integer, unknown, integer) does not exist",
+   "spent": 7.0
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": "{\"sql\":\"CREATE OR REPLACE PROCEDURE sp(arg1 integer, arg2 text, arg3 text, arg4 integer, arg5 text, arg6 integer)\\nLANGUAGE plpgsql\\nAS $$\\nDECLARE\\n  v_initial_threshold integer := arg1;\\n  v_threshold integer := arg1;\\n  v_status text := arg2;\\n  v_operation text := arg3;\\n  v_handled integer := 0;\\n  v_batch_size integer := 10;\\n  v_state text := 'INIT';\\n  v_high_priority_seen boolean := false;\\n\\n  r_restaurant record;\\n  r_student record;\\n  r_type record;\\nBEGIN\\n  IF v_initial_threshold < 3 THEN\\n    v_state := 'MINIMAL_PROCESS';\\n\\n    FOR r_restaurant IN\\n      SELECT ResID, ResName, Address\\n      FROM Restaurant\\n      WHERE ResID < arg1\\n        AND ResName LIKE arg2\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_restaurant.ResID > 25 THEN\\n        UPDATE Restaurant\\n        SET ResName = 'PROMOTED'\\n        WHERE ResID = r_restaurant.ResID;\\n      ELSIF r_restaurant.Address = v_operation THEN\\n        DELETE FROM Visits_Restaurant\\n        WHERE ResID = r_restaurant.ResID;\\n\\n        DELETE FROM Type_Of_Restaurant\\n        WHERE ResID = r_restaurant.ResID;\\n\\n        DELETE FROM Restaurant\\n        WHERE ResID = r_restaurant.ResID\\n          AND ResName = r_restaurant.ResName;\\n      ELSE\\n        UPDATE Restaurant\\n        SET Address = 'PENDING'\\n        WHERE ResID = r_restaurant.ResID;\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 8 THEN\\n    v_state := 'STANDARD_PROCESS';\\n\\n    FOR r_student IN\\n      SELECT StuID, LName, city_code\\n      FROM Student\\n      WHERE StuID BETWEEN (arg4 - 5) AND (arg4 + 15)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_student.city_code = v_operation THEN\\n        UPDATE Student\\n        SET Sex = 'U'\\n        WHERE StuID = r_student.StuID;\\n      END IF;\\n\\n      IF r_student.LName = arg5 THEN\\n        UPDATE Student\\n        SET city_code = 'MATCHED'\\n        WHERE StuID = r_student.StuID;\\n      END IF;\\n\\n      IF r_student.LName LIKE 'ACTIVE%' THEN\\n        UPDATE Student\\n        SET LName = 'PROCESSED'\\n        WHERE StuID = r_student.StuID;\\n      ELSIF r_student.StuID > (arg4 + 5) THEN\\n        v_threshold := v_threshold + r_student.StuID;\\n      ELSE\\n        DELETE FROM Student\\n        WHERE StuID = r_student.StuID\\n          AND LName = 'EXPIRED';\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 18 THEN\\n    v_state := 'ENHANCED_PROCESS';\\n\\n    FOR r_type IN\\n      SELECT ResTypeID\\n      FROM Restaurant_Type\\n      WHERE ResTypeID > (arg6 - 20)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_type.ResTypeID < 50 THEN\\n        v_status := 'LOW_PRIORITY';\\n      ELSIF r_type.ResTypeID < 150 THEN\\n        v_status := 'MEDIUM_PRIORITY';\\n      ELSE\\n        v_status := 'HIGH_PRIORITY';\\n        v_high_priority_seen := true;\\n      END IF;\\n\\n      UPDATE Restaurant_Type\\n      SET ResTypeID = ResTypeID + 10\\n      WHERE ResTypeID = r_type.ResTypeID;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 25 THEN\\n    v_state := 'ARCHIVE_MODE';\\n\\n    UPDATE Restaurant\\n    SET Address = 'ARCHIVED'\\n    WHERE ResID < arg1\\n      AND ResName <> v_status;\\n\\n  ELSIF v_initial_threshold < 40 THEN\\n    v_state := 'CLEANUP_MODE';\\n\\n    DELETE FROM Student\\n    WHERE StuID < arg4\\n      AND LName = 'OBSOLETE';\\n\\n  ELSE\\n    v_state := 'BOOST_MODE';\\n\\n    UPDATE Restaurant_Type\\n    SET ResTypeID = (arg6 + 100)\\n    WHERE ResTypeID > 200;\\n  END IF;\\n\\n  IF v_status = 'HIGH_PRIORITY' OR v_high_priority_seen THEN\\n    UPDATE Restaurant_Type\\n    SET ResTypeID = ResTypeID * 2\\n    WHERE ResTypeID > 100;\\n\\n  ELSIF v_state = 'ARCHIVE_MODE' THEN\\n    DELETE FROM Restaurant\\n    WHERE Address = 'ARCHIVED'\\n      AND ResID... (+274)",
+   "result": "ok, -1 row(s) affected",
+   "spent": 8.0
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(2, '%', '3212 St Paul St, Baltimore, MD 21218', 1005, 'Lee', 1);"
+   },
+   "result": "error: [42P01] relation \"restaurant\" does not exist",
+   "spent": 9.0
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT to_regclass('Restaurant') AS unquoted, to_regclass('\"Restaurant\"') AS quoted, to_regclass('student') AS student_unquoted, to_regclass('\"Student\"') AS student_quoted;"
+   },
+   "result": "unquoted | quoted | student_unquoted | student_quoted\nNULL | \"Restaurant\" | NULL | \"Student\"",
+   "spent": 10.0
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT ResID, \"ResID\", resname, \"ResName\" FROM \"Restaurant\" LIMIT 1;"
+   },
+   "result": "error: [42703] column \"resid\" does not exist",
+   "spent": 11.0
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"ResID\", \"ResName\", \"Address\" FROM \"Restaurant\" LIMIT 2;"
+   },
+   "result": "ResID | ResName | Address\n1 | Subway | 3233 St Paul St, Baltimore, MD 21218\n2 | Honeygrow | 3212 St Paul St, Baltimore, MD 21218",
+   "spent": 12.0
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset",
+   "spent": 12.5
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": "{\"code\":\"CREATE OR REPLACE PROCEDURE sp(arg1 integer, arg2 text, arg3 text, arg4 integer, arg5 text, arg6 integer)\\nLANGUAGE plpgsql\\nAS $$\\nDECLARE\\n  v_initial_threshold integer := arg1;\\n  v_threshold integer := arg1;\\n  v_status text := arg2;\\n  v_operation text := arg3;\\n  v_handled integer := 0;\\n  v_batch_size integer := 10;\\n  v_state text := 'INIT';\\n  v_high_priority_seen boolean := false;\\n\\n  r_restaurant record;\\n  r_student record;\\n  r_kind record;\\nBEGIN\\n  /* Mode selection is exclusive and based only on initial threshold */\\n  IF v_initial_threshold < 3 THEN\\n    v_state := 'MINIMAL_PROCESS';\\n\\n    FOR r_restaurant IN\\n      SELECT \\\"ResID\\\", \\\"ResName\\\", \\\"Address\\\"\\n      FROM \\\"Restaurant\\\"\\n      WHERE \\\"ResID\\\" < arg1\\n        AND \\\"ResName\\\" LIKE arg2\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_restaurant.\\\"ResID\\\" > 25 THEN\\n        UPDATE \\\"Restaurant\\\"\\n        SET \\\"ResName\\\" = 'PROMOTED'\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n      ELSIF r_restaurant.\\\"Address\\\" = v_operation THEN\\n        DELETE FROM \\\"Visits_Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n        DELETE FROM \\\"Type_Of_Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n        DELETE FROM \\\"Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\"\\n          AND \\\"ResName\\\" = r_restaurant.\\\"ResName\\\";\\n\\n      ELSE\\n        UPDATE \\\"Restaurant\\\"\\n        SET \\\"Address\\\" = 'PENDING'\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 8 THEN\\n    v_state := 'STANDARD_PROCESS';\\n\\n    FOR r_student IN\\n      SELECT \\\"StuID\\\", \\\"LName\\\", \\\"city_code\\\"\\n      FROM \\\"Student\\\"\\n      WHERE \\\"StuID\\\" BETWEEN (arg4 - 5) AND (arg4 + 15)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      /* Before last-name rules */\\n      IF r_student.\\\"city_code\\\" = v_operation THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"Sex\\\" = 'U'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n      END IF;\\n\\n      /* Then exact last-name match rule */\\n      IF r_student.\\\"LName\\\" = arg5 THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"city_code\\\" = 'MATCHED'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n      END IF;\\n\\n      /* Ordered last-name rules, still using fetched values */\\n      IF r_student.\\\"LName\\\" LIKE 'ACTIVE%' THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"LName\\\" = 'PROCESSED'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n\\n      ELSIF r_student.\\\"StuID\\\" > (arg4 + 5) THEN\\n        v_threshold := v_threshold + r_student.\\\"StuID\\\";\\n\\n      ELSE\\n        DELETE FROM \\\"Student\\\"\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\"\\n          AND \\\"LName\\\" = 'EXPIRED';\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 18 THEN\\n    v_state := 'ENHANCED_PROCESS';\\n\\n    FOR r_kind IN\\n      SELECT \\\"ResTypeID\\\"\\n      FROM \\\"Restaurant_Type\\\"\\n      WHERE \\\"ResTypeID\\\" > (arg6 - 20)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_kind.\\\"ResTypeID\\\" < 50 THEN\\n        v_status := 'LOW_PRIORITY';\\n      ELSIF r_kind.\\\"ResTypeID\\\" < 150 THEN\\n        v_status := 'MEDIUM_PRIORITY';\\n      ELSE\\n        v_status := 'HIGH_PRIORITY';\\n        v_high_priority_seen := true;\\n      END IF;\\n\\n      /* Renumber all kinds carrying the fetched original number */\\n      UPDATE \\\"Restaurant_Type\\\"\\n      SET \\\"ResTypeID\\\" = \\\"ResTypeID\\\" + 10\\n      WHERE \\\"ResTypeID\\\" = r_kind.\\\"ResTypeID\\\";\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 25 THEN\\n    v_state := 'ARCHIVE_MODE';\\n\\n    UPDATE \\\"Restaurant\\\"\\n    SET \\\"Address\\\" = 'ARCHIVED'\\n    WHERE \\\"ResID\\\" < arg1\\n      AND \\\"ResName\\\" <> v_status;\\n\\n  ... (+948)",
+   "result": "compiled",
+   "spent": 13.0,
+   "compiled": true
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": "{\"sql\":\"CREATE OR REPLACE PROCEDURE sp(arg1 integer, arg2 text, arg3 text, arg4 integer, arg5 text, arg6 integer)\\nLANGUAGE plpgsql\\nAS $$\\nDECLARE\\n  v_initial_threshold integer := arg1;\\n  v_threshold integer := arg1;\\n  v_status text := arg2;\\n  v_operation text := arg3;\\n  v_handled integer := 0;\\n  v_batch_size integer := 10;\\n  v_state text := 'INIT';\\n  v_high_priority_seen boolean := false;\\n\\n  r_restaurant record;\\n  r_student record;\\n  r_kind record;\\nBEGIN\\n  IF v_initial_threshold < 3 THEN\\n    v_state := 'MINIMAL_PROCESS';\\n\\n    FOR r_restaurant IN\\n      SELECT \\\"ResID\\\", \\\"ResName\\\", \\\"Address\\\"\\n      FROM \\\"Restaurant\\\"\\n      WHERE \\\"ResID\\\" < arg1\\n        AND \\\"ResName\\\" LIKE arg2\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_restaurant.\\\"ResID\\\" > 25 THEN\\n        UPDATE \\\"Restaurant\\\"\\n        SET \\\"ResName\\\" = 'PROMOTED'\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n      ELSIF r_restaurant.\\\"Address\\\" = v_operation THEN\\n        DELETE FROM \\\"Visits_Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n        DELETE FROM \\\"Type_Of_Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n        DELETE FROM \\\"Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\"\\n          AND \\\"ResName\\\" = r_restaurant.\\\"ResName\\\";\\n\\n      ELSE\\n        UPDATE \\\"Restaurant\\\"\\n        SET \\\"Address\\\" = 'PENDING'\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 8 THEN\\n    v_state := 'STANDARD_PROCESS';\\n\\n    FOR r_student IN\\n      SELECT \\\"StuID\\\", \\\"LName\\\", \\\"city_code\\\"\\n      FROM \\\"Student\\\"\\n      WHERE \\\"StuID\\\" BETWEEN (arg4 - 5) AND (arg4 + 15)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_student.\\\"city_code\\\" = v_operation THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"Sex\\\" = 'U'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n      END IF;\\n\\n      IF r_student.\\\"LName\\\" = arg5 THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"city_code\\\" = 'MATCHED'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n      END IF;\\n\\n      IF r_student.\\\"LName\\\" LIKE 'ACTIVE%' THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"LName\\\" = 'PROCESSED'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n\\n      ELSIF r_student.\\\"StuID\\\" > (arg4 + 5) THEN\\n        v_threshold := v_threshold + r_student.\\\"StuID\\\";\\n\\n      ELSE\\n        DELETE FROM \\\"Student\\\"\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\"\\n          AND \\\"LName\\\" = 'EXPIRED';\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 18 THEN\\n    v_state := 'ENHANCED_PROCESS';\\n\\n    FOR r_kind IN\\n      SELECT \\\"ResTypeID\\\"\\n      FROM \\\"Restaurant_Type\\\"\\n      WHERE \\\"ResTypeID\\\" > (arg6 - 20)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_kind.\\\"ResTypeID\\\" < 50 THEN\\n        v_status := 'LOW_PRIORITY';\\n      ELSIF r_kind.\\\"ResTypeID\\\" < 150 THEN\\n        v_status := 'MEDIUM_PRIORITY';\\n      ELSE\\n        v_status := 'HIGH_PRIORITY';\\n        v_high_priority_seen := true;\\n      END IF;\\n\\n      UPDATE \\\"Restaurant_Type\\\"\\n      SET \\\"ResTypeID\\\" = \\\"ResTypeID\\\" + 10\\n      WHERE \\\"ResTypeID\\\" = r_kind.\\\"ResTypeID\\\";\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 25 THEN\\n    v_state := 'ARCHIVE_MODE';\\n\\n    UPDATE \\\"Restaurant\\\"\\n    SET \\\"Address\\\" = 'ARCHIVED'\\n    WHERE \\\"ResID\\\" < arg1\\n      AND \\\"ResName\\\" <> v_status;\\n\\n  ELSIF v_initial_threshold < 40 THEN\\n    v_state := 'CLEANUP_MODE';\\n\\n    DELETE FROM \\\"Student\\\"\\n    WHERE \\\"StuID\\\" < arg4\\n      AND \\\"LName\\\" = 'OBSOLETE';\\n\\n  ELSE\\n    v_state := 'BOOST_MODE';\\n\\n    UPDATE \\\"Restaurant_Type\\\"\\n    SET \\\"ResTypeID\\\" = (arg6 + 100)\\n    WHERE \\\"Re... (+626)",
+   "result": "ok, -1 row(s) affected",
+   "spent": 14.0
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(2, '%', '3212 St Paul St, Baltimore, MD 21218', 1005, 'Lee', 1);"
+   },
+   "result": "ok, -1 row(s) affected",
+   "spent": 15.0
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Restaurant\" ORDER BY \"ResID\";"
+   },
+   "result": "ResID | ResName | Address | Rating\n1 | Subway | PENDING | 3\n2 | Honeygrow | 3212 St Paul St, Baltimore, MD 21218 | 4",
+   "spent": 16.0
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset",
+   "spent": 16.5
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset",
+   "spent": 17.0
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": "{\"sql\":\"CREATE OR REPLACE PROCEDURE sp(arg1 integer, arg2 text, arg3 text, arg4 integer, arg5 text, arg6 integer)\\nLANGUAGE plpgsql\\nAS $$\\nDECLARE\\n  v_initial_threshold integer := arg1;\\n  v_threshold integer := arg1;\\n  v_status text := arg2;\\n  v_operation text := arg3;\\n  v_handled integer := 0;\\n  v_batch_size integer := 10;\\n  v_state text := 'INIT';\\n  v_high_priority_seen boolean := false;\\n\\n  r_restaurant record;\\n  r_student record;\\n  r_kind record;\\nBEGIN\\n  /* exclusive mode selection based on threshold before any changes */\\n  IF v_initial_threshold < 3 THEN\\n    v_state := 'MINIMAL_PROCESS';\\n\\n    FOR r_restaurant IN\\n      SELECT \\\"ResID\\\", \\\"ResName\\\", \\\"Address\\\"\\n      FROM \\\"Restaurant\\\"\\n      WHERE \\\"ResID\\\" < arg1\\n        AND \\\"ResName\\\" LIKE arg2\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_restaurant.\\\"ResID\\\" > 25 THEN\\n        UPDATE \\\"Restaurant\\\"\\n        SET \\\"ResName\\\" = 'PROMOTED'\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n      ELSIF r_restaurant.\\\"Address\\\" = v_operation THEN\\n        DELETE FROM \\\"Visits_Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n        DELETE FROM \\\"Type_Of_Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n        DELETE FROM \\\"Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\"\\n          AND \\\"ResName\\\" = r_restaurant.\\\"ResName\\\";\\n      ELSE\\n        UPDATE \\\"Restaurant\\\"\\n        SET \\\"Address\\\" = 'PENDING'\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 8 THEN\\n    v_state := 'STANDARD_PROCESS';\\n\\n    FOR r_student IN\\n      SELECT \\\"StuID\\\", \\\"LName\\\", \\\"city_code\\\"\\n      FROM \\\"Student\\\"\\n      WHERE \\\"StuID\\\" BETWEEN (arg4 - 5) AND (arg4 + 15)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_student.\\\"city_code\\\" = v_operation THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"Sex\\\" = 'U'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n      END IF;\\n\\n      IF r_student.\\\"LName\\\" = arg5 THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"city_code\\\" = 'MATCHED'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n      END IF;\\n\\n      IF r_student.\\\"LName\\\" LIKE 'ACTIVE%' THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"LName\\\" = 'PROCESSED'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n      ELSIF r_student.\\\"StuID\\\" > (arg4 + 5) THEN\\n        v_threshold := v_threshold + r_student.\\\"StuID\\\";\\n      ELSE\\n        DELETE FROM \\\"Student\\\"\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\"\\n          AND \\\"LName\\\" = 'EXPIRED';\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 18 THEN\\n    v_state := 'ENHANCED_PROCESS';\\n\\n    FOR r_kind IN\\n      SELECT \\\"ResTypeID\\\"\\n      FROM \\\"Restaurant_Type\\\"\\n      WHERE \\\"ResTypeID\\\" > (arg6 - 20)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_kind.\\\"ResTypeID\\\" < 50 THEN\\n        v_status := 'LOW_PRIORITY';\\n      ELSIF r_kind.\\\"ResTypeID\\\" < 150 THEN\\n        v_status := 'MEDIUM_PRIORITY';\\n      ELSE\\n        v_status := 'HIGH_PRIORITY';\\n        v_high_priority_seen := true;\\n      END IF;\\n\\n      UPDATE \\\"Restaurant_Type\\\"\\n      SET \\\"ResTypeID\\\" = \\\"ResTypeID\\\" + 10\\n      WHERE \\\"ResTypeID\\\" = r_kind.\\\"ResTypeID\\\";\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 25 THEN\\n    v_state := 'ARCHIVE_MODE';\\n\\n    UPDATE \\\"Restaurant\\\"\\n    SET \\\"Address\\\" = 'ARCHIVED'\\n    WHERE \\\"ResID\\\" < arg1\\n      AND \\\"ResName\\\" <> v_status;\\n\\n  ELSIF v_initial_threshold < 40 THEN\\n    v_state := 'CLEANUP_MODE';\\n\\n    DELETE FROM \\\"Student\\\"\\n    WHERE \\\"StuID\\\" < arg4\\n      AND \\\"LName\\\" = 'OBSOLETE';\\n\\n  ELSE\\n    v_state := 'BOOST_MODE';\\n\\n    UPDATE \\\"Restaur... (+712)",
+   "result": "ok, -1 row(s) affected",
+   "spent": 18.0
+  },
+  {
+   "step": 23,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(4, 'X', 'WAS', 1001, 'Smith', 1);"
+   },
+   "result": "ok, -1 row(s) affected",
+   "spent": 19.0
+  },
+  {
+   "step": 24,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT \"StuID\",\"LName\",\"Sex\",\"city_code\" FROM \"Student\" WHERE \"StuID\" BETWEEN 996 AND 1020 ORDER BY \"StuID\";"
+   },
+   "result": "StuID | LName | Sex | city_code\n1001 | Smith | F | MATCHED\n1002 | Kim | F | HKG\n1003 | Jones | U | WAS\n1004 | Kumar | M | CHI\n1005 | Gompers | M | YYZ\n1006 | Schultz | M | BAL\n1007 | Apap | F | PIT\n1008 | Nelson | F | BAL\n1009 | Tai | M | YYZ\n1010 | Lee | M | HOU\n1011 | Adams | M | PHL\n1012 | Davis | M | PIT\n1014 | Norris | M | DAL\n1015 | Lee | F | HKG\n1016 | Schwartz | M | DET\n1017 | Wilson | M | LON\n1018 | Leighton | M | PIT\n1019 | Pang | M | WAS\n1020 | Thornton | M | NYC",
+   "spent": 20.0
+  },
+  {
+   "step": 25,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": "{\"code\":\"CREATE OR REPLACE PROCEDURE sp(arg1 integer, arg2 text, arg3 text, arg4 integer, arg5 text, arg6 integer)\\nLANGUAGE plpgsql\\nAS $$\\nDECLARE\\n  v_initial_threshold integer := arg1;\\n  v_threshold integer := arg1;\\n  v_status text := arg2;\\n  v_operation text := arg3;\\n  v_handled integer := 0;\\n  v_batch_size integer := 10;\\n  v_state text := 'INIT';\\n  v_high_priority_seen boolean := false;\\n\\n  r_restaurant record;\\n  r_student record;\\n  r_kind record;\\nBEGIN\\n  /* Mode selection is exclusive and based only on the initial threshold */\\n  IF v_initial_threshold < 3 THEN\\n    v_state := 'MINIMAL_PROCESS';\\n\\n    FOR r_restaurant IN\\n      SELECT \\\"ResID\\\", \\\"ResName\\\", \\\"Address\\\"\\n      FROM \\\"Restaurant\\\"\\n      WHERE \\\"ResID\\\" < arg1\\n        AND \\\"ResName\\\" LIKE arg2\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_restaurant.\\\"ResID\\\" > 25 THEN\\n        UPDATE \\\"Restaurant\\\"\\n        SET \\\"ResName\\\" = 'PROMOTED'\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n      ELSIF r_restaurant.\\\"Address\\\" = v_operation THEN\\n        DELETE FROM \\\"Visits_Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n        DELETE FROM \\\"Type_Of_Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n        DELETE FROM \\\"Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\"\\n          AND \\\"ResName\\\" = r_restaurant.\\\"ResName\\\";\\n\\n      ELSE\\n        UPDATE \\\"Restaurant\\\"\\n        SET \\\"Address\\\" = 'PENDING'\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 8 THEN\\n    v_state := 'STANDARD_PROCESS';\\n\\n    FOR r_student IN\\n      SELECT \\\"StuID\\\", \\\"LName\\\", \\\"city_code\\\"\\n      FROM \\\"Student\\\"\\n      WHERE \\\"StuID\\\" BETWEEN (arg4 - 5) AND (arg4 + 15)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      /* Before last-name rules */\\n      IF r_student.\\\"city_code\\\" = v_operation THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"Sex\\\" = 'U'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n      END IF;\\n\\n      IF r_student.\\\"LName\\\" = arg5 THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"city_code\\\" = 'MATCHED'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n      END IF;\\n\\n      /* Apply ordered rules using fetched last name and fetched student number */\\n      IF r_student.\\\"LName\\\" LIKE 'ACTIVE%' THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"LName\\\" = 'PROCESSED'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n\\n      ELSIF r_student.\\\"StuID\\\" > (arg4 + 5) THEN\\n        v_threshold := v_threshold + r_student.\\\"StuID\\\";\\n\\n      ELSE\\n        DELETE FROM \\\"Student\\\"\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\"\\n          AND \\\"LName\\\" = 'EXPIRED';\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 18 THEN\\n    v_state := 'ENHANCED_PROCESS';\\n\\n    FOR r_kind IN\\n      SELECT \\\"ResTypeID\\\"\\n      FROM \\\"Type_Of_Restaurant\\\"\\n      WHERE \\\"ResTypeID\\\" > (arg6 - 20)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_kind.\\\"ResTypeID\\\" < 50 THEN\\n        v_status := 'LOW_PRIORITY';\\n      ELSIF r_kind.\\\"ResTypeID\\\" < 150 THEN\\n        v_status := 'MEDIUM_PRIORITY';\\n      ELSE\\n        v_status := 'HIGH_PRIORITY';\\n        v_high_priority_seen := true;\\n      END IF;\\n\\n      UPDATE \\\"Type_Of_Restaurant\\\"\\n      SET \\\"ResTypeID\\\" = \\\"ResTypeID\\\" + 10\\n      WHERE \\\"ResTypeID\\\" = r_kind.\\\"ResTypeID\\\";\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 25 THEN\\n    v_state := 'ARCHIVE_MODE';\\n\\n    UPDATE \\\"Restaurant\\\"\\n    SET \\\"Address\\\" = 'ARCHIVED'\\n    WHERE \\\"ResID\\\" < arg1\\n      AND \\\"ResName\\\" <> v_status;\\n\\n  ELSIF v_initial_threshold < 40 THEN\\n    v_state := 'CLEANUP_MODE';\\n\\n    DELETE FRO... (+872)",
+   "result": "compiled",
+   "spent": 20.5,
+   "compiled": true
+  },
+  {
+   "step": 26,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": "{\"code\":\"CREATE OR REPLACE PROCEDURE sp(arg1 integer, arg2 text, arg3 text, arg4 integer, arg5 text, arg6 integer)\\nLANGUAGE plpgsql\\nAS $$\\nDECLARE\\n  v_initial_threshold integer := arg1;\\n  v_threshold integer := arg1;\\n  v_status text := arg2;\\n  v_operation text := arg3;\\n\\n  v_handled integer := 0;\\n  v_batch_size integer := 10;\\n  v_state text := 'INIT';\\n  v_high_priority_seen boolean := false;\\n\\n  r_restaurant record;\\n  r_student record;\\n  r_kind record;\\nBEGIN\\n  /* Mode selection is exclusive and stable: based only on the initial threshold */\\n  IF v_initial_threshold < 3 THEN\\n    v_state := 'MINIMAL_PROCESS';\\n\\n    FOR r_restaurant IN\\n      SELECT \\\"ResID\\\", \\\"ResName\\\", \\\"Address\\\"\\n      FROM \\\"Restaurant\\\"\\n      WHERE \\\"ResID\\\" < arg1\\n        AND \\\"ResName\\\" LIKE arg2\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_restaurant.\\\"ResID\\\" > 25 THEN\\n        UPDATE \\\"Restaurant\\\"\\n        SET \\\"ResName\\\" = 'PROMOTED'\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n      ELSIF r_restaurant.\\\"Address\\\" = v_operation THEN\\n        DELETE FROM \\\"Visits_Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n        DELETE FROM \\\"Type_Of_Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n        DELETE FROM \\\"Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\"\\n          AND \\\"ResName\\\" = r_restaurant.\\\"ResName\\\";\\n\\n      ELSE\\n        UPDATE \\\"Restaurant\\\"\\n        SET \\\"Address\\\" = 'PENDING'\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 8 THEN\\n    v_state := 'STANDARD_PROCESS';\\n\\n    FOR r_student IN\\n      SELECT \\\"StuID\\\", \\\"LName\\\", \\\"city_code\\\"\\n      FROM \\\"Student\\\"\\n      WHERE \\\"StuID\\\" BETWEEN (arg4 - 5) AND (arg4 + 15)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      /* Before the last-name rules */\\n      IF r_student.\\\"city_code\\\" = v_operation THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"Sex\\\" = 'U'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n      END IF;\\n\\n      IF r_student.\\\"LName\\\" = arg5 THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"city_code\\\" = 'MATCHED'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n      END IF;\\n\\n      /* Ordered last-name rules using fetched values */\\n      IF r_student.\\\"LName\\\" LIKE 'ACTIVE%' THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"LName\\\" = 'PROCESSED'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n\\n      ELSIF r_student.\\\"StuID\\\" > (arg4 + 5) THEN\\n        v_threshold := v_threshold + r_student.\\\"StuID\\\";\\n\\n      ELSE\\n        DELETE FROM \\\"Student\\\"\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\"\\n          AND \\\"LName\\\" = 'EXPIRED';\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 18 THEN\\n    v_state := 'ENHANCED_PROCESS';\\n\\n    FOR r_kind IN\\n      SELECT \\\"ResTypeID\\\"\\n      FROM \\\"Restaurant_Type\\\"\\n      WHERE \\\"ResTypeID\\\" > (arg6 - 20)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_kind.\\\"ResTypeID\\\" < 50 THEN\\n        v_status := 'LOW_PRIORITY';\\n      ELSIF r_kind.\\\"ResTypeID\\\" < 150 THEN\\n        v_status := 'MEDIUM_PRIORITY';\\n      ELSE\\n        v_status := 'HIGH_PRIORITY';\\n        v_high_priority_seen := true;\\n      END IF;\\n\\n      UPDATE \\\"Restaurant_Type\\\"\\n      SET \\\"ResTypeID\\\" = \\\"ResTypeID\\\" + 10\\n      WHERE \\\"ResTypeID\\\" = r_kind.\\\"ResTypeID\\\";\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 25 THEN\\n    v_state := 'ARCHIVE_MODE';\\n\\n    UPDATE \\\"Restaurant\\\"\\n    SET \\\"Address\\\" = 'ARCHIVED'\\n    WHERE \\\"ResID\\\" < arg1\\n      AND \\\"ResName\\\" <> v_status;\\n\\n  ELSIF v_initial_threshold < 40 THEN\\n    v_state := 'CLEANUP_MODE';\\n\\n    DELETE FROM \\\"Student\\\"\\n   ... (+871)",
+   "result": "compiled",
+   "spent": 21.0,
+   "compiled": true
+  },
+  {
+   "step": 27,
+   "actor": "tool",
+   "tool": "submit",
+   "args": "{\"answer\":\"CREATE OR REPLACE PROCEDURE sp(arg1 integer, arg2 text, arg3 text, arg4 integer, arg5 text, arg6 integer)\\nLANGUAGE plpgsql\\nAS $$\\nDECLARE\\n  v_initial_threshold integer := arg1;\\n  v_threshold integer := arg1;\\n  v_status text := arg2;\\n  v_operation text := arg3;\\n\\n  v_handled integer := 0;\\n  v_batch_size integer := 10;\\n  v_state text := 'INIT';\\n  v_high_priority_seen boolean := false;\\n\\n  r_restaurant record;\\n  r_student record;\\n  r_kind record;\\nBEGIN\\n  /* Mode selection is exclusive and stable: based only on the initial threshold */\\n  IF v_initial_threshold < 3 THEN\\n    v_state := 'MINIMAL_PROCESS';\\n\\n    FOR r_restaurant IN\\n      SELECT \\\"ResID\\\", \\\"ResName\\\", \\\"Address\\\"\\n      FROM \\\"Restaurant\\\"\\n      WHERE \\\"ResID\\\" < arg1\\n        AND \\\"ResName\\\" LIKE arg2\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_restaurant.\\\"ResID\\\" > 25 THEN\\n        UPDATE \\\"Restaurant\\\"\\n        SET \\\"ResName\\\" = 'PROMOTED'\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n      ELSIF r_restaurant.\\\"Address\\\" = v_operation THEN\\n        DELETE FROM \\\"Visits_Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n        DELETE FROM \\\"Type_Of_Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n\\n        DELETE FROM \\\"Restaurant\\\"\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\"\\n          AND \\\"ResName\\\" = r_restaurant.\\\"ResName\\\";\\n\\n      ELSE\\n        UPDATE \\\"Restaurant\\\"\\n        SET \\\"Address\\\" = 'PENDING'\\n        WHERE \\\"ResID\\\" = r_restaurant.\\\"ResID\\\";\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 8 THEN\\n    v_state := 'STANDARD_PROCESS';\\n\\n    FOR r_student IN\\n      SELECT \\\"StuID\\\", \\\"LName\\\", \\\"city_code\\\"\\n      FROM \\\"Student\\\"\\n      WHERE \\\"StuID\\\" BETWEEN (arg4 - 5) AND (arg4 + 15)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      /* Before the last-name rules */\\n      IF r_student.\\\"city_code\\\" = v_operation THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"Sex\\\" = 'U'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n      END IF;\\n\\n      IF r_student.\\\"LName\\\" = arg5 THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"city_code\\\" = 'MATCHED'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n      END IF;\\n\\n      /* Ordered last-name rules using fetched values */\\n      IF r_student.\\\"LName\\\" LIKE 'ACTIVE%' THEN\\n        UPDATE \\\"Student\\\"\\n        SET \\\"LName\\\" = 'PROCESSED'\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\";\\n\\n      ELSIF r_student.\\\"StuID\\\" > (arg4 + 5) THEN\\n        v_threshold := v_threshold + r_student.\\\"StuID\\\";\\n\\n      ELSE\\n        DELETE FROM \\\"Student\\\"\\n        WHERE \\\"StuID\\\" = r_student.\\\"StuID\\\"\\n          AND \\\"LName\\\" = 'EXPIRED';\\n      END IF;\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 18 THEN\\n    v_state := 'ENHANCED_PROCESS';\\n\\n    FOR r_kind IN\\n      SELECT \\\"ResTypeID\\\"\\n      FROM \\\"Restaurant_Type\\\"\\n      WHERE \\\"ResTypeID\\\" > (arg6 - 20)\\n    LOOP\\n      v_handled := v_handled + 1;\\n\\n      IF r_kind.\\\"ResTypeID\\\" < 50 THEN\\n        v_status := 'LOW_PRIORITY';\\n      ELSIF r_kind.\\\"ResTypeID\\\" < 150 THEN\\n        v_status := 'MEDIUM_PRIORITY';\\n      ELSE\\n        v_status := 'HIGH_PRIORITY';\\n        v_high_priority_seen := true;\\n      END IF;\\n\\n      UPDATE \\\"Restaurant_Type\\\"\\n      SET \\\"ResTypeID\\\" = \\\"ResTypeID\\\" + 10\\n      WHERE \\\"ResTypeID\\\" = r_kind.\\\"ResTypeID\\\";\\n\\n      IF v_handled >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF v_initial_threshold < 25 THEN\\n    v_state := 'ARCHIVE_MODE';\\n\\n    UPDATE \\\"Restaurant\\\"\\n    SET \\\"Address\\\" = 'ARCHIVED'\\n    WHERE \\\"ResID\\\" < arg1\\n      AND \\\"ResName\\\" <> v_status;\\n\\n  ELSIF v_initial_threshold < 40 THEN\\n    v_state := 'CLEANUP_MODE';\\n\\n    DELETE FROM \\\"Student\\\"\\n ... (+873)",
+   "result": "received",
+   "spent": 21.0,
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(arg1 integer, arg2 text, arg3 text, arg4 integer, arg5 text, arg6 integer)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n  v_initial_threshold integer := arg1;\n  v_threshold integer := arg1;\n  v_status text := arg2;\n  v_operation text := arg3;\n\n  v_handled integer := 0;\n  v_batch_size integer := 10;\n  v_state text := 'INIT';\n  v_high_priority_seen boolean := false;\n\n  r_restaurant record;\n  r_student record;\n  r_kind record;\nBEGIN\n  /* Mode selection is exclusive and stable: based only on the initial threshold */\n  IF v_initial_threshold < 3 THEN\n    v_state := 'MINIMAL_PROCESS';\n\n    FOR r_restaurant IN\n      SELECT \"ResID\", \"ResName\", \"Address\"\n      FROM \"Restaurant\"\n      WHERE \"ResID\" < arg1\n        AND \"ResName\" LIKE arg2\n    LOOP\n      v_handled := v_handled + 1;\n\n      IF r_restaurant.\"ResID\" > 25 THEN\n        UPDATE \"Restaurant\"\n        SET \"ResName\" = 'PROMOTED'\n        WHERE \"ResID\" = r_restaurant.\"ResID\";\n\n      ELSIF r_restaurant.\"Address\" = v_operation THEN\n        DELETE FROM \"Visits_Restaurant\"\n        WHERE \"ResID\" = r_restaurant.\"ResID\";\n\n        DELETE FROM \"Type_Of_Restaurant\"\n        WHERE \"ResID\" = r_restaurant.\"ResID\";\n\n        DELETE FROM \"Restaurant\"\n        WHERE \"ResID\" = r_restaurant.\"ResID\"\n          AND \"ResName\" = r_restaurant.\"ResName\";\n\n      ELSE\n        UPDATE \"Restaurant\"\n        SET \"Address\" = 'PENDING'\n        WHERE \"ResID\" = r_restaurant.\"ResID\";\n      END IF;\n\n      IF v_handled >= v_batch_size THEN\n        v_batch_size := v_batch_size + 5;\n      END IF;\n    END LOOP;\n\n  ELSIF v_initial_threshold < 8 THEN\n    v_state := 'STANDARD_PROCESS';\n\n    FOR r_student IN\n      SELECT \"StuID\", \"LName\", \"city_code\"\n      FROM \"Student\"\n      WHERE \"StuID\" BETWEEN (arg4 - 5) AND (arg4 + 15)\n    LOOP\n      v_handled := v_handled + 1;\n\n      /* Before the last-name rules */\n      IF r_student.\"city_code\" = v_operation THEN\n        UPDATE \"Student\"\n        SET \"Sex\" = 'U'\n        WHERE \"StuID\" = r_student.\"StuID\";\n      END IF;\n\n      IF r_student.\"LName\" = arg5 THEN\n        UPDATE \"Student\"\n        SET \"city_code\" = 'MATCHED'\n        WHERE \"StuID\" = r_student.\"StuID\";\n      END IF;\n\n      /* Ordered last-name rules using fetched values */\n      IF r_student.\"LName\" LIKE 'ACTIVE%' THEN\n        UPDATE \"Student\"\n        SET \"LName\" = 'PROCESSED'\n        WHERE \"StuID\" = r_student.\"StuID\";\n\n      ELSIF r_student.\"StuID\" > (arg4 + 5) THEN\n        v_threshold := v_threshold + r_student.\"StuID\";\n\n      ELSE\n        DELETE FROM \"Student\"\n        WHERE \"StuID\" = r_student.\"StuID\"\n          AND \"LName\" = 'EXPIRED';\n      END IF;\n\n      IF v_handled >= v_batch_size THEN\n        v_batch_size := v_batch_size + 5;\n      END IF;\n    END LOOP;\n\n  ELSIF v_initial_threshold < 18 THEN\n    v_state := 'ENHANCED_PROCESS';\n\n    FOR r_kind IN\n      SELECT \"ResTypeID\"\n      FROM \"Restaurant_Type\"\n      WHERE \"ResTypeID\" > (arg6 - 20)\n    LOOP\n      v_handled := v_handled + 1;\n\n      IF r_kind.\"ResTypeID\" < 50 THEN\n        v_status := 'LOW_PRIORITY';\n      ELSIF r_kind.\"ResTypeID\" < 150 THEN\n        v_status := 'MEDIUM_PRIORITY';\n      ELSE\n        v_status := 'HIGH_PRIORITY';\n        v_high_priority_seen := true;\n      END IF;\n\n      UPDATE \"Restaurant_Type\"\n      SET \"ResTypeID\" = \"ResTypeID\" + 10\n      WHERE \"ResTypeID\" = r_kind.\"ResTypeID\";\n\n      IF v_handled >= v_batch_size THEN\n        v_batch_size := v_batch_size + 5;\n      END IF;\n    END LOOP;\n\n  ELSIF v_initial_threshold < 25 THEN\n    v_state := 'ARCHIVE_MODE';\n\n    UPDATE \"Restaurant\"\n    SET \"Address\" = 'ARCHIVED'\n    WHERE \"ResID\" < arg1\n      AND \"ResName\" <> v_status;\n\n  ELSIF v_initial_threshold < 40 THEN\n    v_state := 'CLEANUP_MODE';\n\n    DELETE FROM \"Student\"\n    WHERE \"StuID\" < arg4\n      AND \"LName\" = 'OBSOLETE';\n\n  ELSE\n    v_state := 'BOOST_MODE';\n\n    UPDATE \"Restaurant_Type\"\n    SET \"ResTypeID\" = (arg6 + 100)\n    WHERE \"ResTypeID\" > 200;\n  END IF;\n\n  /* Final action (exactly one), with given precedence */\n  IF v_status = 'HIGH_PRIORITY' OR v_high_priority_seen THEN\n    UPDATE \"Restaurant_Type\"\n    SET \"ResTypeID\" = \"ResTypeID\" * 2\n    WHERE \"ResTypeID\" > 100;\n\n  ELSIF v_state = 'ARCHIVE_MODE' THEN\n    DELETE FROM \"Restaurant\"\n    WHERE \"Address\" = 'ARCHIVED'\n      AND \"ResID\" < (v_threshold - 10);\n\n  ELSIF v_handled > 15 THEN\n    UPDATE \"Student\"\n    SET \"LName\" = 'BULK_PROCESSED'\n    WHERE \"StuID\" BETWEEN arg4 AND (arg4 + 50);\n\n  ELSE\n    UPDATE \"Restaurant\"\n    SET \"ResName\" = v_operation\n    WHERE \"ResID\" > v_threshold;\n  END IF;\nEND;\n$$;"
+ },
+ "pair": {
+  "single_run": "filtered-a3",
+  "single_task": "postgres_a3_000"
+ }
+}

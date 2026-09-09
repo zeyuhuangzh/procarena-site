@@ -1,0 +1,430 @@
+{
+ "id": "ora_interact-loc_gpt-5.2_b6-2-3_20260830-1256--oracle_a5_003",
+ "run": "ora_interact-loc_gpt-5.2_b6-2-3_20260830-1256",
+ "task_id": "oracle_a5_003",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "a5",
+ "dialect": "oracle",
+ "model": "gpt-5.2",
+ "model_label": "GPT-5.2",
+ "solver_id": "gpt-5.2",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "database state differs after call 1",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "spec",
+  "diagnosis": {
+   "kind": "state_differs",
+   "message": "call 1/7 CALL sp(87, 'A', 10, 0); -- database state differs; differing table(s): wine"
+  },
+  "recovered": 3,
+  "oracle_size": 4
+ },
+ "summary": {
+  "steps": 18,
+  "seconds": 243.5,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 1,
+   "off_oracle": 0
+  },
+  "recovered": 3,
+  "oracle_size": 4,
+  "entries_per_question": 1.5,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "ask_selector": 1,
+   "execute_scratch": 10,
+   "sample_rows": 1,
+   "ask_user": 1,
+   "describe_table": 1,
+   "compile_plsql": 2,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 17.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 17.0,
+   "by_tool": {
+    "get_schema": 1.0,
+    "ask_selector": 2.0,
+    "execute_scratch": 10.0,
+    "sample_rows": 0.5,
+    "ask_user": 2.0,
+    "describe_table": 0.5,
+    "compile_plsql": 1.0,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": true
+  },
+  "final_warning": true,
+  "tokens": {
+   "calls": 18,
+   "wasted_calls": 0,
+   "input_tokens": 66498,
+   "output_tokens": 14041,
+   "cached_input_tokens": 35840,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 30658,
+   "max_input_tokens": 5824,
+   "cost_usd": 0.0,
+   "turns": 18,
+   "cache_sources": {
+    "reported": 22
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 4,
+    "wasted_calls": 0,
+    "input_tokens": 3349,
+    "output_tokens": 1377,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 3349,
+    "max_input_tokens": 1327,
+    "cost_usd": 0.0009
+   },
+   "total": {
+    "calls": 22,
+    "wasted_calls": 0,
+    "input_tokens": 69847,
+    "output_tokens": 15418,
+    "cached_input_tokens": 35840,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 34007,
+    "max_input_tokens": 5824,
+    "cost_usd": 0.0009
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 0,
+   "blocked": 0,
+   "none": 0,
+   "items_used": [],
+   "inventory_size": 7
+  }
+ },
+ "task": {
+  "prompt": "Write an Oracle PL/SQL stored procedure named sp with exactly this signature: sp(arg1 NUMBER, arg2 VARCHAR2, arg3 NUMBER, arg4 NUMBER). The names are placeholders; use positions. The first argument is the score threshold, the second is the grape name for the new row, the third is the price value used in the pricing rules, and the fourth is the number used for the delete comparison and for choosing the new row's price. Use the attached built-in functions from builtins.md as-is; don't reimplement them.\n\nWork on the wine listing. Consider every wine whose score is at least the first argument. Each considered wine contributes the price it had before its rule was applied to the running total exactly once, and is then acted on by exactly one of the rules below, the first one that matches it.\n- grape starts with exact text prefix_ → set its price to the third argument\n- otherwise, wine number strictly less than the fourth argument → delete that row\n- otherwise, winery exactly Twomey → set its price based on the third argument\n- otherwise, apply the Hollander concession to that row\n- otherwise, set its price to twice the third argument\n\nDeleted rows still count in the running total. If no rows match, leave existing rows unchanged and keep the running total at 0. After those changes and deletions are done, find the largest wine number still present; if none remain, use 1 for the new row, otherwise use that largest number plus 1. Then insert exactly one row with that number, score equal to the first argument plus 1, grape equal to exact text prefix_ followed immediately by the second argument, and price equal to the third argument when the running total is not greater than the fourth argument, or the third argument plus 1 when the running total is greater. Don't assign the other wine columns. Leave the transaction uncommitted and include no exception handler.\n\nFor the otherwise case, set its price to 3 times the third argument.\n\nReturn the complete stored procedure and nothing else.",
+  "materials": [
+   {
+    "file": "builtins.md",
+    "kind": "built-in function signatures",
+    "text": "# Built-in functions you may rely on\n\n- `instr`\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "R1",
+   "op": "reasoning",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "How should the running total and rule application treat each considered row?",
+   "answer": "Set the running total to 0. For each considered row, add that row's price as it was before that row changed to the running total; then apply only the first matching rule below."
+  },
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": 7,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the Hollander concession?",
+   "answer": "The Hollander concession is the rule that, when a considered wine has cases greater than its score, sets that row's price to the third argument plus that row's original price."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 7,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What exact price is assigned for a row whose winery is exactly Twomey?",
+   "answer": "The price is set to the third argument plus that row's original price."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": 2,
+   "via": "ask_selector",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "whether the otherwise-case price is twice or three times the third argument",
+   "answer": "The rule list is correct: the otherwise-case price is twice the third argument, i.e. 2 * arg3. The '3 times' statement is wrong."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable appellations , columns = [ No ( NUMBER | primary key | values : 8 , 2 ) , Appelation ( VARCHAR2 | values : Chalone , Amador-Mendocino-Sonoma Counties ) , County ( VARCHAR2 | values : Napa , N/A ) , State ( VARCHAR2 | values : California , California ) , Area ( VARCHAR2 | values : North Coast , California ) , isAVA ( VARCHAR2 | values : Yes , Yes ) ]\ntable grapes , columns = [ ID ( NUMBER | primary key | values : 11 , 1 ) , Grape ( VARCHAR2 | values : Sangiovese , Mourvedre ) , Color ( VARCHAR2 | values : Red , White ) ]\ntable wine , columns = [ No ( NUMBER | primary key | values : 87 , 86 ) , Grape ( VARCHAR2 | values : Pinot Noir , Pinot Noir ) , Winery ( VARCHAR2 | values : Alma Rosa , Twomey ) , Appelation ( VARCHAR2 | values : Santa Lucia Highlands , Sonoma Coast ) , State ( VARCHAR2 | values : California , California ) , Name ( VARCHAR2 | values : Kali Hart , A by Acacia ) , Year ( NUMBER | values : 2008 , 2008 ) , Price ( NUMBER | values : 30 , 68 ) , Score ( NUMBER | values : 87 , 87 ) , Cases ( NUMBER | values : 833 , 500 ) , Drink ( VARCHAR2 | values : now , now ) ]\nforeign keys : None",
+   "spent": 1.0
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "question": "In the rule list, the last bullet says set price to twice the third argument, but later it says 'For the otherwise case, set its price to 3 times the third argument.' Which final/otherwise price should be used for wines that reach the last rule (after Hollander concession doesn't apply)?",
+    "options": [
+     "None of these are correct / clarify differently",
+     "Set price to 2 * arg3",
+     "Set price to 3 * arg3"
+    ]
+   },
+   "result": "3",
+   "spent": 3.0,
+   "index": 3,
+   "options": [
+    "None of the following are correct.",
+    "None of these are correct / clarify differently",
+    "Set price to 2 * arg3",
+    "Set price to 3 * arg3"
+   ],
+   "entry": "C1",
+   "status": "revealed",
+   "conflict_noted": true
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT object_name, object_type FROM user_objects WHERE object_type IN ('FUNCTION','PROCEDURE') ORDER BY object_type, object_name"
+   },
+   "result": "OBJECT_NAME | OBJECT_TYPE\nLOGMNR$COL_GG_TABF_PUBLIC | FUNCTION\nLOGMNR$GSBA_GG_TABF_PUBLIC | FUNCTION\nLOGMNR$KEY_GG_TABF_PUBLIC | FUNCTION\nLOGMNR$SEQ_GG_TABF_PUBLIC | FUNCTION\nLOGMNR$TAB_GG_TABF_PUBLIC | FUNCTION\nLOGMNR$USER_GG_TABF_PUBLIC | FUNCTION\nSP | PROCEDURE",
+   "spent": 4.0
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT text FROM user_source WHERE name = 'SP' AND type='PROCEDURE' ORDER BY line"
+   },
+   "result": "TEXT\nPROCEDURE sp(arg1 NUMBER, arg2 VARCHAR2) IS\n\n  l_cnt           NUMBER;\n\n  l_existing_cnt  NUMBER;\n\n  l_current_name  \"artist\".\"Name\"%TYPE;\n\nBEGIN\n\n  /* 1) Duplicate-name checks (must run before any insert/update) */\n\n  IF arg2 IS NOT NULL THEN\n\n    /* Sable gate: exact-name duplicate check */\n\n    SELECT COUNT(*)\n\n      INTO l_cnt\n\n      FROM \"artist\"\n\n     WHERE \"Artist_ID\" <> arg1\n\n       AND \"Name\" = arg2;\n\n\n\n    IF l_cnt > 0 THEN\n\n      RAISE_APPLICATION_ERROR(-20001, 'Artist name already exists for another artist');\n\n    END IF;\n\n\n\n    /* Normalized-name duplicate check */\n\n    SELECT COUNT(*)\n\n      INTO l_cnt\n\n      FROM \"artist\"\n\n     WHERE \"Artist_ID\" <> arg1\n\n       AND UPPER(TRIM(\"Name\")) = UPPER(TRIM(arg2));\n\n\n\n    IF l_cnt > 0 THEN\n\n      RAISE_APPLICATION_ERROR(-20004, 'Artist name already exists for another artist after case/space normalization');\n\n    END IF;\n\n  ELSE\n\n    /* NULL-name duplicate check */\n\n    SELECT COUNT(*)\n\n      INTO l_cnt\n\n      FROM \"artist\"\n\n     WHERE \"Artist_ID\" <> arg1\n\n       AND \"Name\" IS NULL;\n\n\n\n    IF l_cnt > 0 THEN\n\n      RAISE_APPLICATION_ERROR(-20005, 'Artist name already exists for another artist with NULL name');\n\n    END IF;\n\n  END IF;\n\n\n\n  /* 2) Count existing artist rows for the supplied identifier */\n\n  SELECT COUNT(*)\n\n    INTO l_existing_cnt\n\n    FROM \"artist\"\n\n   WHERE \"Artist_ID\" = arg1;\n\n\n\n  /* Attic threshold = 2 selects the create branch */\n\n  IF l_existing_cnt = 2 THEN\n\n    INSERT INTO \"artist\" (\"Artist_ID\", \"Name\")\n\n... (more rows not shown)",
+   "spent": 5.0
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "wine",
+    "limit": 20
+   },
+   "result": "No | Grape | Winery | Appelation | State | Name | Year | Price | Score | Cases | Drink\n78 | Pinot Noir | Kosta Browne | Sonoma Coast | California | Gaps Crown Vineyard | 2008 | 68 | 92 | 690 | now\n79 | Pinot Noir | Kosta Browne | Sonoma Coast | California | Pinot Noir | 2008 | 52 | 90 | 3554 | now\n80 | Pinot Noir | Rusack | Sta. Rita Hills | California | Reserve | 2008 | 40 | 89 | 340 | now\n81 | Pinot Noir | Acacia | California | California | A by Acacia | 2008 | 17 | 88 | 58231 | now\n82 | Pinot Noir | Alma Rosa | Sta. Rita Hills | California | La Encantada Vineyard | 2008 | 43 | 88 | 591 | now\n83 | Pinot Noir | Alma Rosa | Sta. Rita Hills | California | La Encantada Vineyard Clone 667 | 2008 | 43 | 88 | 358 | now\n84 | Pinot Noir | Artesa | Carneros | California | Estate Reserve | 2007 | 40 | 88 | 3527 | now\n85 | Pinot Noir | Robert Mondavi | Napa Valley | California | Carneros | 2008 | 28 | 88 | 30300 | now\n86 | Pinot Noir | Pfendler | Sonoma Coast | California | Pinot Noir | 2008 | 45 | 88 | 400 | now\n87 | Pinot Noir | Roar | Santa Lucia Highlands | California | Garys Vineyard | 2008 | 50 | 88 | 710 | now\n88 | Pinot Noir | Rusack | Santa Maria Valley | California | Pinot Noir | 2008 | 36 | 88 | 833 | now\n89 | Pinot Noir | Sequana | Santa Lucia Highlands | California | Sarmento Vineyard | 2008 | 32 | 88 | 500 | now\n90 | Pinot Noir | Spell | Sonoma Coast | California | Pinot Noir | 2008 | 30 | 88 | 170 | now\n91 | Pinot Noir | Twomey | Santa Barbara County | California | Pinot Noir | 2008 | 30 | 88 | 1510 | now\n92 | Pinot Noir | Alma Rosa | Sta. Rita Hills | California | Pinot Noir | 2008 | 32 | 87 | 4651 | now\n93 | Pinot Noir | Castle Rock | Central Coast | California | Pinot Noir | 2008 | 13 | 87 | 36000 | now\n94 | Pinot Noir | V. Sattui | Carneros | California | Henry Ranch | 2008 | 36 | 87 | 951 | now\n95 | Pinot Noir | Sebastiani | Carneros | California | Pinot Noir | 2008 | 24 | 87 | 720 | now\n96 | Pinot Noir | Talbott | Santa Lucia Highlands | California | Kali Hart | 2008 | 21 | 87 | 8000 | now\n97 | Pinot Noir | Tudor | Santa Lucia Highlands | California | Pinot Noir | 2007 | 40 | 87 | 3965 | now",
+   "spent": 5.5
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT COUNT(*) cnt, MIN(\"Score\") min_score, MAX(\"Score\") max_score FROM \"wine\""
+   },
+   "result": "CNT | MIN_SCORE | MAX_SCORE\n481 | 85 | 98",
+   "spent": 6.5
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "I can implement the prefix_/delete rules, but two rules are underspecified:\n1) 'winery exactly Twomey → set its price based on the third argument' — what is the exact pricing formula?\n2) 'apply the Hollander concession to that row' — what rows qualify, and what exact price change should be made? As written it matches all remaining rows, making the final otherwise rule unreachable."
+   },
+   "result": "The price is set to the third argument plus that row's original price.\n\nThe Hollander concession is the rule that, when a considered wine has cases greater than its score, sets that row's price to the third argument plus that row's original price.",
+   "spent": 8.5,
+   "revealed": [
+    "M1",
+    "J1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "wine"
+   },
+   "result": "table wine , columns = [ No ( NUMBER | primary key | values : 87 , 86 ) , Grape ( VARCHAR2 | values : Pinot Noir , Pinot Noir ) , Winery ( VARCHAR2 | values : Alma Rosa , Twomey ) , Appelation ( VARCHAR2 | values : Santa Lucia Highlands , Sonoma Coast ) , State ( VARCHAR2 | values : California , California ) , Name ( VARCHAR2 | values : Kali Hart , A by Acacia ) , Year ( NUMBER | values : 2008 , 2008 ) , Price ( NUMBER | values : 30 , 68 ) , Score ( NUMBER | values : 87 , 87 ) , Cases ( NUMBER | values : 833 , 500 ) , Drink ( VARCHAR2 | values : now , now ) ]",
+   "spent": 9.0
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT column_name, nullable FROM user_tab_columns WHERE table_name = 'WINE' ORDER BY column_id"
+   },
+   "result": "(COLUMN_NAME | NULLABLE)\n(no rows)",
+   "spent": 10.0
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT column_name, nullable FROM user_tab_columns WHERE table_name = 'wine' ORDER BY column_id"
+   },
+   "result": "(COLUMN_NAME | NULLABLE)\n(no rows)",
+   "spent": 11.0
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables ORDER BY table_name"
+   },
+   "result": "TABLE_NAME\nAQ$_INTERNET_AGENTS\nAQ$_INTERNET_AGENT_PRIVS\nAQ$_KEY_SHARD_MAP\nAQ$_QUEUES\nAQ$_QUEUE_TABLES\nAQ$_SCHEDULES\nHELP\nLOGMNRC_CONCOL_GG\nLOGMNRC_CON_GG\nLOGMNRC_DBNAME_UID_MAP\nLOGMNRC_GSBA\nLOGMNRC_GSII\nLOGMNRC_GTCS\nLOGMNRC_GTLO\nLOGMNRC_INDCOL_GG\nLOGMNRC_IND_GG\nLOGMNRC_SEQ_GG\nLOGMNRC_SHARD_TS\nLOGMNRC_TS\nLOGMNRC_TSPART\nLOGMNRC_USER\nLOGMNRGGC_GTCS\nLOGMNRGGC_GTLO\nLOGMNRP_CTAS_PART_MAP\nLOGMNRT_MDDL$\nLOGMNR_AGE_SPILL$\nLOGMNR_ATTRCOL$\nLOGMNR_ATTRIBUTE$\nLOGMNR_CCOL$\nLOGMNR_CDEF$\nLOGMNR_COL$\nLOGMNR_COLTYPE$\nLOGMNR_CON$\nLOGMNR_CONTAINER$\nLOGMNR_DICTIONARY$\nLOGMNR_DICTSTATE$\nLOGMNR_DID$\nLOGMNR_ENC$\nLOGMNR_ERROR$\nLOGMNR_FILTER$\nLOGMNR_GLOBAL$\nLOGMNR_GT_TAB_INCLUDE$\nLOGMNR_GT_USER_INCLUDE$\nLOGMNR_GT_XID_INCLUDE$\nLOGMNR_ICOL$\nLOGMNR_IDNSEQ$\nLOGMNR_IND$\nLOGMNR_INDCOMPART$\nLOGMNR_INDPART$\nLOGMNR_INDSUBPART$\n... (more rows not shown)",
+   "spent": 12.0
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT object_name FROM user_objects WHERE object_type='TABLE' AND (LOWER(object_name) LIKE '%wine%' OR object_name LIKE '%WINE%')"
+   },
+   "result": "(OBJECT_NAME)\n(no rows)",
+   "spent": 13.0
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT COUNT(*) FROM \"wine\""
+   },
+   "result": "COUNT(*)\n481",
+   "spent": 14.0
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT object_name, object_type FROM user_objects WHERE object_name IN ('wine','WINE','Wine')"
+   },
+   "result": "(OBJECT_NAME | OBJECT_TYPE)\n(no rows)",
+   "spent": 15.0
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT synonym_name, table_owner, table_name FROM user_synonyms WHERE LOWER(synonym_name)='wine'"
+   },
+   "result": "(SYNONYM_NAME | TABLE_OWNER | TABLE_NAME)\n(no rows)",
+   "spent": 16.0
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(arg1 NUMBER, arg2 VARCHAR2, arg3 NUMBER, arg4 NUMBER)\nIS\n  l_total     NUMBER := 0;\n  l_max_no    NUMBER;\n  l_new_no    NUMBER;\n  l_new_price NUMBER;\nBEGIN\n  /* Running total of original prices for considered wines */\n  SELECT NVL(SUM(\"Price\"), 0)\n    INTO l_total\n    FROM \"wine\"\n   WHERE \"Score\" >= arg1;\n\n  /* Rule 1: grape starts with prefix_ */\n  UPDATE \"wine\"\n     SET \"Price\" = arg3\n   WHERE \"Score\" >= arg1\n     AND NVL(INSTR(\"Grape\", 'prefix_'), 0) = 1;\n\n  /* Rule 2: otherwise, wine number strictly less than arg4 -> delete */\n  DELETE FROM \"wine\"\n   WHERE \"Score\" >= arg1\n     AND NVL(INSTR(\"Grape\", 'prefix_'), 0) <> 1\n     AND \"No\" < arg4;\n\n  /* Rule 3: otherwise, winery exactly Twomey -> price = arg3 + original price */\n  UPDATE \"wine\"\n     SET \"Price\" = arg3 + \"Price\"\n   WHERE \"Score\" >= arg1\n     AND NVL(INSTR(\"Grape\", 'prefix_'), 0) <> 1\n     AND \"No\" >= arg4\n     AND \"Winery\" = 'Twomey';\n\n  /* Rule 4: otherwise, Hollander concession (Cases > Score) -> price = arg3 + original price */\n  UPDATE \"wine\"\n     SET \"Price\" = arg3 + \"Price\"\n   WHERE \"Score\" >= arg1\n     AND NVL(INSTR(\"Grape\", 'prefix_'), 0) <> 1\n     AND \"No\" >= arg4\n     AND (\"Winery\" <> 'Twomey' OR \"Winery\" IS NULL)\n     AND \"Cases\" > \"Score\";\n\n  /* Rule 5: otherwise -> price = 3 * arg3 */\n  UPDATE \"wine\"\n     SET \"Price\" = 3 * arg3\n   WHERE \"Score\" >= arg1\n     AND NVL(INSTR(\"Grape\", 'prefix_'), 0) <> 1\n     AND \"No\" >= arg4\n     AND (\"Winery\" <> 'Twomey' OR \"Winery\" IS NULL)\n     AND (\"Cases\" <= \"Score\" OR \"Cases\" IS NULL OR \"Score\" IS NULL);\n\n  /* New row number */\n  SELECT NVL(MAX(\"No\"), 0)\n    INTO l_max_no\n    FROM \"wine\";\n\n  IF l_max_no = 0 THEN\n    l_new_no := 1;\n  ELSE\n    l_new_no := l_max_no + 1;\n  END IF;\n\n  IF l_total > arg4 THEN\n    l_new_price := arg3 + 1;\n  ELSE\n    l_new_price := arg3;\n  END IF;\n\n  INSERT INTO \"wine\" (\"No\", \"Score\", \"Grape\", \"Price\")\n  VALUES (l_new_no, arg1 + 1, 'prefix_' || arg2, l_new_price);\nEND;"
+   },
+   "result": "compiled",
+   "spent": 16.5,
+   "compiled": true
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(arg1 NUMBER, arg2 VARCHAR2, arg3 NUMBER, arg4 NUMBER)\nIS\n  l_total     NUMBER := 0;\n  l_max_no    NUMBER;\n  l_new_no    NUMBER;\n  l_new_price NUMBER;\nBEGIN\n  /* Running total of original prices for considered wines */\n  SELECT SUM(\"Price\")\n    INTO l_total\n    FROM \"wine\"\n   WHERE \"Score\" >= arg1;\n\n  IF l_total IS NULL THEN\n    l_total := 0;\n  END IF;\n\n  /* Rule 1: grape starts with prefix_ */\n  UPDATE \"wine\"\n     SET \"Price\" = arg3\n   WHERE \"Score\" >= arg1\n     AND INSTR(\"Grape\", 'prefix_') = 1;\n\n  /* Rule 2: otherwise, wine number strictly less than arg4 -> delete */\n  DELETE FROM \"wine\"\n   WHERE \"Score\" >= arg1\n     AND (INSTR(\"Grape\", 'prefix_') <> 1 OR INSTR(\"Grape\", 'prefix_') IS NULL)\n     AND \"No\" < arg4;\n\n  /* Rule 3: otherwise, winery exactly Twomey -> price = arg3 + original price */\n  UPDATE \"wine\"\n     SET \"Price\" = arg3 + \"Price\"\n   WHERE \"Score\" >= arg1\n     AND (INSTR(\"Grape\", 'prefix_') <> 1 OR INSTR(\"Grape\", 'prefix_') IS NULL)\n     AND \"No\" >= arg4\n     AND \"Winery\" = 'Twomey';\n\n  /* Rule 4: otherwise, Hollander concession (Cases > Score) -> price = arg3 + original price */\n  UPDATE \"wine\"\n     SET \"Price\" = arg3 + \"Price\"\n   WHERE \"Score\" >= arg1\n     AND (INSTR(\"Grape\", 'prefix_') <> 1 OR INSTR(\"Grape\", 'prefix_') IS NULL)\n     AND \"No\" >= arg4\n     AND (\"Winery\" <> 'Twomey' OR \"Winery\" IS NULL)\n     AND \"Cases\" > \"Score\";\n\n  /* Rule 5: otherwise -> price = 3 * arg3 */\n  UPDATE \"wine\"\n     SET \"Price\" = 3 * arg3\n   WHERE \"Score\" >= arg1\n     AND (INSTR(\"Grape\", 'prefix_') <> 1 OR INSTR(\"Grape\", 'prefix_') IS NULL)\n     AND \"No\" >= arg4\n     AND (\"Winery\" <> 'Twomey' OR \"Winery\" IS NULL)\n     AND (\"Cases\" <= \"Score\" OR \"Cases\" IS NULL);\n\n  /* New row number */\n  SELECT MAX(\"No\")\n    INTO l_max_no\n    FROM \"wine\";\n\n  IF l_max_no IS NULL THEN\n    l_new_no := 1;\n  ELSE\n    l_new_no := l_max_no + 1;\n  END IF;\n\n  IF l_total > arg4 THEN\n    l_new_price := arg3 + 1;\n  ELSE\n    l_new_price := arg3;\n  END IF;\n\n  INSERT INTO \"wine\" (\"No\", \"Score\", \"Grape\", \"Price\")\n  VALUES (l_new_no, arg1 + 1, 'prefix_' || arg2, l_new_price);\nEND;"
+   },
+   "result": "compiled",
+   "spent": 17.0,
+   "compiled": true
+  },
+  {
+   "step": 17,
+   "actor": "harness",
+   "tool": "",
+   "args": "",
+   "result": "budget exhausted: submit-only turn"
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(arg1 NUMBER, arg2 VARCHAR2, arg3 NUMBER, arg4 NUMBER)\nIS\n  l_total     NUMBER := 0;\n  l_max_no    NUMBER;\n  l_new_no    NUMBER;\n  l_new_price NUMBER;\nBEGIN\n  /* Running total of original prices for considered wines */\n  SELECT SUM(\"Price\")\n    INTO l_total\n    FROM \"wine\"\n   WHERE \"Score\" >= arg1;\n\n  IF l_total IS NULL THEN\n    l_total := 0;\n  END IF;\n\n  /* Rule 1: grape starts with prefix_ */\n  UPDATE \"wine\"\n     SET \"Price\" = arg3\n   WHERE \"Score\" >= arg1\n     AND INSTR(\"Grape\", 'prefix_') = 1;\n\n  /* Rule 2: otherwise, wine number strictly less than arg4 -> delete */\n  DELETE FROM \"wine\"\n   WHERE \"Score\" >= arg1\n     AND (INSTR(\"Grape\", 'prefix_') <> 1 OR INSTR(\"Grape\", 'prefix_') IS NULL)\n     AND \"No\" < arg4;\n\n  /* Rule 3: otherwise, winery exactly Twomey -> price = arg3 + original price */\n  UPDATE \"wine\"\n     SET \"Price\" = arg3 + \"Price\"\n   WHERE \"Score\" >= arg1\n     AND (INSTR(\"Grape\", 'prefix_') <> 1 OR INSTR(\"Grape\", 'prefix_') IS NULL)\n     AND \"No\" >= arg4\n     AND \"Winery\" = 'Twomey';\n\n  /* Rule 4: otherwise, Hollander concession (Cases > Score) -> price = arg3 + original price */\n  UPDATE \"wine\"\n     SET \"Price\" = arg3 + \"Price\"\n   WHERE \"Score\" >= arg1\n     AND (INSTR(\"Grape\", 'prefix_') <> 1 OR INSTR(\"Grape\", 'prefix_') IS NULL)\n     AND \"No\" >= arg4\n     AND (\"Winery\" <> 'Twomey' OR \"Winery\" IS NULL)\n     AND \"Cases\" > \"Score\";\n\n  /* Rule 5: otherwise -> price = 3 * arg3 */\n  UPDATE \"wine\"\n     SET \"Price\" = 3 * arg3\n   WHERE \"Score\" >= arg1\n     AND (INSTR(\"Grape\", 'prefix_') <> 1 OR INSTR(\"Grape\", 'prefix_') IS NULL)\n     AND \"No\" >= arg4\n     AND (\"Winery\" <> 'Twomey' OR \"Winery\" IS NULL)\n     AND (\"Cases\" <= \"Score\" OR \"Cases\" IS NULL);\n\n  /* New row number */\n  SELECT MAX(\"No\")\n    INTO l_max_no\n    FROM \"wine\";\n\n  IF l_max_no IS NULL THEN\n    l_new_no := 1;\n  ELSE\n    l_new_no := l_max_no + 1;\n  END IF;\n\n  IF l_total > arg4 THEN\n    l_new_price := arg3 + 1;\n  ELSE\n    l_new_price := arg3;\n  END IF;\n\n  INSERT INTO \"wine\" (\"No\", \"Score\", \"Grape\", \"Price\")\n  VALUES (l_new_no, arg1 + 1, 'prefix_' || arg2, l_new_price);\nEND;"
+   },
+   "result": "received",
+   "spent": 17.0,
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(arg1 NUMBER, arg2 VARCHAR2, arg3 NUMBER, arg4 NUMBER)\nIS\n  l_total     NUMBER := 0;\n  l_max_no    NUMBER;\n  l_new_no    NUMBER;\n  l_new_price NUMBER;\nBEGIN\n  /* Running total of original prices for considered wines */\n  SELECT SUM(\"Price\")\n    INTO l_total\n    FROM \"wine\"\n   WHERE \"Score\" >= arg1;\n\n  IF l_total IS NULL THEN\n    l_total := 0;\n  END IF;\n\n  /* Rule 1: grape starts with prefix_ */\n  UPDATE \"wine\"\n     SET \"Price\" = arg3\n   WHERE \"Score\" >= arg1\n     AND INSTR(\"Grape\", 'prefix_') = 1;\n\n  /* Rule 2: otherwise, wine number strictly less than arg4 -> delete */\n  DELETE FROM \"wine\"\n   WHERE \"Score\" >= arg1\n     AND (INSTR(\"Grape\", 'prefix_') <> 1 OR INSTR(\"Grape\", 'prefix_') IS NULL)\n     AND \"No\" < arg4;\n\n  /* Rule 3: otherwise, winery exactly Twomey -> price = arg3 + original price */\n  UPDATE \"wine\"\n     SET \"Price\" = arg3 + \"Price\"\n   WHERE \"Score\" >= arg1\n     AND (INSTR(\"Grape\", 'prefix_') <> 1 OR INSTR(\"Grape\", 'prefix_') IS NULL)\n     AND \"No\" >= arg4\n     AND \"Winery\" = 'Twomey';\n\n  /* Rule 4: otherwise, Hollander concession (Cases > Score) -> price = arg3 + original price */\n  UPDATE \"wine\"\n     SET \"Price\" = arg3 + \"Price\"\n   WHERE \"Score\" >= arg1\n     AND (INSTR(\"Grape\", 'prefix_') <> 1 OR INSTR(\"Grape\", 'prefix_') IS NULL)\n     AND \"No\" >= arg4\n     AND (\"Winery\" <> 'Twomey' OR \"Winery\" IS NULL)\n     AND \"Cases\" > \"Score\";\n\n  /* Rule 5: otherwise -> price = 3 * arg3 */\n  UPDATE \"wine\"\n     SET \"Price\" = 3 * arg3\n   WHERE \"Score\" >= arg1\n     AND (INSTR(\"Grape\", 'prefix_') <> 1 OR INSTR(\"Grape\", 'prefix_') IS NULL)\n     AND \"No\" >= arg4\n     AND (\"Winery\" <> 'Twomey' OR \"Winery\" IS NULL)\n     AND (\"Cases\" <= \"Score\" OR \"Cases\" IS NULL);\n\n  /* New row number */\n  SELECT MAX(\"No\")\n    INTO l_max_no\n    FROM \"wine\";\n\n  IF l_max_no IS NULL THEN\n    l_new_no := 1;\n  ELSE\n    l_new_no := l_max_no + 1;\n  END IF;\n\n  IF l_total > arg4 THEN\n    l_new_price := arg3 + 1;\n  ELSE\n    l_new_price := arg3;\n  END IF;\n\n  INSERT INTO \"wine\" (\"No\", \"Score\", \"Grape\", \"Price\")\n  VALUES (l_new_no, arg1 + 1, 'prefix_' || arg2, l_new_price);\nEND;"
+ },
+ "pair": {
+  "single_run": "filtered-ora-a5",
+  "single_task": "oracle_a5_003"
+ }
+}

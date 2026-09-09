@@ -1,0 +1,130 @@
+{
+ "id": "ora_direct_gemini-3.1_nob_20260829-0858--oracle_a1_000",
+ "run": "ora_direct_gemini-3.1_nob_20260829-0858",
+ "task_id": "oracle_a1_000",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "a1",
+ "dialect": "oracle",
+ "model": "gemini-3.1",
+ "model_label": "Gemini-3.1 Pro",
+ "solver_id": "gemini-3.1",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 59.9,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 1,
+   "wasted_calls": 0,
+   "input_tokens": 775,
+   "output_tokens": 490,
+   "cached_input_tokens": 0,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 775,
+   "max_input_tokens": 775,
+   "cost_usd": 0.0,
+   "turns": 1,
+   "cache_sources": {
+    "reported": 1
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 1,
+    "wasted_calls": 0,
+    "input_tokens": 775,
+    "output_tokens": 490,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 775,
+    "max_input_tokens": 775,
+    "cost_usd": 0.0
+   }
+  }
+ },
+ "task": {
+  "prompt": "Create an Oracle PL/SQL procedure named `sp` with exactly this signature: `sp(arg1 NUMBER, arg2 VARCHAR2, arg3 VARCHAR2, arg4 VARCHAR2)`. It returns nothing. arg1 is the age cutoff, arg2 is the driver name, arg3 is the party, arg4 is the home city.\n\nFirst, for drivers older than arg1, set driver name to arg2, bump years worked on their school-bus records by 1, and when arg3 isn't null and the driver party matches it, set those school-bus records' full-time flag to T.\n\nThen delete drivers with null party. After that, set home city to arg4 for the remaining drivers.\n\nIf arg3 isn't null, set party to arg3 for remaining drivers older than arg1, and set full-time flag to F on school-bus records for remaining drivers with party = arg3 and age <= arg1. Basically that's it.\n\nUse only driver records and school-bus records; do not read or change school records, and do not read or change the school-bus record's own ID. Do not commit or rollback, and do not define exception handlers. Return the complete stored procedure and nothing else.",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp (\n    arg1 NUMBER,\n    arg2 VARCHAR2,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n) AS\nBEGIN\n    -- For drivers older than arg1, set driver name to arg2\n    UPDATE \"driver\"\n    SET \"Name\" = arg2\n    WHERE \"Age\" > arg1;\n\n    -- Bump years worked on their school-bus records by 1\n    UPDATE \"school_bus\"\n    SET \"Years_Working\" = \"Years_Working\" + 1\n    WHERE \"Driver_ID\" IN (\n        SELECT \"Driver_ID\" \n        FROM \"driver\" \n        WHERE \"Age\" > arg1\n    );\n\n    -- When arg3 isn't null and the driver party matches it, set full-time flag to T\n    IF arg3 IS NOT NULL THEN\n        UPDATE \"school_bus\"\n        SET \"If_full_time\" = 'T'\n        WHERE \"Driver_ID\" IN (\n            SELECT \"Driver_ID\" \n            FROM \"driver\" \n            WHERE \"Age\" > arg1 AND \"Party\" = arg3\n        );\n    END IF;\n\n    -- Delete drivers with null party\n    DELETE FROM \"driver\"\n    WHERE \"Party\" IS NULL;\n\n    -- Set home city to arg4 for the remaining drivers\n    UPDATE \"driver\"\n    SET \"Home_city\" = arg4;\n\n    -- If arg3 isn't null, set party to arg3 for remaining drivers older than arg1\n    -- and set full-time flag to F on school-bus records for remaining drivers with party = arg3 and age <= arg1\n    IF arg3 IS NOT NULL THEN\n        UPDATE \"driver\"\n        SET \"Party\" = arg3\n        WHERE \"Age\" > arg1;\n\n        UPDATE \"school_bus\"\n        SET \"If_full_time\" = 'F'\n        WHERE \"Driver_ID\" IN (\n            SELECT \"Driver_ID\" \n            FROM \"driver\" \n            WHERE \"Party\" = arg3 AND \"Age\" <= arg1\n        );\n    END IF;\nEND;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp (\n    arg1 NUMBER,\n    arg2 VARCHAR2,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n) AS\nBEGIN\n    -- For drivers older than arg1, set driver name to arg2\n    UPDATE \"driver\"\n    SET \"Name\" = arg2\n    WHERE \"Age\" > arg1;\n\n    -- Bump years worked on their school-bus records by 1\n    UPDATE \"school_bus\"\n    SET \"Years_Working\" = \"Years_Working\" + 1\n    WHERE \"Driver_ID\" IN (\n        SELECT \"Driver_ID\" \n        FROM \"driver\" \n        WHERE \"Age\" > arg1\n    );\n\n    -- When arg3 isn't null and the driver party matches it, set full-time flag to T\n    IF arg3 IS NOT NULL THEN\n        UPDATE \"school_bus\"\n        SET \"If_full_time\" = 'T'\n        WHERE \"Driver_ID\" IN (\n            SELECT \"Driver_ID\" \n            FROM \"driver\" \n            WHERE \"Age\" > arg1 AND \"Party\" = arg3\n        );\n    END IF;\n\n    -- Delete drivers with null party\n    DELETE FROM \"driver\"\n    WHERE \"Party\" IS NULL;\n\n    -- Set home city to arg4 for the remaining drivers\n    UPDATE \"driver\"\n    SET \"Home_city\" = arg4;\n\n    -- If arg3 isn't null, set party to arg3 for remaining drivers older than arg1\n    -- and set full-time flag to F on school-bus records for remaining drivers with party = arg3 and age <= arg1\n    IF arg3 IS NOT NULL THEN\n        UPDATE \"driver\"\n        SET \"Party\" = arg3\n        WHERE \"Age\" > arg1;\n\n        UPDATE \"school_bus\"\n        SET \"If_full_time\" = 'F'\n        WHERE \"Driver_ID\" IN (\n            SELECT \"Driver_ID\" \n            FROM \"driver\" \n            WHERE \"Party\" = arg3 AND \"Age\" <= arg1\n        );\n    END IF;\nEND;"
+ },
+ "pair": null
+}

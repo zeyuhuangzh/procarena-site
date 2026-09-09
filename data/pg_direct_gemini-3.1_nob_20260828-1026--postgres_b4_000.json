@@ -1,0 +1,136 @@
+{
+ "id": "pg_direct_gemini-3.1_nob_20260828-1026--postgres_b4_000",
+ "run": "pg_direct_gemini-3.1_nob_20260828-1026",
+ "task_id": "postgres_b4_000",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "b4",
+ "dialect": "postgres",
+ "model": "gemini-3.1",
+ "model_label": "Gemini-3.1 Pro",
+ "solver_id": "gemini-3.1",
+ "effort": "medium",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 109.3,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 1,
+   "wasted_calls": 0,
+   "input_tokens": 2316,
+   "output_tokens": 802,
+   "cached_input_tokens": 0,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 2316,
+   "max_input_tokens": 2316,
+   "cost_usd": 0.0,
+   "turns": 1,
+   "cache_sources": {
+    "reported": 1
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 1,
+    "wasted_calls": 0,
+    "input_tokens": 2316,
+    "output_tokens": 802,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 2316,
+    "max_input_tokens": 2316,
+    "cost_usd": 0.0
+   }
+  }
+ },
+ "task": {
+  "prompt": "Please complete the missing block in incomplete_procedure.sql. Keep the interface fixed as sp(arg1 integer, arg2 text, arg3 integer, arg4 integer, arg5 integer, arg6 integer): arg1 is the engineer, arg2 is the visit-start/detail text to copy, arg3 is the skill value, arg4 is the part fault, arg5 is the maintenance contractor or supplier company value, and arg6 is the maintenance contract value. Change nothing outside the hole.\n\nThe block should apply the intended maintenance updates: while walking the attached visit cursor, reduce maintenance contract numbers once for each still-unfixed required-to-fix skill row whose skill is greater than arg5, subtracting arg6 and 33 each time. Update visit engineers to arg1 unless arg4 is -1000. If arg4 equals arg3, mark the matching fault-log part entries for that part fault as Fixed, not visit statuses.\n\nAlso copy arg2 into the relevant “other details” fields: for assets on contract arg6 supplied by arg5 when arg6 is not -1000 and arg1 is below it; for parts whose faults include arg4 when arg2 is present and arg3 equals arg5; and for fault log entries matching assets on contract arg6 from company arg5 with fitted parts having fault arg4 when arg2 is present and arg4 is non-negative.\n\nDon’t add result output, commits, rollbacks, or custom error handling; let PostgreSQL errors propagate. Return the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "incomplete_procedure.sql",
+    "kind": "incomplete procedure",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\"; ref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text; DELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id; OPEN ref_cursor;-- TODO: after opening the visit cursor, walk visits with the nested required-skills cursor, adjust maintenance contracts based on the skill/company relationship, then run the follow-up visit, fault, asset, part, and fault-log updates driven by the input params\n END; $$;"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\"; ref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text; DELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id; OPEN ref_cursor;\n\nLOOP\n    FETCH ref_cursor INTO rec;\n    EXIT WHEN NOT FOUND;\n    \n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        \n        IF rec2.\"skill_id\" > para_maintenance_contract_company_id THEN\n            UPDATE \"Maintenance_Contracts\"\n            SET \"maintenance_contract_id\" = \"maintenance_contract_id\" - para_maintenance_contract_id - 33;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\nEND LOOP;\nCLOSE ref_cursor;\n\nIF para_part_fault_id <> -1000 THEN\n    UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id;\nEND IF;\n\nIF para_part_fault_id = para_skill_id THEN\n    UPDATE \"Fault_Log_Parts\" SET \"fault_status\" = 'Fixed' WHERE \"part_fault_id\" = para_part_fault_id;\nEND IF;\n\nIF para_maintenance_contract_id <> -1000 AND para_engineer_id < para_maintenance_contract_id THEN\n    UPDATE \"Assets\"\n    SET \"other_asset_details\" = para_visit_start_text\n    WHERE \"maintenance_contract_id\" = para_maintenance_contract_id\n      AND \"supplier_company_id\" = para_maintenance_contract_company_id;\nEND IF;\n\nIF para_visit_start_text IS NOT NULL AND para_skill_id = para_maintenance_contract_company_id THEN\n    UPDATE \"Parts\"\n    SET \"other_part_details\" = para_visit_start_text\n    WHERE \"part_id\" IN (\n        SELECT \"part_id\" FROM \"Part_Faults\" WHERE \"part_fault_id\" = para_part_fault_id\n    );\nEND IF;\n\nIF para_visit_start_text IS NOT NULL AND para_part_fault_id >= 0 THEN\n    UPDATE \"Fault_Log\"\n    SET \"other_fault_details\" = para_visit_start_text\n    WHERE \"asset_id\" IN (\n        SELECT \"asset_id\" FROM \"Assets\"\n        WHERE \"maintenance_contract_id\" = para_maintenance_contract_id\n          AND \"supplier_company_id\" = para_maintenance_contract_company_id\n    )\n    AND \"fault_log_entry_id\" IN (\n        SELECT \"fault_log_entry_id\" FROM \"Fault_Log_Parts\"\n        WHERE \"part_fault_id\" = para_part_fault_id\n    );\nEND IF;\n\nEND; $$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\"; ref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text; DELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id; OPEN ref_cursor;\n\nLOOP\n    FETCH ref_cursor INTO rec;\n    EXIT WHEN NOT FOUND;\n    \n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        \n        IF rec2.\"skill_id\" > para_maintenance_contract_company_id THEN\n            UPDATE \"Maintenance_Contracts\"\n            SET \"maintenance_contract_id\" = \"maintenance_contract_id\" - para_maintenance_contract_id - 33;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\nEND LOOP;\nCLOSE ref_cursor;\n\nIF para_part_fault_id <> -1000 THEN\n    UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id;\nEND IF;\n\nIF para_part_fault_id = para_skill_id THEN\n    UPDATE \"Fault_Log_Parts\" SET \"fault_status\" = 'Fixed' WHERE \"part_fault_id\" = para_part_fault_id;\nEND IF;\n\nIF para_maintenance_contract_id <> -1000 AND para_engineer_id < para_maintenance_contract_id THEN\n    UPDATE \"Assets\"\n    SET \"other_asset_details\" = para_visit_start_text\n    WHERE \"maintenance_contract_id\" = para_maintenance_contract_id\n      AND \"supplier_company_id\" = para_maintenance_contract_company_id;\nEND IF;\n\nIF para_visit_start_text IS NOT NULL AND para_skill_id = para_maintenance_contract_company_id THEN\n    UPDATE \"Parts\"\n    SET \"other_part_details\" = para_visit_start_text\n    WHERE \"part_id\" IN (\n        SELECT \"part_id\" FROM \"Part_Faults\" WHERE \"part_fault_id\" = para_part_fault_id\n    );\nEND IF;\n\nIF para_visit_start_text IS NOT NULL AND para_part_fault_id >= 0 THEN\n    UPDATE \"Fault_Log\"\n    SET \"other_fault_details\" = para_visit_start_text\n    WHERE \"asset_id\" IN (\n        SELECT \"asset_id\" FROM \"Assets\"\n        WHERE \"maintenance_contract_id\" = para_maintenance_contract_id\n          AND \"supplier_company_id\" = para_maintenance_contract_company_id\n    )\n    AND \"fault_log_entry_id\" IN (\n        SELECT \"fault_log_entry_id\" FROM \"Fault_Log_Parts\"\n        WHERE \"part_fault_id\" = para_part_fault_id\n    );\nEND IF;\n\nEND; $$;"
+ },
+ "pair": null
+}

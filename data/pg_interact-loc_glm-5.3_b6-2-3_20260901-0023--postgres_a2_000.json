@@ -1,0 +1,385 @@
+{
+ "id": "pg_interact-loc_glm-5.3_b6-2-3_20260901-0023--postgres_a2_000",
+ "run": "pg_interact-loc_glm-5.3_b6-2-3_20260901-0023",
+ "task_id": "postgres_a2_000",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "a2",
+ "dialect": "postgres",
+ "model": "glm-5.3",
+ "model_label": "GLM-5.3",
+ "solver_id": "glm-5.3",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 8,
+  "oracle_size": 9
+ },
+ "summary": {
+  "steps": 10,
+  "seconds": 588.9,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 2,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 8,
+  "oracle_size": 9,
+  "entries_per_question": 4.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "ask_user": 2,
+   "compile_plsql": 1,
+   "execute_scratch": 5,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 27.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 10.5,
+   "by_tool": {
+    "get_schema": 1.0,
+    "ask_user": 4.0,
+    "compile_plsql": 0.5,
+    "execute_scratch": 5.0,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 10,
+   "wasted_calls": 0,
+   "input_tokens": 67172,
+   "output_tokens": 5558,
+   "cached_input_tokens": 40512,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 26660,
+   "max_input_tokens": 8271,
+   "cost_usd": 0.0,
+   "turns": 10,
+   "cache_sources": {
+    "reported": 14
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 4,
+    "wasted_calls": 0,
+    "input_tokens": 3016,
+    "output_tokens": 1664,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 3016,
+    "max_input_tokens": 1144,
+    "cost_usd": 0.0009
+   },
+   "total": {
+    "calls": 14,
+    "wasted_calls": 0,
+    "input_tokens": 70188,
+    "output_tokens": 7222,
+    "cached_input_tokens": 40512,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 29676,
+    "max_input_tokens": 8271,
+    "cost_usd": 0.0009
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 0,
+   "blocked": 0,
+   "none": 0,
+   "items_used": [],
+   "inventory_size": 12
+  }
+ },
+ "task": {
+  "prompt": "Please write the PostgreSQL PL/pgSQL procedure for the football data cleanup and correction pass described in the attached design_document.md. The attached design document is the source of truth for the detailed requirements.\n\nThe procedure must be named sp and must take exactly this interface: sp(arg1 integer, arg2 text, arg3 integer, arg4 integer, arg5 text, arg6 integer).\n\nArgument meanings by position:\n1. height limit for the later player weight adjustment\n2. unused input kept in the interface\n3. baseline player API number\n4. minimum team API number for the later team long-name correction\n5. requested team long-name value\n6. baseline team FIFA API number\n\nPlease return the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "design_document.md",
+    "kind": "design document",
+    "text": "## 1. Overview\n\nThis is a PostgreSQL PL/pgSQL stored procedure that runs a staged cleanup and correction pass over football data. It stamps and removes low-numbered players and teams through a fixed phase sequence, then applies the remaining player, team, player-skill, and team-tactic corrections in order.\n\n## 2. Interface\n\n| Position | Type | Business meaning |\n| --- | --- | --- |\n| 1 | integer | Height limit for the post-phase player weight increase. |\n| 2 | text | Unused input; no rule or effect reads it. |\n| 3 | integer | Baseline player API number for staged player removals and the later player-skill correction. |\n| 4 | integer | Minimum team API number for the later team long-name correction. |\n| 5 | text | Requested team long name, and the value that gates whether the long-name correction runs at all. |\n| 6 | integer | Baseline team FIFA API number for staged team removals and the later team-tactic correction. |\n\n## 3. Data\n\nUse the database’s exact case-sensitive spellings for the entities and fields that match the business terms below.\n\nThe procedure touches only players, teams, player skill snapshots, and team tactical snapshots.\n\nFor players, it reads the player API number only to decide staged removals. It writes the birthday text during the phases. After the phases, it reads height, reads weight, and writes weight.\n\nFor teams, it reads the team FIFA API number to decide staged removals, and reads it again for the final team-tactic match. It writes the short team code during the phases. After the phases, it reads the short team code and the team API number for the long-name correction, and writes the long team name.\n\nFor player skill snapshots, it reads the player API number, potential, and overall rating. It writes potential.\n\nFor team tactical snapshots, it reads the team API number, defensive aggression, and defensive pressure. It writes defensive aggression.\n\nNo country records or league records are read or changed. No other fields in any entity are read or changed, except that a staged player or team removal removes the whole current row.\n\n## 4. Rule catalogue\n\n| Rule name | Definition |\n| --- | --- |\n| **Procedure identifier** | The procedure uses the **Harbor Badge**. |\n| **Weight step variable** | A local integer in the procedure declaration named v_weight_increment, initialized to the unit increment. |\n| **Phase count** | The phase count is defined by consistency with the ordered phase rule sets: the phased pass has one phase for each listed phase rule set and no phases outside them. |\n| **Phase 1 player birthday marker** | The marker text used for phase 1 player birthdays. |\n| **Phase 2 player birthday marker** | The exact text value 'phase_2'. |\n| **Phase 3 player birthday marker** | The exact text value 'phase_3'. |\n| **Phase 4 player birthday marker** | The exact text value 'phase_4'. |\n| **Phase 5 player birthday marker** | The exact text value 'phase_5'. |\n| **Phase 6 player birthday marker** | The exact text value 'phase_6'. |\n| **Phase 7 player birthday marker** | The exact text value 'phase_7'. |\n| **Phase 8 player birthday marker** | The exact text value 'phase_8'. |\n| **Phase 9 player birthday marker** | The exact text value 'phase_9'. |\n| **Phase 1 team short-code marker** | The exact text value 'log_phase_1'. |\n| **Phase 2 team short-code marker** | The exact text value 'log_phase_2'. |\n| **Phase 3 team short-code marker** | The exact text value 'log_phase_3'. |\n| **Phase 4 team short-code marker** | The exact text value 'log_phase_4'. |\n| **Phase 5 team short-code marker** | The exact text value 'log_phase_5'. |\n| **Phase 6 team short-code marker** | The exact text value 'log_phase_6'. |\n| **Phase 7 team short-code marker** | The exact text value 'log_phase_7'. |\n| **Phase 8 team short-code marker** | The exact text value 'log_phase_8'. |\n| **Phase 9 team short-code marker** | **Ninth Bell Tag**. |\n| **Phase 1 player removal cutoff** | The third argument. |\n| **Phase 2 player removal cutoff** | The third argument increased by 1. |\n| **Phase 3 player removal cutoff** | The third argument increased by 2. |\n| **Phase 4 player removal cutoff** | The third argument increased by its phase-specific offset. |\n| **Phase 5 player removal cutoff** | The third argument increased by 4. |\n| **Phase 6 player removal cutoff** | The third argument increased by 5. |\n| **Phase 7 player removal cutoff** | The third argument increased by 6. |\n| **Phase 8 player removal cutoff** | The third argument increased by 7. |\n| **Phase 9 player removal cutoff** | The third argument increased by 8. |\n| **Phase 1 team removal cutoff** | The sixth argument. |\n| **Phase 2 team removal cutoff** | The sixth argument increased by 1. |\n| **Phase 3 team removal cutoff** | The sixth argument increased by 2. |\n| **Phase 4 team removal cutoff** | The sixth argument increased by 3. |\n| **Phase 5 team removal cutoff** | The sixth argument increased by 4. |\n| **Phase 6 team removal cutoff** | The sixth argument increased by 5. |\n| **Phase 7 team removal cutoff** | The sixth argument increased by 6. |\n| **Phase 8 team removal cutoff** | The sixth argument increased by 7. |\n| **Phase 9 team removal cutoff** | The sixth argument increased by 8. |\n| **Player weight height limit** | The first argument. |\n| **Requested team long-name value** | The fifth argument. |\n| **Long-name null gate** | Open only when **Requested team long-name value** is not NULL. |\n| **Team long-name API floor** | The fourth argument. |\n| **Player-skill API floor** | The API floor used for the later player-skill correction. |\n| **Team-tactic FIFA floor** | **Anchorline Floor**. |\n## 5. Processing specification\n\nRun the procedure identified by **Harbor Badge**. Its declaration includes **Weight step variable**.\n\nRun the phased pass first, using **Phase count**. Each phase works only on rows that still exist at that moment. In every phase, the four effects happen in this exact order: first every current player gets that phase’s player birthday marker; then current players with player API numbers strictly below that phase’s player removal cutoff are removed; then every current team gets that phase’s team short-code marker; then current teams with team FIFA API numbers strictly below that phase’s team removal cutoff are removed. This order matters because each removal changes which rows are available to later phases and post-phase corrections.\n\nUse these phase rule sets in order:\n\n| Phase rule set | Player birthday marker | Player removal cutoff | Team short-code marker | Team removal cutoff |\n| --- | --- | --- | --- | --- |\n| Phase 1 | **Phase 1 player birthday marker** | **Phase 1 player removal cutoff** | **Phase 1 team short-code marker** | **Phase 1 team removal cutoff** |\n| Phase 2 | **Phase 2 player birthday marker** | **Phase 2 player removal cutoff** | **Phase 2 team short-code marker** | **Phase 2 team removal cutoff** |\n| Phase 3 | **Phase 3 player birthday marker** | **Phase 3 player removal cutoff** | **Phase 3 team short-code marker** | **Phase 3 team removal cutoff** |\n| Phase 4 | **Phase 4 player birthday marker** | **Phase 4 player removal cutoff** | **Phase 4 team short-code marker** | **Phase 4 team removal cutoff** |\n| Phase 5 | **Phase 5 player birthday marker** | **Phase 5 player removal cutoff** | **Phase 5 team short-code marker** | **Phase 5 team removal cutoff** |\n| Phase 6 | **Phase 6 player birthday marker** | **Phase 6 player removal cutoff** | **Phase 6 team short-code marker** | **Phase 6 team removal cutoff** |\n| Phase 7 | **Phase 7 player birthday marker** | **Phase 7 player removal cutoff** | **Phase 7 team short-code marker** | **Phase 7 team removal cutoff** |\n| Phase 8 | **Phase 8 player birthday marker** | **Phase 8 player removal cutoff** | **Phase 8 team short-code marker** | **Phase 8 team removal cutoff** |\n| Phase 9 | **Phase 9 player birthday marker** | **Phase 9 player removal cutoff** | **Ninth Bell Tag** | **Phase 9 team removal cutoff** |\n\nAfter the phased pass has fully completed, every remaining player whose height is strictly below **Player weight height limit** has weight increased by **Weight step variable**. Players already removed during the phased pass are not affected. Remaining players whose height does not qualify keep their weight.\n\nNext, if **Long-name null gate** is open, every current team whose short code is exactly **Ninth Bell Tag** and whose team API number is at or above **Team long-name API floor** has its long name set to **Requested team long-name value**. Current teams with a different short code, or with a team API number below **Team long-name API floor**, keep their long name.\n\nNext, every player skill snapshot whose player API number is at or above **Player-skill API floor**, and whose potential is strictly below its own overall rating, has potential set to that same snapshot’s overall rating. This correction is self-contained; it does not check whether a matching current player exists.\n\nFinally, each team tactical snapshot whose defensive aggression is strictly below its own defensive pressure is corrected only when at least one current team shares its team API number and has a team FIFA API number at or above **Anchorline Floor**. Qualifying snapshots have defensive aggression set to their own defensive pressure. If there is no matching current team, or if every matching current team is below **Anchorline Floor**, the snapshot is not changed.\n\nFor the phased pass, **Phase 3 player removal cutoff** is the third argument increased by 10.\n\n## 6. Edge cases and error behaviour\n\nAll comparisons and arithmetic use normal PostgreSQL behaviour. A row qualifies for a conditional effect only when the condition evaluates to true. If a compared field or input is NULL, ordinary PostgreSQL NULL comparison behaviour applies, so strict-below and at-or-above checks do not qualify the row unless PostgreSQL evaluates them to true.\n\nThe explicit exception is **Long-name null gate**: when that gate is closed, the whole team long-name correction affects no rows.\n\nIf any effect finds no matching rows, it affects no rows and the procedure continues with the next ordered effect. Empty participating entities are handled the same way.\n\nDo not reorder, combine, or defer the effects in Section 5. Each effect sees the current data left by all earlier effects.\n\nThere is no special exception handling. Any PostgreSQL error, including arithmetic errors or other database errors, propagates to the caller through normal PL/pgSQL behaviour. The procedure does not catch it, does not return a result set, and does not perform explicit transaction control."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "S1",
+   "op": "commonsense",
+   "revealed_at": 2,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What value is the unit increment?",
+   "answer": "The unit increment is exactly 1."
+  },
+  {
+   "id": "R1",
+   "op": "reasoning",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "How many phases does the phased pass run?",
+   "answer": "The phased pass runs exactly 9 phases."
+  },
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": 2,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what is the Harbor Badge?",
+   "answer": "The Harbor Badge means the stored procedure’s name is exactly sp."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": 2,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what is the Ninth Bell Tag?",
+   "answer": "The Ninth Bell Tag is the exact text value 'log_phase_9'."
+  },
+  {
+   "id": "J3",
+   "op": "jargon",
+   "revealed_at": 2,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what is the Anchorline Floor?",
+   "answer": "The Anchorline Floor is the same value as **Phase 9 team removal cutoff**."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 2,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what exact text value is used for the Phase 1 player birthday marker",
+   "answer": "The Phase 1 player birthday marker is the exact text value 'phase_1'."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": 3,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what offset is added to the third argument for the Phase 4 player removal cutoff",
+   "answer": "The phase-specific offset for the Phase 4 player removal cutoff is 3."
+  },
+  {
+   "id": "M3",
+   "op": "mask",
+   "revealed_at": 2,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what value is used as the Player-skill API floor",
+   "answer": "The Player-skill API floor is the same value as **Phase 9 player removal cutoff**."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": 3,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "whether the Phase 3 player removal cutoff adds 2 or 10",
+   "answer": "The correct statement is Passage U1: the Phase 3 player removal cutoff is the third argument increased by 2."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Country , columns = [ id ( integer | primary key | values : 19694 , 15722 ) , name ( text | values : Portugal , Belgium ) ]\ntable League , columns = [ id ( integer | primary key | values : 7809 , 24558 ) , country_id ( integer | values : 17642 , 13274 ) , name ( text | values : France Ligue 1 , Portugal Liga ZON Sagres ) ]\ntable Player , columns = [ id ( integer | primary key | values : 4 , 8 ) , player_api_id ( integer | values : 101042 , 163222 ) , player_name ( text | values : Aaron Lennox , Aaron Cresswell ) , player_fifa_api_id ( integer | values : 2335 , 206592 ) , birthday ( text | values : 1979-11-08 00:00:00 , 1991-05-13 00:00:00 ) , height ( integer | values : 165 , 191 ) , weight ( integer | values : 154 , 146 ) ]\ntable Player_Attributes , columns = [ id ( integer | primary key | values : 3 , 20 ) , player_fifa_api_id ( integer | values : 189615 , 218353 ) , player_api_id ( integer | values : 505942 , 155782 ) , integer ( text | values : 2014-04-04 00:00:00 , 2015-09-21 00:00:00 ) , overall_rating ( integer | values : 73 , 62 ) , potential ( integer | values : 71 , 75 ) , preferred_foot ( text | values : left , right ) , attacking_work_rate ( text | values : medium , medium ) , defensive_work_rate ( text | values : medium , medium ) , crossing ( integer | values : 79 , 79 ) , finishing ( integer | values : 50 , 44 ) , heading_accuracy ( integer | values : 57 , 51 ) , short_passing ( integer | values : 70 , 67 ) , volleys ( integer | values : 28 , 32 ) , dribbling ( integer | values : 71 , 71 ) , curve ( integer | values : 44 , 67 ) , free_kick_accuracy ( integer | values : 68 , 69 ) , long_passing ( integer | values : 68 , 68 ) , ball_control ( integer | values : 71 , 67 ) , acceleration ( integer | values : 84 , 84 ) , sprint_speed ( integer | values : 82 , 82 ) , agility ( integer | values : 81 , 59 ) , reactions ( integer | values : 69 , 46 ) , balance ( integer | values : 65 , 65 ) , shot_power ( integer | values : 70 , 71 ) , jumping ( integer | values : 84 , 84 ) , stamina ( integer | values : 79 , 79 ) , strength ( integer | values : 56 , 50 ) , long_shots ( integer | values : 56 , 35 ) , aggression ( integer | values : 66 , 62 ) , interceptions ( integer | values : 40 , 70 ) , positioning ( integer | values : 60 , 45 ) , vision ( integer | values : 53 , 65 ) , penalties ( integer | values : 48 , 48 ) , marking ( integer | values : 65 , 76 ) , standing_tackle ( integer | values : 75 , 72 ) , sliding_tackle ( integer | values : 66 , 78 ) , gk_diving ( integer | values : 13 , 13 ) , gk_handling ( integer | values : 7 , 6 ) , gk_kicking ( integer | values : 8 , 8 ) , gk_positioning ( integer | values : 9 , 8 ) , gk_reflexes ( integer | values : 8 , 11 ) ]\ntable Team , columns = [ id ( integer | primary key | values : 7 , 10 ) , team_api_id ( integer | values : 9999 , 7947 ) , team_fifa_api_id ( integer | values : 2007 , 675 ) , team_long_name ( text | values : KSV Cercle Brugge , Sporting Charleroi ) , team_short_name ( text | values : CEB , ZUL ) ]\ntable Team_Attributes , columns = [ id ( integer | primary key | values : 19 , 7 ) , team_fifa_api_id ( integer | values : 47 , 77 ) , team_api_id ( integer | values : 8576 , 8485 ) , integer ( text | values : 2015-09-10 00:00:00 , 2015-09-10 00:00:00 ) , buildUpPlaySpeed ( integer | values : 60 , 48 ) , buildUpPlaySpeedClass ( text | values : Balanced , Balanced ) , buildUpPlayDribbling ( integer | values : 41 , 41 ) , buildUpPlayDribblingClass ( text | values : Normal , Little ) , buildUpPlayPassing ( integer | values : 50 , 50 ) , buildUpPlayPassingClass ( text | values : Mixed , Mixed ) , buildUpPlayPositioningClass ( text | values : Organised , Organised ) , chanceCreationPassing ( integer | values : 50 , 45 ) , chanceCreationPassingClass ( text | values : Normal , Normal ) , chanceCreationCrossing ( integer | values : 48 , 70 ) , chanceCreationCrossingClass ( text | values : Normal , Normal ) , chanceCreationShooting ( integer | values :... (+567)",
+   "spent": 1.0
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "The design document references several named tokens whose concrete values I need: (1) the \"Harbor Badge\" (procedure identifier), (2) the \"Ninth Bell Tag\" (used as the phase 9 team short-code marker and in the long-name correction), (3) the \"Anchorline Floor\" (the FIFA API floor for the team-tactic correction), and (4) the \"Phase 1 player birthday marker\" text. Also, is the \"Weight step variable\" unit increment simply 1, and is the \"Player-skill API floor\" the third argument?"
+   },
+   "result": "The Harbor Badge means the stored procedure’s name is exactly sp.\n\nThe Ninth Bell Tag is the exact text value 'log_phase_9'.\n\nThe Anchorline Floor is the same value as **Phase 9 team removal cutoff**.\n\nThe Phase 1 player birthday marker is the exact text value 'phase_1'.\n\nThe unit increment is exactly 1.\n\nThe Player-skill API floor is the same value as **Phase 9 player removal cutoff**.",
+   "spent": 3.0,
+   "revealed": [
+    "J1",
+    "J2",
+    "J3",
+    "M1",
+    "S1",
+    "M3"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "Two clarifications on removal cutoffs: (1) \"Phase 4 player removal cutoff — the third argument increased by its phase-specific offset\": what is that offset for phase 4? (2) The closing note says \"Phase 3 player removal cutoff is the third argument increased by 10\", overriding the rule-table value of +2. Please confirm phase 3 player cutoff = arg3 + 10, and tell me the phase 4 player cutoff offset."
+   },
+   "result": "The phase-specific offset for the Phase 4 player removal cutoff is 3.\n\nThe correct statement is Passage U1: the Phase 3 player removal cutoff is the third argument increased by 2.",
+   "spent": 5.0,
+   "revealed": [
+    "M2",
+    "C1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(arg1 integer, arg2 text, arg3 integer, arg4 integer, arg5 text, arg6 integer)\nLANGUAGE plpgsql AS $$\nDECLARE\n    v_weight_increment integer := 1;\nBEGIN\n    -- Phase 1\n    UPDATE \"Player\" SET \"birthday\" = 'phase_1';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_1';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6;\n\n    -- Phase 2\n    UPDATE \"Player\" SET \"birthday\" = 'phase_2';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 1;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_2';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 1;\n\n    -- Phase 3\n    UPDATE \"Player\" SET \"birthday\" = 'phase_3';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 2;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_3';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 2;\n\n    -- Phase 4\n    UPDATE \"Player\" SET \"birthday\" = 'phase_4';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 3;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_4';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 3;\n\n    -- Phase 5\n    UPDATE \"Player\" SET \"birthday\" = 'phase_5';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 4;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_5';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 4;\n\n    -- Phase 6\n    UPDATE \"Player\" SET \"birthday\" = 'phase_6';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 5;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_6';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 5;\n\n    -- Phase 7\n    UPDATE \"Player\" SET \"birthday\" = 'phase_7';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 6;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_7';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 6;\n\n    -- Phase 8\n    UPDATE \"Player\" SET \"birthday\" = 'phase_8';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 7;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_8';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 7;\n\n    -- Phase 9\n    UPDATE \"Player\" SET \"birthday\" = 'phase_9';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 8;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_9';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 8;\n\n    -- Post-phase: player weight increase\n    UPDATE \"Player\"\n    SET \"weight\" = \"weight\" + v_weight_increment\n    WHERE \"height\" < arg1;\n\n    -- Post-phase: team long-name correction\n    IF arg5 IS NOT NULL THEN\n        UPDATE \"Team\"\n        SET \"team_long_name\" = arg5\n        WHERE \"team_short_name\" = 'log_phase_9'\n          AND \"team_api_id\" >= arg4;\n    END IF;\n\n    -- Post-phase: player-skill correction\n    UPDATE \"Player_Attributes\"\n    SET \"potential\" = \"overall_rating\"\n    WHERE \"player_api_id\" >= arg3 + 8\n      AND \"potential\" < \"overall_rating\";\n\n    -- Post-phase: team-tactic correction\n    UPDATE \"Team_Attributes\"\n    SET \"defenceAggression\" = \"defencePressure\"\n    WHERE \"defenceAggression\" < \"defencePressure\"\n      AND EXISTS (\n          SELECT 1\n          FROM \"Team\" t\n          WHERE t.\"team_api_id\" = \"Team_Attributes\".\"team_api_id\"\n            AND t.\"team_fifa_api_id\" >= arg6 + 8\n      );\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "spent": 5.5,
+   "compiled": true
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(180, 'x', 100000, 10000, 'NewLongName', 1000);"
+   },
+   "result": "error: [42883] procedure sp(integer, unknown, integer, integer, unknown, integer) does not exist",
+   "spent": 6.5
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(arg1 integer, arg2 text, arg3 integer, arg4 integer, arg5 text, arg6 integer)\nLANGUAGE plpgsql AS $$\nDECLARE\n    v_weight_increment integer := 1;\nBEGIN\n    -- Phase 1\n    UPDATE \"Player\" SET \"birthday\" = 'phase_1';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_1';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6;\n\n    -- Phase 2\n    UPDATE \"Player\" SET \"birthday\" = 'phase_2';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 1;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_2';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 1;\n\n    -- Phase 3\n    UPDATE \"Player\" SET \"birthday\" = 'phase_3';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 2;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_3';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 2;\n\n    -- Phase 4\n    UPDATE \"Player\" SET \"birthday\" = 'phase_4';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 3;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_4';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 3;\n\n    -- Phase 5\n    UPDATE \"Player\" SET \"birthday\" = 'phase_5';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 4;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_5';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 4;\n\n    -- Phase 6\n    UPDATE \"Player\" SET \"birthday\" = 'phase_6';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 5;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_6';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 5;\n\n    -- Phase 7\n    UPDATE \"Player\" SET \"birthday\" = 'phase_7';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 6;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_7';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 6;\n\n    -- Phase 8\n    UPDATE \"Player\" SET \"birthday\" = 'phase_8';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 7;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_8';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 7;\n\n    -- Phase 9\n    UPDATE \"Player\" SET \"birthday\" = 'phase_9';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 8;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_9';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 8;\n\n    -- Post-phase: player weight increase\n    UPDATE \"Player\"\n    SET \"weight\" = \"weight\" + v_weight_increment\n    WHERE \"height\" < arg1;\n\n    -- Post-phase: team long-name correction\n    IF arg5 IS NOT NULL THEN\n        UPDATE \"Team\"\n        SET \"team_long_name\" = arg5\n        WHERE \"team_short_name\" = 'log_phase_9'\n          AND \"team_api_id\" >= arg4;\n    END IF;\n\n    -- Post-phase: player-skill correction\n    UPDATE \"Player_Attributes\"\n    SET \"potential\" = \"overall_rating\"\n    WHERE \"player_api_id\" >= arg3 + 8\n      AND \"potential\" < \"overall_rating\";\n\n    -- Post-phase: team-tactic correction\n    UPDATE \"Team_Attributes\"\n    SET \"defenceAggression\" = \"defencePressure\"\n    WHERE \"defenceAggression\" < \"defencePressure\"\n      AND EXISTS (\n          SELECT 1\n          FROM \"Team\" t\n          WHERE t.\"team_api_id\" = \"Team_Attributes\".\"team_api_id\"\n            AND t.\"team_fifa_api_id\" >= arg6 + 8\n      );\nEND;\n$$;"
+   },
+   "result": "ok, -1 row(s) affected",
+   "spent": 7.5
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(180, 'x', 999999999, 10000, 'NewLongName', 999999999);\nSELECT (SELECT count(*) FROM \"Player\") players, (SELECT count(*) FROM \"Team\") teams;"
+   },
+   "result": "ok, -1 row(s) affected",
+   "spent": 8.5
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT (SELECT count(*) FROM \"Player\") players, (SELECT count(*) FROM \"Team\") teams,\n(SELECT count(*) FROM \"Player\" WHERE \"birthday\"='phase_1') p1, (SELECT count(*) FROM \"Team\" WHERE \"team_short_name\"='log_phase_1') t1;"
+   },
+   "result": "players | teams | p1 | t1\n0 | 2 | 0 | 0",
+   "spent": 9.5
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"Team\";"
+   },
+   "result": "id | team_api_id | team_fifa_api_id | team_long_name | team_short_name\n9 | 7947 | NULL | FCV Dender EH | log_phase_9\n15 | 4049 | NULL | Tubize | log_phase_9",
+   "spent": 10.5
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(arg1 integer, arg2 text, arg3 integer, arg4 integer, arg5 text, arg6 integer)\nLANGUAGE plpgsql AS $$\nDECLARE\n    v_weight_increment integer := 1;\nBEGIN\n    -- Phase 1\n    UPDATE \"Player\" SET \"birthday\" = 'phase_1';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_1';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6;\n\n    -- Phase 2\n    UPDATE \"Player\" SET \"birthday\" = 'phase_2';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 1;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_2';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 1;\n\n    -- Phase 3\n    UPDATE \"Player\" SET \"birthday\" = 'phase_3';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 2;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_3';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 2;\n\n    -- Phase 4\n    UPDATE \"Player\" SET \"birthday\" = 'phase_4';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 3;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_4';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 3;\n\n    -- Phase 5\n    UPDATE \"Player\" SET \"birthday\" = 'phase_5';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 4;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_5';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 4;\n\n    -- Phase 6\n    UPDATE \"Player\" SET \"birthday\" = 'phase_6';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 5;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_6';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 5;\n\n    -- Phase 7\n    UPDATE \"Player\" SET \"birthday\" = 'phase_7';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 6;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_7';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 6;\n\n    -- Phase 8\n    UPDATE \"Player\" SET \"birthday\" = 'phase_8';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 7;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_8';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 7;\n\n    -- Phase 9\n    UPDATE \"Player\" SET \"birthday\" = 'phase_9';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 8;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_9';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 8;\n\n    -- Post-phase: player weight increase for players below the height limit\n    UPDATE \"Player\"\n    SET \"weight\" = \"weight\" + v_weight_increment\n    WHERE \"height\" < arg1;\n\n    -- Post-phase: team long-name correction (gated on arg5 being non-NULL)\n    IF arg5 IS NOT NULL THEN\n        UPDATE \"Team\"\n        SET \"team_long_name\" = arg5\n        WHERE \"team_short_name\" = 'log_phase_9'\n          AND \"team_api_id\" >= arg4;\n    END IF;\n\n    -- Post-phase: player-skill potential correction\n    UPDATE \"Player_Attributes\"\n    SET \"potential\" = \"overall_rating\"\n    WHERE \"player_api_id\" >= arg3 + 8\n      AND \"potential\" < \"overall_rating\";\n\n    -- Post-phase: team-tactic defensive aggression correction\n    UPDATE \"Team_Attributes\"\n    SET \"defenceAggression\" = \"defencePressure\"\n    WHERE \"defenceAggression\" < \"defencePressure\"\n      AND EXISTS (\n          SELECT 1\n          FROM \"Team\" t\n          WHERE t.\"team_api_id\" = \"Team_Attributes\".\"team_api_id\"\n            AND t.\"team_fifa_api_id\" >= arg6 + 8\n      );\nEND;\n$$;"
+   },
+   "result": "received",
+   "spent": 10.5,
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(arg1 integer, arg2 text, arg3 integer, arg4 integer, arg5 text, arg6 integer)\nLANGUAGE plpgsql AS $$\nDECLARE\n    v_weight_increment integer := 1;\nBEGIN\n    -- Phase 1\n    UPDATE \"Player\" SET \"birthday\" = 'phase_1';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_1';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6;\n\n    -- Phase 2\n    UPDATE \"Player\" SET \"birthday\" = 'phase_2';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 1;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_2';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 1;\n\n    -- Phase 3\n    UPDATE \"Player\" SET \"birthday\" = 'phase_3';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 2;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_3';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 2;\n\n    -- Phase 4\n    UPDATE \"Player\" SET \"birthday\" = 'phase_4';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 3;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_4';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 3;\n\n    -- Phase 5\n    UPDATE \"Player\" SET \"birthday\" = 'phase_5';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 4;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_5';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 4;\n\n    -- Phase 6\n    UPDATE \"Player\" SET \"birthday\" = 'phase_6';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 5;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_6';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 5;\n\n    -- Phase 7\n    UPDATE \"Player\" SET \"birthday\" = 'phase_7';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 6;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_7';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 6;\n\n    -- Phase 8\n    UPDATE \"Player\" SET \"birthday\" = 'phase_8';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 7;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_8';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 7;\n\n    -- Phase 9\n    UPDATE \"Player\" SET \"birthday\" = 'phase_9';\n    DELETE FROM \"Player\" WHERE \"player_api_id\" < arg3 + 8;\n    UPDATE \"Team\" SET \"team_short_name\" = 'log_phase_9';\n    DELETE FROM \"Team\" WHERE \"team_fifa_api_id\" < arg6 + 8;\n\n    -- Post-phase: player weight increase for players below the height limit\n    UPDATE \"Player\"\n    SET \"weight\" = \"weight\" + v_weight_increment\n    WHERE \"height\" < arg1;\n\n    -- Post-phase: team long-name correction (gated on arg5 being non-NULL)\n    IF arg5 IS NOT NULL THEN\n        UPDATE \"Team\"\n        SET \"team_long_name\" = arg5\n        WHERE \"team_short_name\" = 'log_phase_9'\n          AND \"team_api_id\" >= arg4;\n    END IF;\n\n    -- Post-phase: player-skill potential correction\n    UPDATE \"Player_Attributes\"\n    SET \"potential\" = \"overall_rating\"\n    WHERE \"player_api_id\" >= arg3 + 8\n      AND \"potential\" < \"overall_rating\";\n\n    -- Post-phase: team-tactic defensive aggression correction\n    UPDATE \"Team_Attributes\"\n    SET \"defenceAggression\" = \"defencePressure\"\n    WHERE \"defenceAggression\" < \"defencePressure\"\n      AND EXISTS (\n          SELECT 1\n          FROM \"Team\" t\n          WHERE t.\"team_api_id\" = \"Team_Attributes\".\"team_api_id\"\n            AND t.\"team_fifa_api_id\" >= arg6 + 8\n      );\nEND;\n$$;"
+ },
+ "pair": {
+  "single_run": "filtered-a2",
+  "single_task": "postgres_a2_000"
+ }
+}

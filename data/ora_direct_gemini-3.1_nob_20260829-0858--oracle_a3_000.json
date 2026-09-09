@@ -1,0 +1,134 @@
+{
+ "id": "ora_direct_gemini-3.1_nob_20260829-0858--oracle_a3_000",
+ "run": "ora_direct_gemini-3.1_nob_20260829-0858",
+ "task_id": "oracle_a3_000",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "a3",
+ "dialect": "oracle",
+ "model": "gemini-3.1",
+ "model_label": "Gemini-3.1 Pro",
+ "solver_id": "gemini-3.1",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 118.9,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 1,
+   "wasted_calls": 0,
+   "input_tokens": 1611,
+   "output_tokens": 1569,
+   "cached_input_tokens": 0,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 1611,
+   "max_input_tokens": 1611,
+   "cost_usd": 0.0,
+   "turns": 1,
+   "cache_sources": {
+    "reported": 1
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 1,
+    "wasted_calls": 0,
+    "input_tokens": 1611,
+    "output_tokens": 1569,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 1611,
+    "max_input_tokens": 1611,
+    "cost_usd": 0.0
+   }
+  }
+ },
+ "task": {
+  "prompt": "Write one Oracle stored procedure named sp with exactly this signature: sp(arg1 IN NUMBER, arg2 IN VARCHAR2, arg3 IN VARCHAR2, arg4 IN NUMBER, arg5 IN VARCHAR2, arg6 IN NUMBER). Args by position: restaurant ID, restaurant-name LIKE pattern, restaurant address, student ID, student last name, restaurant-type ID. The attached examples.md shows the call form; use it as a check.\n\nSet threshold := rounded arg1, status text := arg2, row_count := 0, batch_size := 10. Do not commit or rollback, and let any database error propagate.\n\nPick one threshold case, in order. Below 3, scan restaurants where ID < arg1 and name LIKE arg2. For each read row, if ID > 25 set name to 'PROMOTED'. Else if address = arg3, count visits to that restaurant by students with last name = arg5; when count > 0 set address to 'RETAINED', otherwise delete the restaurant by read ID/name, then its visits, then its restaurant-type assignments. Otherwise set address to 'PENDING', then rating to arg6.\n\nBelow 8, scan students with ID between arg4 - 5 and arg4 + 15 inclusive, using read ID/last name. Set major to 700 if read last name = arg5; then if read last name begins 'ACTIVE' set last name to 'PROCESSED', else if read ID > arg4 + 5 add read ID to threshold, else delete the student only for read last name 'EXPIRED'.\n\nBelow 18, scan restaurant types with ID > arg6 - 20. Set status text from read type ID: 'LOW_PRIORITY' below 50, 'MEDIUM_PRIORITY' below 150, otherwise 'HIGH_PRIORITY'. Then add 10 to that type ID, then add 10 to restaurant-type assignments whose type ID was the read value.\n\nBelow 25, set address = 'ARCHIVED' for restaurants with ID < arg1 and name <> arg2, then stop with the normal unhandled Oracle error from trying to read a row with no row source. Below 40, delete students with ID < arg4 and last name = 'OBSOLETE', then stop with the same unhandled error. Otherwise set every restaurant type with ID > 200 to arg6 + 100, then stop with the same unhandled error.\n\nFor the first three cases, don't impose row order. Count each row as soon as it's read. After processing it, if row_count >= batch_size, batch_size += 5.\n\nAfter the first three cases, run final checks in this order. If status text is 'HIGH_PRIORITY', double IDs of restaurant types with ID > 100 and skip the rest. Else if the selected case was the archive case, delete restaurants with address 'ARCHIVED' and ID < threshold - 10. Else if row_count > 15, set last name = 'BULK_PROCESSED' for students with ID between arg4 and arg4 + 50 inclusive. Else set name = arg3 for restaurants with ID > threshold. Use the current threshold here, including student IDs added above.\n\nThat's it.\n\nReturn the complete stored procedure source and nothing else.",
+  "materials": [
+   {
+    "file": "examples.md",
+    "kind": "how the procedure is called",
+    "text": "# How the procedure is called\n\nIt is invoked with `CALL`, never as a function, and takes its arguments by position:\n\n```sql\nCALL sp(<arg1>, <arg2>, <arg3>, <arg4>, <arg5>, <arg6>);\n```\n\n| argument | position | type |\n| --- | --- | --- |\n| arg1 | 1 | IN NUMBER |\n| arg2 | 2 | IN VARCHAR2 |\n| arg3 | 3 | IN VARCHAR2 |\n| arg4 | 4 | IN NUMBER |\n| arg5 | 5 | IN VARCHAR2 |\n| arg6 | 6 | IN NUMBER |\n\nThe names above are placeholders. Declare the parameters in this order with these types; what each one means is in the request.\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": "{\"answer\":\"CREATE OR REPLACE PROCEDURE sp(\\n  arg1 IN NUMBER, \\n  arg2 IN VARCHAR2, \\n  arg3 IN VARCHAR2, \\n  arg4 IN NUMBER, \\n  arg5 IN VARCHAR2, \\n  arg6 IN NUMBER\\n) IS\\n  v_threshold NUMBER := ROUND(arg1);\\n  v_status_text VARCHAR2(32767) := arg2;\\n  v_row_count NUMBER := 0;\\n  v_batch_size NUMBER := 10;\\n  v_selected_case VARCHAR2(50);\\n  v_visits_count NUMBER;\\n  v_dummy NUMBER;\\nBEGIN\\n  IF v_threshold \\u003c 3 THEN\\n    v_selected_case := 'CASE1';\\n    FOR r IN (SELECT \\\"ResID\\\", \\\"ResName\\\", \\\"Address\\\" FROM \\\"Restaurant\\\" WHERE \\\"ResID\\\" \\u003c arg1 AND \\\"ResName\\\" LIKE arg2) LOOP\\n      v_row_count := v_row_count + 1;\\n      \\n      IF r.\\\"ResID\\\" \\u003e 25 THEN\\n        UPDATE \\\"Restaurant\\\" SET \\\"ResName\\\" = 'PROMOTED' WHERE \\\"ResID\\\" = r.\\\"ResID\\\";\\n      ELSIF r.\\\"Address\\\" = arg3 THEN\\n        SELECT COUNT(*) INTO v_visits_count\\n        FROM \\\"Visits_Restaurant\\\" vr\\n        JOIN \\\"Student\\\" s ON vr.\\\"StuID\\\" = s.\\\"StuID\\\"\\n        WHERE vr.\\\"ResID\\\" = r.\\\"ResID\\\" AND s.\\\"LName\\\" = arg5;\\n        \\n        IF v_visits_count \\u003e 0 THEN\\n          UPDATE \\\"Restaurant\\\" SET \\\"Address\\\" = 'RETAINED' WHERE \\\"ResID\\\" = r.\\\"ResID\\\";\\n        ELSE\\n          DELETE FROM \\\"Restaurant\\\" WHERE \\\"ResID\\\" = r.\\\"ResID\\\" AND \\\"ResName\\\" = r.\\\"ResName\\\";\\n          DELETE FROM \\\"Visits_Restaurant\\\" WHERE \\\"ResID\\\" = r.\\\"ResID\\\";\\n          DELETE FROM \\\"Type_Of_Restaurant\\\" WHERE \\\"ResID\\\" = r.\\\"ResID\\\";\\n        END IF;\\n      ELSE\\n        UPDATE \\\"Restaurant\\\" SET \\\"Address\\\" = 'PENDING', \\\"Rating\\\" = arg6 WHERE \\\"ResID\\\" = r.\\\"ResID\\\";\\n      END IF;\\n      \\n      IF v_row_count \\u003e= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n    \\n  ELSIF v_threshold \\u003c 8 THEN\\n    v_selected_case := 'CASE2';\\n    FOR r IN (SELECT \\\"StuID\\\", \\\"LName\\\" FROM \\\"Student\\\" WHERE \\\"StuID\\\" BETWEEN arg4 - 5 AND arg4 + 15) LOOP\\n      v_row_count := v_row_count + 1;\\n      \\n      IF r.\\\"LName\\\" = arg5 THEN\\n        UPDATE \\\"Student\\\" SET \\\"Major\\\" = 700 WHERE \\\"StuID\\\" = r.\\\"StuID\\\" AND \\\"LName\\\" = r.\\\"LName\\\";\\n      END IF;\\n      \\n      IF r.\\\"LName\\\" LIKE 'ACTIVE%' THEN\\n        UPDATE \\\"Student\\\" SET \\\"LName\\\" = 'PROCESSED' WHERE \\\"StuID\\\" = r.\\\"StuID\\\" AND \\\"LName\\\" = r.\\\"LName\\\";\\n      ELSIF r.\\\"StuID\\\" \\u003e arg4 + 5 THEN\\n        v_threshold := v_threshold + r.\\\"StuID\\\";\\n      ELSIF r.\\\"LName\\\" = 'EXPIRED' THEN\\n        DELETE FROM \\\"Student\\\" WHERE \\\"StuID\\\" = r.\\\"StuID\\\" AND \\\"LName\\\" = r.\\\"LName\\\";\\n      END IF;\\n      \\n      IF v_row_count \\u003e= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n    \\n  ELSIF v_threshold \\u003c 18 THEN\\n    v_selected_case := 'CASE3';\\n    FOR r IN (SELECT \\\"ResTypeID\\\" FROM \\\"Restaurant_Type\\\" WHERE \\\"ResTypeID\\\" \\u003e arg6 - 20) LOOP\\n      v_row_count := v_row_count + 1;\\n      \\n      IF r.\\\"ResTypeID\\\" \\u003c 50 THEN\\n        v_status_text := 'LOW_PRIORITY';\\n      ELSIF r.\\\"ResTypeID\\\" \\u003c 150 THEN\\n        v_status_text := 'MEDIUM_PRIORITY';\\n      ELSE\\n        v_status_text := 'HIGH_PRIORITY';\\n      END IF;\\n      \\n      UPDATE \\\"Restaurant_Type\\\" SET \\\"ResTypeID\\\" = \\\"ResTypeID\\\" + 10 WHERE \\\"ResTypeID\\\" = r.\\\"ResTypeID\\\";\\n      UPDATE \\\"Type_Of_Restaurant\\\" SET \\\"ResTypeID\\\" = \\\"ResTypeID\\\" + 10 WHERE \\\"ResTypeID\\\" = r.\\\"ResTypeID\\\";\\n      \\n      IF v_row_count \\u003e= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n    \\n  ELSIF v_threshold \\u003c 25 THEN\\n    v_selected_case := 'ARCHIVE';\\n    UPDATE \\\"Restaurant\\\" SET \\\"Address\\\" = 'ARCHIVED' WHERE \\\"ResID\\\" \\u003c arg1 AND \\\"ResName\\\" \\u003c\\u003e arg2;\\n    SELECT 1 INTO v_dummy FROM DUAL WHERE 1=0;\\n    \\n  ELSIF v_threshold \\u003c 40 THEN\\n    v_selected_case := 'OBSOLETE';\\n    DELETE FROM \\\"Student\\\" WHERE \\\"StuID\\\" \\u003c arg4 AND \\\"LName\\\" = 'OBSOLETE';\\n    SELECT 1 INTO v_dummy FROM DUAL WHERE 1=0;\\n    \\n  ELSE\\n    v_selected_case := 'DEFAULT';\\n    UPDATE \\\"Rest... (+679)",
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n  arg1 IN NUMBER, \n  arg2 IN VARCHAR2, \n  arg3 IN VARCHAR2, \n  arg4 IN NUMBER, \n  arg5 IN VARCHAR2, \n  arg6 IN NUMBER\n) IS\n  v_threshold NUMBER := ROUND(arg1);\n  v_status_text VARCHAR2(32767) := arg2;\n  v_row_count NUMBER := 0;\n  v_batch_size NUMBER := 10;\n  v_selected_case VARCHAR2(50);\n  v_visits_count NUMBER;\n  v_dummy NUMBER;\nBEGIN\n  IF v_threshold < 3 THEN\n    v_selected_case := 'CASE1';\n    FOR r IN (SELECT \"ResID\", \"ResName\", \"Address\" FROM \"Restaurant\" WHERE \"ResID\" < arg1 AND \"ResName\" LIKE arg2) LOOP\n      v_row_count := v_row_count + 1;\n      \n      IF r.\"ResID\" > 25 THEN\n        UPDATE \"Restaurant\" SET \"ResName\" = 'PROMOTED' WHERE \"ResID\" = r.\"ResID\";\n      ELSIF r.\"Address\" = arg3 THEN\n        SELECT COUNT(*) INTO v_visits_count\n        FROM \"Visits_Restaurant\" vr\n        JOIN \"Student\" s ON vr.\"StuID\" = s.\"StuID\"\n        WHERE vr.\"ResID\" = r.\"ResID\" AND s.\"LName\" = arg5;\n        \n        IF v_visits_count > 0 THEN\n          UPDATE \"Restaurant\" SET \"Address\" = 'RETAINED' WHERE \"ResID\" = r.\"ResID\";\n        ELSE\n          DELETE FROM \"Restaurant\" WHERE \"ResID\" = r.\"ResID\" AND \"ResName\" = r.\"ResName\";\n          DELETE FROM \"Visits_Restaurant\" WHERE \"ResID\" = r.\"ResID\";\n          DELETE FROM \"Type_Of_Restaurant\" WHERE \"ResID\" = r.\"ResID\";\n        END IF;\n      ELSE\n        UPDATE \"Restaurant\" SET \"Address\" = 'PENDING', \"Rating\" = arg6 WHERE \"ResID\" = r.\"ResID\";\n      END IF;\n      \n      IF v_row_count >= v_batch_size THEN\n        v_batch_size := v_batch_size + 5;\n      END IF;\n    END LOOP;\n    \n  ELSIF v_threshold < 8 THEN\n    v_selected_case := 'CASE2';\n    FOR r IN (SELECT \"StuID\", \"LName\" FROM \"Student\" WHERE \"StuID\" BETWEEN arg4 - 5 AND arg4 + 15) LOOP\n      v_row_count := v_row_count + 1;\n      \n      IF r.\"LName\" = arg5 THEN\n        UPDATE \"Student\" SET \"Major\" = 700 WHERE \"StuID\" = r.\"StuID\" AND \"LName\" = r.\"LName\";\n      END IF;\n      \n      IF r.\"LName\" LIKE 'ACTIVE%' THEN\n        UPDATE \"Student\" SET \"LName\" = 'PROCESSED' WHERE \"StuID\" = r.\"StuID\" AND \"LName\" = r.\"LName\";\n      ELSIF r.\"StuID\" > arg4 + 5 THEN\n        v_threshold := v_threshold + r.\"StuID\";\n      ELSIF r.\"LName\" = 'EXPIRED' THEN\n        DELETE FROM \"Student\" WHERE \"StuID\" = r.\"StuID\" AND \"LName\" = r.\"LName\";\n      END IF;\n      \n      IF v_row_count >= v_batch_size THEN\n        v_batch_size := v_batch_size + 5;\n      END IF;\n    END LOOP;\n    \n  ELSIF v_threshold < 18 THEN\n    v_selected_case := 'CASE3';\n    FOR r IN (SELECT \"ResTypeID\" FROM \"Restaurant_Type\" WHERE \"ResTypeID\" > arg6 - 20) LOOP\n      v_row_count := v_row_count + 1;\n      \n      IF r.\"ResTypeID\" < 50 THEN\n        v_status_text := 'LOW_PRIORITY';\n      ELSIF r.\"ResTypeID\" < 150 THEN\n        v_status_text := 'MEDIUM_PRIORITY';\n      ELSE\n        v_status_text := 'HIGH_PRIORITY';\n      END IF;\n      \n      UPDATE \"Restaurant_Type\" SET \"ResTypeID\" = \"ResTypeID\" + 10 WHERE \"ResTypeID\" = r.\"ResTypeID\";\n      UPDATE \"Type_Of_Restaurant\" SET \"ResTypeID\" = \"ResTypeID\" + 10 WHERE \"ResTypeID\" = r.\"ResTypeID\";\n      \n      IF v_row_count >= v_batch_size THEN\n        v_batch_size := v_batch_size + 5;\n      END IF;\n    END LOOP;\n    \n  ELSIF v_threshold < 25 THEN\n    v_selected_case := 'ARCHIVE';\n    UPDATE \"Restaurant\" SET \"Address\" = 'ARCHIVED' WHERE \"ResID\" < arg1 AND \"ResName\" <> arg2;\n    SELECT 1 INTO v_dummy FROM DUAL WHERE 1=0;\n    \n  ELSIF v_threshold < 40 THEN\n    v_selected_case := 'OBSOLETE';\n    DELETE FROM \"Student\" WHERE \"StuID\" < arg4 AND \"LName\" = 'OBSOLETE';\n    SELECT 1 INTO v_dummy FROM DUAL WHERE 1=0;\n    \n  ELSE\n    v_selected_case := 'DEFAULT';\n    UPDATE \"Restaurant_Type\" SET \"ResTypeID\" = arg6 + 100 WHERE \"ResTypeID\" > 200;\n    SELECT 1 INTO v_dummy FROM DUAL WHERE 1=0;\n  END IF;\n\n  IF v_status_text = 'HIGH_PRIORITY' THEN\n    UPDATE \"Restaurant_Type\" SET \"ResTypeID\" = \"ResTypeID\" * 2 WHERE \"ResTypeID\" > 100;\n  ELSIF v_selected_case = 'ARCHIVE' THEN\n    DELETE FROM \"Restaurant\" WHERE \"Address\" = 'ARCHIVED' AND \"ResID\" < v_threshold - 10;\n  ELSIF v_row_count > 15 THEN\n    UPDATE \"Student\" SET \"LName\" = 'BULK_PROCESSED' WHERE \"StuID\" BETWEEN arg4 AND arg4 + 50;\n  ELSE\n    UPDATE \"Restaurant\" SET \"ResName\" = arg3 WHERE \"ResID\" > v_threshold;\n  END IF;\nEND sp;"
+ },
+ "pair": null
+}

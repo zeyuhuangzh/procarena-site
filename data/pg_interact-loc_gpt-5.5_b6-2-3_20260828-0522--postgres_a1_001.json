@@ -1,0 +1,337 @@
+{
+ "id": "pg_interact-loc_gpt-5.5_b6-2-3_20260828-0522--postgres_a1_001",
+ "run": "pg_interact-loc_gpt-5.5_b6-2-3_20260828-0522",
+ "task_id": "postgres_a1_001",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "a1",
+ "dialect": "postgres",
+ "model": "gpt-5.5",
+ "model_label": "GPT-5.5",
+ "solver_id": "gpt-5.5",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "candidate failed on call 1: [42703] column \"pixels\" does not exist",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "spec",
+  "diagnosis": {
+   "kind": "call_failed",
+   "message": "call 1/5 CALL sp(19, '802.11b', 16, '320 × 200'); -- [42703] column \"pixels\" does not exist"
+  },
+  "recovered": 3,
+  "oracle_size": 7
+ },
+ "summary": {
+  "steps": 8,
+  "seconds": 93.5,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 2,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 3,
+  "oracle_size": 7,
+  "entries_per_question": 1.5,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "ask_user": 2,
+   "describe_table": 3,
+   "compile_plsql": 1,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 23.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 7.0,
+   "by_tool": {
+    "get_schema": 1.0,
+    "ask_user": 4.0,
+    "describe_table": 1.5,
+    "compile_plsql": 0.5,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 6,
+   "wasted_calls": 0,
+   "input_tokens": 17825,
+   "output_tokens": 4926,
+   "cached_input_tokens": 0,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 17825,
+   "max_input_tokens": 4129,
+   "cost_usd": 0.0,
+   "turns": 6,
+   "cache_sources": {
+    "reported": 10
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 4,
+    "wasted_calls": 0,
+    "input_tokens": 2578,
+    "output_tokens": 786,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 2578,
+    "max_input_tokens": 986,
+    "cost_usd": 0.0006
+   },
+   "total": {
+    "calls": 10,
+    "wasted_calls": 0,
+    "input_tokens": 20403,
+    "output_tokens": 5712,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 20403,
+    "max_input_tokens": 4129,
+    "cost_usd": 0.0006
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 0,
+   "blocked": 0,
+   "none": 0,
+   "items_used": [],
+   "inventory_size": 9
+  }
+ },
+ "task": {
+  "prompt": "Please write a PostgreSQL PL/pgSQL stored procedure, replacing any existing one with the same signature. It must be named `sp` and take exactly `sp(arg1 real, arg2 text, arg3 real, arg4 text)`, with no return value. The first argument is the RAM amount in MiB, the second is the Wi-Fi value, the third is used kilobytes, and the fourth is the pixel setting.\n\nApply the Kestrel register discipline for local state in the procedure.\n\nOnly read or change these pieces of stored data: for chip models, the RAM amount, Wi-Fi value, and model name; for screen modes, used kilobytes, pixel setting, and graphics mode; for handsets, the screen-mode reference, chip-model reference, accreditation level, accreditation type, and hardware model name. No other stored data should be used.\n\nFirst choose one RAM case, using strict less-than tests in this priority under PostgreSQL's normal NULL comparison semantics. If the first argument is below 0, set `result_val` from the first argument multiplied by -1, then every chip model whose Wi-Fi value equals the second argument has its RAM amount changed to `result_val`. If it is not below 0 but is below 10, set `result_val` from the first argument plus 5, then remove every chip model whose RAM amount equals the first argument. If it is not below 10 but is below 20, set `result_val` from the first argument multiplied by 2, then every screen mode whose pixel setting equals the fourth argument has its used kilobytes changed to the third argument plus `result_val`. If it is not below 20 but is below 30, set `result_val` from the first argument minus 8, then remove every screen mode whose used kilobytes equals the third argument. Otherwise, set `result_val` from the first argument divided by 2 and set `status_text` to 'processed'; that case does not directly change stored rows.\n\nAfter that case has fully taken effect, the remaining numbered effects are a current-state chain: each effect is evaluated and applied against the data state produced by the RAM case and all earlier numbered effects.\n\n1. A handset whose screen-mode reference equals PostgreSQL's text form of the graphics mode of at least one current screen mode with pixel setting equal to the fourth argument and used kilobytes equal to the third argument gets a suffix appended to its accreditation level, once.\n2. A handset whose chip-model reference equals the model name of at least one current chip model with Wi-Fi value equal to the second argument gets '_wifi_match' appended to its accreditation type, once.\n3. A handset whose chip-model reference equals the model name of at least one current chip model with RAM amount equal to the first argument and Wi-Fi value equal to the second argument gets '_ram_wifi_match' appended to its hardware model name, once.\n4. A handset gets '_dual_match' appended to its accreditation type, once, when both are true: its chip-model reference matches the model name of at least one current chip model with Wi-Fi value equal to the second argument, and its screen-mode reference matches PostgreSQL's text form of the graphics mode of at least one current screen mode with pixel setting equal to the fourth argument. If the same accreditation type already got '_wifi_match', this new text must come after that.\n5. Every chip model whose RAM amount equals the first argument has its Wi-Fi value changed to the second argument followed immediately by the current `status_text`, with no separator.\n6. Increase `result_val` by 3.\n7. Every screen mode whose used kilobytes equals the third argument has its pixel setting changed to the fourth argument followed by '_updated'.\n8. Remove every chip model whose RAM amount is strictly greater than `result_val`.\n9. Set `status_text` to 'active'.\n10. Every screen mode whose pixel setting equals the fourth argument has its used kilobytes changed to the third argument plus 12.\n11. Every chip model whose Wi-Fi value equals the second argument has its RAM amount changed to `result_val`.\n12. Decrease `result_val` by 7.\n13. Remove every screen mode whose pixel setting equals the fourth argument followed by '_old'.\n14. Every chip model whose RAM amount equals the first argument has its Wi-Fi value changed to the second argument followed by a suffix.\n15. Set `status_text` to 'completed'.\n16. Every screen mode whose pixel setting equals the fourth argument has its used kilobytes changed to the third argument multiplied by 3.\n17. Remove every chip model whose Wi-Fi value equals the second argument followed immediately by the current `status_text`, which is then 'completed', with no separator.\n\nFollow the Cairn runtime compact throughout.\n\nAs a final reminder, effect 9 sets `status_text` to 'pending'.\n\nReturn the complete stored procedure and nothing else.",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "S1",
+   "op": "commonsense",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "How do PostgreSQL NULL comparison semantics affect these less-than tests?",
+   "answer": "Null comparisons do not count as true."
+  },
+  {
+   "id": "R1",
+   "op": "reasoning",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What concrete ordering does the current-state chain require for the remaining effects?",
+   "answer": "After the RAM case has fully taken effect, apply the remaining steps in the exact numerical sequence shown. Each step must see the current data left by the RAM case and by every earlier numbered step; each step's effects must be complete before the next numbered step is evaluated."
+  },
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what is the Kestrel register discipline?",
+   "answer": "Use only two local values: an integer `result_val`, starting at 0, and text `status_text`, starting at 'pending'. Whenever a real-number calculation is put into `result_val`, let PL/pgSQL do its normal assignment conversion to integer."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what is the Cairn runtime compact?",
+   "answer": "Use PostgreSQL's normal equality, ordering, arithmetic, text concatenation, real-to-text conversion, and null behavior throughout; if a condition is not true because of null, it matches nothing, and text concatenation with null should behave normally for PostgreSQL. If a step matches no rows, it just changes nothing and continues; do not add an exception handler or explicit transaction control, and PostgreSQL errors should propagate normally."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 6,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what suffix is appended to the accreditation level",
+   "answer": "The suffix appended to the accreditation level is '_screen_match'."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": 2,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what suffix follows the second argument",
+   "answer": "The suffix following the second argument is '_final'."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": 2,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "whether effect 9 sets status_text to 'active' or 'pending'",
+   "answer": "The numbered requirement is right: effect 9 sets `status_text` to 'active'."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable chip_model , columns = [ Model_name ( text | primary key | values : X5 high end , X30 low-end ) , Launch_year ( real | values : 2004.0 , 2005.0 ) , RAM_MiB ( real | values : 32.0 , 32.0 ) , ROM_MiB ( real | values : 128.0 , 256.0 ) , Slots ( text | values : 1CFII,1SD , 1SD ) , WiFi ( text | values : 802.11b , 802.11b ) , Bluetooth ( text | values : Yes , Yes ) ]\ntable phone , columns = [ Company_name ( text | primary key | values : LG Electronics , Nokia Corporation ) , Hardware_Model_name ( text | values : XPERIA T, XPERIA J , GT-I9300 ) , Accreditation_type ( text | values : Full , Full ) , Accreditation_level ( text | values : joyn , joyn ) , integer ( text | values : Approved (valid until 03.05.13) , Approved (valid until 03.05.13) ) , chip_model ( text | values : X50 Advanced , X5 ) , screen_mode ( text | values : 6 , 5 ) ]\ntable screen_mode , columns = [ Graphics_mode ( real | primary key | values : 3.0 , 6.0 ) , Char_cells ( text | values : 20 × 32 , 40 × 32 ) , Pixels ( text | values : 640 × 256 , 320 × 200 ) , Hardware_colours ( real | values : 2.0 , 2.0 ) , used_kb ( real | values : 16.0 , 16.0 ) , map ( text | values : 4000–7FFF , 3000–7FFF ) , Type ( text | values : Graphics , Graphics ) ]\nforeign keys : None",
+   "spent": 1.0
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "Two points need clarification before I write the procedure: (1) Effect 9 is stated once as setting status_text to 'active', but the final reminder says effect 9 sets status_text to 'pending'. Which value should effect 9 use? (2) In effect 14, \"second argument followed by a suffix\" does not name the suffix. Should this be a literal suffix such as '_suffix', the current status_text, or something else?"
+   },
+   "result": "The numbered requirement is right: effect 9 sets `status_text` to 'active'.\n\nThe suffix following the second argument is '_final'.",
+   "spent": 3.0,
+   "revealed": [
+    "C1",
+    "M2"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "chip_model"
+   },
+   "result": "table chip_model , columns = [ Model_name ( text | primary key | values : X5 high end , X30 low-end ) , Launch_year ( real | values : 2004.0 , 2005.0 ) , RAM_MiB ( real | values : 32.0 , 32.0 ) , ROM_MiB ( real | values : 128.0 , 256.0 ) , Slots ( text | values : 1CFII,1SD , 1SD ) , WiFi ( text | values : 802.11b , 802.11b ) , Bluetooth ( text | values : Yes , Yes ) ]",
+   "spent": 3.5
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "phone"
+   },
+   "result": "table phone , columns = [ Company_name ( text | primary key | values : LG Electronics , Nokia Corporation ) , Hardware_Model_name ( text | values : XPERIA T, XPERIA J , GT-I9300 ) , Accreditation_type ( text | values : Full , Full ) , Accreditation_level ( text | values : joyn , joyn ) , integer ( text | values : Approved (valid until 03.05.13) , Approved (valid until 03.05.13) ) , chip_model ( text | values : X50 Advanced , X5 ) , screen_mode ( text | values : 6 , 5 ) ]",
+   "spent": 4.0
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "screen_mode"
+   },
+   "result": "table screen_mode , columns = [ Graphics_mode ( real | primary key | values : 3.0 , 6.0 ) , Char_cells ( text | values : 20 × 32 , 40 × 32 ) , Pixels ( text | values : 640 × 256 , 320 × 200 ) , Hardware_colours ( real | values : 2.0 , 2.0 ) , used_kb ( real | values : 16.0 , 16.0 ) , map ( text | values : 4000–7FFF , 3000–7FFF ) , Type ( text | values : Graphics , Graphics ) ]",
+   "spent": 4.5
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "Effect 1 says the matching handset gets \"a suffix\" appended to its accreditation level, but the suffix text is not specified. What exact text should be appended?"
+   },
+   "result": "The suffix appended to the accreditation level is '_screen_match'.",
+   "spent": 6.5,
+   "revealed": [
+    "M1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(arg1 real, arg2 text, arg3 real, arg4 text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    result_val real;\n    status_text text;\nBEGIN\n    IF arg1 < 0 THEN\n        result_val := arg1 * -1;\n        UPDATE chip_model\n           SET ram_mib = result_val\n         WHERE wifi = arg2;\n    ELSIF arg1 < 10 THEN\n        result_val := arg1 + 5;\n        DELETE FROM chip_model\n         WHERE ram_mib = arg1;\n    ELSIF arg1 < 20 THEN\n        result_val := arg1 * 2;\n        UPDATE screen_mode\n           SET used_kb = arg3 + result_val\n         WHERE pixels = arg4;\n    ELSIF arg1 < 30 THEN\n        result_val := arg1 - 8;\n        DELETE FROM screen_mode\n         WHERE used_kb = arg3;\n    ELSE\n        result_val := arg1 / 2;\n        status_text := 'processed';\n    END IF;\n\n    UPDATE phone p\n       SET accreditation_level = p.accreditation_level || '_screen_match'\n     WHERE EXISTS (\n           SELECT 1\n             FROM screen_mode sm\n            WHERE sm.pixels = arg4\n              AND sm.used_kb = arg3\n              AND p.screen_mode = sm.graphics_mode::text\n       );\n\n    UPDATE phone p\n       SET accreditation_type = p.accreditation_type || '_wifi_match'\n     WHERE EXISTS (\n           SELECT 1\n             FROM chip_model cm\n            WHERE cm.wifi = arg2\n              AND p.chip_model = cm.model_name\n       );\n\n    UPDATE phone p\n       SET hardware_model_name = p.hardware_model_name || '_ram_wifi_match'\n     WHERE EXISTS (\n           SELECT 1\n             FROM chip_model cm\n            WHERE cm.ram_mib = arg1\n              AND cm.wifi = arg2\n              AND p.chip_model = cm.model_name\n       );\n\n    UPDATE phone p\n       SET accreditation_type = p.accreditation_type || '_dual_match'\n     WHERE EXISTS (\n           SELECT 1\n             FROM chip_model cm\n            WHERE cm.wifi = arg2\n              AND p.chip_model = cm.model_name\n       )\n       AND EXISTS (\n           SELECT 1\n             FROM screen_mode sm\n            WHERE sm.pixels = arg4\n              AND p.screen_mode = sm.graphics_mode::text\n       );\n\n    UPDATE chip_model\n       SET wifi = arg2 || status_text\n     WHERE ram_mib = arg1;\n\n    result_val := result_val + 3;\n\n    UPDATE screen_mode\n       SET pixels = arg4 || '_updated'\n     WHERE used_kb = arg3;\n\n    DELETE FROM chip_model\n     WHERE ram_mib > result_val;\n\n    status_text := 'active';\n\n    UPDATE screen_mode\n       SET used_kb = arg3 + 12\n     WHERE pixels = arg4;\n\n    UPDATE chip_model\n       SET ram_mib = result_val\n     WHERE wifi = arg2;\n\n    result_val := result_val - 7;\n\n    DELETE FROM screen_mode\n     WHERE pixels = arg4 || '_old';\n\n    UPDATE chip_model\n       SET wifi = arg2 || '_final'\n     WHERE ram_mib = arg1;\n\n    status_text := 'completed';\n\n    UPDATE screen_mode\n       SET used_kb = arg3 * 3\n     WHERE pixels = arg4;\n\n    DELETE FROM chip_model\n     WHERE wifi = arg2 || status_text;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "spent": 7.0,
+   "compiled": true
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(arg1 real, arg2 text, arg3 real, arg4 text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    result_val real;\n    status_text text;\nBEGIN\n    IF arg1 < 0 THEN\n        result_val := arg1 * -1;\n        UPDATE chip_model\n           SET ram_mib = result_val\n         WHERE wifi = arg2;\n    ELSIF arg1 < 10 THEN\n        result_val := arg1 + 5;\n        DELETE FROM chip_model\n         WHERE ram_mib = arg1;\n    ELSIF arg1 < 20 THEN\n        result_val := arg1 * 2;\n        UPDATE screen_mode\n           SET used_kb = arg3 + result_val\n         WHERE pixels = arg4;\n    ELSIF arg1 < 30 THEN\n        result_val := arg1 - 8;\n        DELETE FROM screen_mode\n         WHERE used_kb = arg3;\n    ELSE\n        result_val := arg1 / 2;\n        status_text := 'processed';\n    END IF;\n\n    UPDATE phone p\n       SET accreditation_level = p.accreditation_level || '_screen_match'\n     WHERE EXISTS (\n           SELECT 1\n             FROM screen_mode sm\n            WHERE sm.pixels = arg4\n              AND sm.used_kb = arg3\n              AND p.screen_mode = sm.graphics_mode::text\n       );\n\n    UPDATE phone p\n       SET accreditation_type = p.accreditation_type || '_wifi_match'\n     WHERE EXISTS (\n           SELECT 1\n             FROM chip_model cm\n            WHERE cm.wifi = arg2\n              AND p.chip_model = cm.model_name\n       );\n\n    UPDATE phone p\n       SET hardware_model_name = p.hardware_model_name || '_ram_wifi_match'\n     WHERE EXISTS (\n           SELECT 1\n             FROM chip_model cm\n            WHERE cm.ram_mib = arg1\n              AND cm.wifi = arg2\n              AND p.chip_model = cm.model_name\n       );\n\n    UPDATE phone p\n       SET accreditation_type = p.accreditation_type || '_dual_match'\n     WHERE EXISTS (\n           SELECT 1\n             FROM chip_model cm\n            WHERE cm.wifi = arg2\n              AND p.chip_model = cm.model_name\n       )\n       AND EXISTS (\n           SELECT 1\n             FROM screen_mode sm\n            WHERE sm.pixels = arg4\n              AND p.screen_mode = sm.graphics_mode::text\n       );\n\n    UPDATE chip_model\n       SET wifi = arg2 || status_text\n     WHERE ram_mib = arg1;\n\n    result_val := result_val + 3;\n\n    UPDATE screen_mode\n       SET pixels = arg4 || '_updated'\n     WHERE used_kb = arg3;\n\n    DELETE FROM chip_model\n     WHERE ram_mib > result_val;\n\n    status_text := 'active';\n\n    UPDATE screen_mode\n       SET used_kb = arg3 + 12\n     WHERE pixels = arg4;\n\n    UPDATE chip_model\n       SET ram_mib = result_val\n     WHERE wifi = arg2;\n\n    result_val := result_val - 7;\n\n    DELETE FROM screen_mode\n     WHERE pixels = arg4 || '_old';\n\n    UPDATE chip_model\n       SET wifi = arg2 || '_final'\n     WHERE ram_mib = arg1;\n\n    status_text := 'completed';\n\n    UPDATE screen_mode\n       SET used_kb = arg3 * 3\n     WHERE pixels = arg4;\n\n    DELETE FROM chip_model\n     WHERE wifi = arg2 || status_text;\nEND;\n$$;"
+   },
+   "result": "received",
+   "spent": 7.0,
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(arg1 real, arg2 text, arg3 real, arg4 text)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    result_val real;\n    status_text text;\nBEGIN\n    IF arg1 < 0 THEN\n        result_val := arg1 * -1;\n        UPDATE chip_model\n           SET ram_mib = result_val\n         WHERE wifi = arg2;\n    ELSIF arg1 < 10 THEN\n        result_val := arg1 + 5;\n        DELETE FROM chip_model\n         WHERE ram_mib = arg1;\n    ELSIF arg1 < 20 THEN\n        result_val := arg1 * 2;\n        UPDATE screen_mode\n           SET used_kb = arg3 + result_val\n         WHERE pixels = arg4;\n    ELSIF arg1 < 30 THEN\n        result_val := arg1 - 8;\n        DELETE FROM screen_mode\n         WHERE used_kb = arg3;\n    ELSE\n        result_val := arg1 / 2;\n        status_text := 'processed';\n    END IF;\n\n    UPDATE phone p\n       SET accreditation_level = p.accreditation_level || '_screen_match'\n     WHERE EXISTS (\n           SELECT 1\n             FROM screen_mode sm\n            WHERE sm.pixels = arg4\n              AND sm.used_kb = arg3\n              AND p.screen_mode = sm.graphics_mode::text\n       );\n\n    UPDATE phone p\n       SET accreditation_type = p.accreditation_type || '_wifi_match'\n     WHERE EXISTS (\n           SELECT 1\n             FROM chip_model cm\n            WHERE cm.wifi = arg2\n              AND p.chip_model = cm.model_name\n       );\n\n    UPDATE phone p\n       SET hardware_model_name = p.hardware_model_name || '_ram_wifi_match'\n     WHERE EXISTS (\n           SELECT 1\n             FROM chip_model cm\n            WHERE cm.ram_mib = arg1\n              AND cm.wifi = arg2\n              AND p.chip_model = cm.model_name\n       );\n\n    UPDATE phone p\n       SET accreditation_type = p.accreditation_type || '_dual_match'\n     WHERE EXISTS (\n           SELECT 1\n             FROM chip_model cm\n            WHERE cm.wifi = arg2\n              AND p.chip_model = cm.model_name\n       )\n       AND EXISTS (\n           SELECT 1\n             FROM screen_mode sm\n            WHERE sm.pixels = arg4\n              AND p.screen_mode = sm.graphics_mode::text\n       );\n\n    UPDATE chip_model\n       SET wifi = arg2 || status_text\n     WHERE ram_mib = arg1;\n\n    result_val := result_val + 3;\n\n    UPDATE screen_mode\n       SET pixels = arg4 || '_updated'\n     WHERE used_kb = arg3;\n\n    DELETE FROM chip_model\n     WHERE ram_mib > result_val;\n\n    status_text := 'active';\n\n    UPDATE screen_mode\n       SET used_kb = arg3 + 12\n     WHERE pixels = arg4;\n\n    UPDATE chip_model\n       SET ram_mib = result_val\n     WHERE wifi = arg2;\n\n    result_val := result_val - 7;\n\n    DELETE FROM screen_mode\n     WHERE pixels = arg4 || '_old';\n\n    UPDATE chip_model\n       SET wifi = arg2 || '_final'\n     WHERE ram_mib = arg1;\n\n    status_text := 'completed';\n\n    UPDATE screen_mode\n       SET used_kb = arg3 * 3\n     WHERE pixels = arg4;\n\n    DELETE FROM chip_model\n     WHERE wifi = arg2 || status_text;\nEND;\n$$;"
+ },
+ "pair": {
+  "single_run": "filtered-a1",
+  "single_task": "postgres_a1_001"
+ }
+}

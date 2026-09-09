@@ -41,6 +41,9 @@ function seconds(v) {
   return v >= 60 ? `${Math.floor(v / 60)}m ${Math.round(v % 60)}s` : `${Math.round(v)}s`;
 }
 
+const kfmt = (v) => (v === null || v === undefined) ? '—'
+  : v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v);
+
 /* ── PL/SQL highlighting (presentation only) ──────────────────────── */
 
 const SQL_WORDS = [
@@ -102,10 +105,11 @@ let TABLES = null;   // optional; used for pair cross-links
 
 function renderTitle(view) {
   $('#title').innerHTML =
-    `${esc(view.task_id)}<span class="sep">·</span>${esc(view.model)}` +
+    `${esc(view.task_id)}<span class="sep">·</span>` +
+    `${esc(view.model_label || view.model)}` +
     `<span class="sep">·</span>${esc(view.dialect)}` +
     `<span class="sep">·</span>${esc((view.scenario || '').toUpperCase())}` +
-    `<span class="sep">·</span>${view.stage === 'multi' ? 'multi-turn' : 'single-turn'}`;
+    `<span class="sep">·</span>${view.stage === 'multi' ? 'Interactive' : 'Direct'}`;
   document.title = `ProcArena · ${view.task_id} · ${view.stage}`;
 }
 
@@ -130,11 +134,11 @@ function renderBanners(view) {
   }
   const pair = pairLink(view);
   if (pair) {
+    const other = pair.stage === 'multi' ? 'Interactive' : 'Direct';
     box.append(el('div', { class: 'banner banner-info' },
-      `This task was also played in ${pair.stage}-turn mode: `,
+      `This task was also played in the ${other} mode: `,
       el('a', { href: `run.html?id=${encodeURIComponent(pair.id)}` },
-        pair.stage === 'multi' ? 'view the multi-turn trace →'
-                               : 'view the single-turn trace →')));
+        `view the ${other} trace →`)));
   }
 }
 
@@ -175,6 +179,19 @@ function renderMetrics(view) {
       String((summary.questions || {}).ask_user ?? '—')));
   }
   box.append(metric('steps', `${summary.steps ?? '—'}`));
+  const tokens = summary.tokens;
+  if (tokens && (tokens.input_tokens || tokens.output_tokens)) {
+    const t = el('div', { class: 'metric', title:
+      `${tokens.calls ?? '—'} LLM calls · ${tokens.input_tokens} prompt tokens, ` +
+      `${tokens.output_tokens} completion tokens` });
+    t.append(el('div', { class: 'k' }, 'tokens'),
+      el('div', { class: 'v' }, `${kfmt(tokens.input_tokens)}`,
+        el('small', {}, ` in · ${kfmt(tokens.output_tokens)} out`)));
+    box.append(t);
+    if (tokens.cost_usd) {
+      box.append(metric('cost', `$${Number(tokens.cost_usd).toFixed(3)}`));
+    }
+  }
   box.append(metric('wall clock', seconds(summary.seconds)));
   box.append(metric('ended by', summary.termination || '—'));
   if (summary.budget && summary.budget.limit) {
@@ -292,7 +309,8 @@ function renderMeta(view) {
     ['run', view.run], ['task', view.task_id], ['stage', view.stage],
     ['condition', view.condition], ['tier', view.tier || '—'],
     ['scenario', view.scenario], ['dialect', view.dialect],
-    ['solver', `${view.model} (${view.effort || 'default'})`],
+    ['solver', `${view.model_label || view.model} · ${view.solver_id || view.model}` +
+      ` (${view.effort || 'default'})`],
     ['max steps', view.max_steps ?? '—'],
     ['simulator gate', sim.gate ?? '—'],
     ['match model', sim.match_model ?? '—'],
@@ -342,6 +360,18 @@ function askCard(entry, body) {
   if (entry.fallback) {
     verdicts.append(el('div', { class: 'issue' }, `fallback answers: ${entry.fallback}`));
   }
+  const loc = entry.loc;
+  if (loc && (loc.answers || loc.refused || loc.blocked || loc.none ||
+              (loc.items || []).length)) {
+    const bits = [];
+    if (loc.answers) bits.push(`answered ${loc.answers}`);
+    if (loc.refused) bits.push(`refused ${loc.refused}`);
+    if (loc.blocked) bits.push(`blocked ${loc.blocked}`);
+    if (loc.none) bits.push(`no entry ${loc.none}`);
+    const line = el('div', { class: 'issue' }, `LOC fallback: ${bits.join(' · ')} `);
+    if ((loc.items || []).length) line.append(idChips(loc.items));
+    verdicts.append(line);
+  }
   if (verdicts.children.length) body.append(field('oracle bookkeeping', verdicts));
 }
 
@@ -381,6 +411,12 @@ function renderStepCard(entry) {
   }
   if (stepHasError(entry) && entry.tool !== 'compile_plsql') {
     head.append(el('span', { class: 'pill pill-fail' }, 'error'));
+  }
+  if (entry.spent !== undefined && entry.spent !== null) {
+    head.append(el('span', {
+      class: 'chip chip-spent',
+      title: 'budget points spent so far (running total)',
+    }, `⌛ ${Number(entry.spent).toFixed(1)}`));
   }
   card.append(head);
 
@@ -466,7 +502,14 @@ function renderSubmissionTab(view) {
             ? '; it was working from an incomplete spec.'
             : '; information was complete, the code is wrong.')));
       }
-      if (grade.reason) {
+      const diagnosis = grade.diagnosis;
+      if (diagnosis && diagnosis.kind) {
+        box.append(field('diagnosis',
+          el('div', {},
+            el('span', { class: 'chip' }, diagnosis.kind),
+            diagnosis.message
+              ? block(diagnosis.message, { wrap: true }) : null)));
+      } else if (grade.reason) {
         box.append(field('grader reason', block(grade.reason, { wrap: true })));
       }
     }
@@ -543,6 +586,33 @@ function renderDiagnosticsTab(view) {
   if (summary.entries_per_question !== undefined) {
     box.append(field('entries per question',
       el('div', {}, String(summary.entries_per_question))));
+  }
+  const tokens = summary.tokens;
+  if (tokens) {
+    const rows = [
+      ['LLM calls', tokens.calls], ['turns', tokens.turns],
+      ['prompt tokens', tokens.input_tokens],
+      ['completion tokens', tokens.output_tokens],
+      ['cached prompt tokens', tokens.cached_input_tokens],
+      ['largest prompt', tokens.max_input_tokens],
+      ['wasted calls', tokens.wasted_calls],
+    ].filter(([, v]) => v !== undefined && v !== null);
+    if (tokens.cost_usd) rows.push(['cost (USD)', Number(tokens.cost_usd).toFixed(4)]);
+    box.append(field('token accounting (episode.json)', el('div', { class: 'kv' },
+      rows.flatMap(([k, v]) => [el('dt', {}, k), el('dd', {}, String(v))]))));
+  }
+  const loc = summary.loc;
+  if (loc && Object.keys(loc).length) {
+    const rows = [
+      ['answers', loc.answers], ['refused', loc.refused], ['blocked', loc.blocked],
+      ['no entry', loc.none], ['inventory size', loc.inventory_size],
+    ].filter(([, v]) => v !== undefined && v !== null);
+    const kv = el('div', { class: 'kv' },
+      rows.flatMap(([k, v]) => [el('dt', {}, k), el('dd', {}, String(v))]));
+    box.append(field('LOC fallback channel', kv));
+    if ((loc.items_used || []).length) {
+      box.append(field('LOC items used', idChips(loc.items_used)));
+    }
   }
   if (summary.submission_error) {
     box.append(field('submission error', block(summary.submission_error, { wrap: true })));

@@ -1,0 +1,378 @@
+{
+ "id": "ora_interact-loc_gpt-5.2_b6-2-3_20260830-1256--oracle_b3_001",
+ "run": "ora_interact-loc_gpt-5.2_b6-2-3_20260830-1256",
+ "task_id": "oracle_b3_001",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "b3",
+ "dialect": "oracle",
+ "model": "gpt-5.2",
+ "model_label": "GPT-5.2",
+ "solver_id": "gpt-5.2",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 0,
+  "oracle_size": 3
+ },
+ "summary": {
+  "steps": 17,
+  "seconds": 268.6,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 3,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "compile_plsql": 1,
+   "sample_rows": 3,
+   "describe_table": 1,
+   "execute_scratch": 10,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 15.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 13.5,
+   "by_tool": {
+    "get_schema": 1.0,
+    "compile_plsql": 0.5,
+    "sample_rows": 1.5,
+    "describe_table": 0.5,
+    "execute_scratch": 10.0,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 17,
+   "wasted_calls": 0,
+   "input_tokens": 71970,
+   "output_tokens": 17894,
+   "cached_input_tokens": 42496,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 29474,
+   "max_input_tokens": 5372,
+   "cost_usd": 0.0,
+   "turns": 17,
+   "cache_sources": {
+    "reported": 17
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 17,
+    "wasted_calls": 0,
+    "input_tokens": 71970,
+    "output_tokens": 17894,
+    "cached_input_tokens": 42496,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 29474,
+    "max_input_tokens": 5372,
+    "cost_usd": 0.0
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 0,
+   "blocked": 0,
+   "none": 0,
+   "items_used": [],
+   "inventory_size": 5
+  }
+ },
+ "task": {
+  "prompt": "The stored procedure is named sp and takes five parameters in this exact order: para_Year_Join (NUMBER), para_Artist_ID (NUMBER), para_Ticket_Price (NUMBER), para_Year (NUMBER), and para_Exhibition_ID (NUMBER). It performs two phases in this fixed order and never commits or rolls back; row locks acquired during the procedure remain held until the transaction ends.\n\nPhase 1 processes the artist table. Open a row-locking cursor over every row of the artist table, with no filter and no ordering. As each artist row is fetched, it is locked for update. For each row, before changing anything, capture the row's Artist_ID, Year_Join, and Age. Then set that artist row's Year_Join to para_Year_Join. Then set the same artist row's Age to the captured Age plus the difference between para_Year_Join and the captured Year_Join. The second update uses the captured Artist_ID to identify the row. This is done for every row in the artist table. No other columns of the artist table are changed. The whole-row fetch reads all artist columns, but only Artist_ID, Year_Join, and Age are used.\n\nAfter every artist row has been processed, Phase 2 begins. Open a row-locking cursor over the exhibition table for rows whose Artist_ID lies in the inclusive interval from para_Artist_ID to para_Ticket_Price; that means Artist_ID is greater than or equal to para_Artist_ID and less than or equal to para_Ticket_Price. If either bound is null, no exhibition row satisfies the condition. No ordering is used. As each selected exhibition row is fetched, it is locked for update, even if the procedure does not update it. For each selected exhibition row, examine its Ticket_Price.\n\nIf Ticket_Price is not null, set that currently processed exhibition row's Year to para_Year. Do not make any change to exhibition_record for this row.\n\nIf Ticket_Price is null, leave the exhibition row's Year unchanged. Instead, try to insert a new row into the exhibition_record table with only Exhibition_ID set to para_Exhibition_ID; no other column values are supplied. If this insert succeeds, do nothing further for that exhibition row and continue with the next selected exhibition row. If the insert raises the Oracle DUP_VAL_ON_INDEX exception, update the existing exhibition_record row whose Exhibition_ID equals para_Exhibition_ID: set Attendance to one more than its current Attendance, treating a null Attendance as 0. In other words, a null Attendance becomes 1, and a non-null Attendance is increased by 1. Then continue with the next selected exhibition row.\n\nThe only exception handled is DUP_VAL_ON_INDEX from that insert. Any other exception that occurs is not caught and propagates out of the procedure. The exhibition_record column named NUMBER is not read or written. The procedure leaves the transaction open, so all locks and uncommitted changes remain in place until the caller commits or rolls back.",
+  "materials": [
+   {
+    "file": "buggy_procedure.sql",
+    "kind": "defective procedure",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_Year_Join NUMBER, para_Artist_ID NUMBER, para_Ticket_Price NUMBER, para_Year NUMBER, para_Exhibition_ID NUMBER) IS\n    CURSR ref_cursor1 IS SELECT * FROM \"artist\" FOR UPDATE;\n    CURSOR ref_cursor2 IS SELECT * FROM \"exhibition\" WHERE \"Artist_ID\" BETWEEN para_Artist_ID AND para_Ticket_Price FOR UPDATE;\n    rec1 ref_cursor1%ROWTYPE;\n    rec2 ref_cursor2%ROWTYPE;\n    v_old_year_join NUMBER;\n    v_old_age NUMBER;\n    v_artist_id NUMBER;\nBEGIN\n    OPEN ref_cursor1;\n    \n        FETCH ref_cursor1 INTO rec1;\n        EXIT WHEN ref_cursor1%NOTFOUND;\n        v_old_year_join := rec1.\"Year_Join\";\n        v_old_age := rec1.\"Age\";\n        v_artist_id := rec1.\"Artist_ID\";\n        UPDATE \"artist\" SET \"Year_Join\" = para_Artist_ID WHERE CURRENT OF ref_cursor1;\n        UPDATE \"artist\"\n        SET SET \"Age\" = v_old_age - (para_Year_Join - v_old_year_join\n        WHERE \"Artist_ID\" = v_artist_id;\n    END IF;\n    CLOSE ref_cursor1;\n\n    OPEN ref_cursor2,\n    LOOP\n        FETCH ref_cursor2  rec2;\n        EXIT WHEN ref_cursor2%NOTFOUND;\n        IF rec2.\"Ticket_Price\" IS NULL \n            UPDATE \"exhibition SET \"Year\" = para_Year WHERE CURRENT OF ref_cursor2;\n        ELSE\n            BEGIN\n                INSERT INTO \"exhibition_record\" (\"Exhibition_ID\") VALUES (para_Exhibition_ID);\n            EXCEPTION\n                WHEN DUP_VAL_ON_INDEX THEN\n                    UPDATE \"exhibition_record\"\n                    SET \"Attendance\" = NVL\"Attendance\" 10) + 2\n                    WHERE \"Exhibition_ID\" = para_Exhibition_ID;\n            ;\n        ;\n    ;\n    CLOSE ref_cursor2;\nEND"
+   },
+   {
+    "file": "error.txt",
+    "kind": "server diagnostic",
+    "text": "[65000]"
+   },
+   {
+    "file": "observed_behaviour.md",
+    "kind": "bug report",
+    "text": "# Reported behaviour\n\nThe procedure does not compile. Once the compilation errors are fixed, it still behaves incorrectly, as follows.\n\nAfter that call the following table(s) do not hold what they should:\n\n- artist\n- art_show\n\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What call was run against the fresh database before checking the affected tables?",
+   "answer": "Running the calls below in order against a fresh database, the data is wrong from call 1 onwards:\n\n```sql\nCALL sp(2000,1,2,2010,99);\n```"
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What server diagnostic did the [65000] SQLSTATE code represent?",
+   "answer": "line 2:23 PLS-00103: Encountered the symbol \"IS\" when expecting one of the following:\n\n   := . ( @ % ; not null range default character; line 19:18 PLS-00103: Encountered the symbol \"Age\" when expecting one of the following:\n\n   . ( @ =\nThe symbol \".\" was substituted for \"Age\" to continue.; line 20:9 PLS-00103: Encountered the symbol \"WHERE\" when expecting one of the following:\n\n   . ( ) , * @ % & | = - + < / > at in is mod remainder not rem\n   => .. <an exponent (**)> <> or != or ~= >= <= <> and or like\n   like2 like4 likec as between || member submultiset\nThe symbol \")\" was substituted for \"WHERE\" to continue.; line 21:9 PLS-00103: Encountered the symbol \"IF\" when expecting one of the following:\n\n   ; <an identifier> <a double-quoted delimited-identifier>\n   current delete exists prior <a single-quoted SQL string>"
+  },
+  {
+   "id": "E1",
+   "op": "env_contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Do you mean the exhibition table?",
+   "answer": "No such object exists in the schema; the intended table is `exhibition`."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable artist , columns = [ Artist_ID ( NUMBER | primary key | values : 1 , 1 ) , Name ( VARCHAR2 | values : Mark Brooks , Mark Brooks ) , Country ( VARCHAR2 | values : United States , United States ) , Year_Join ( NUMBER | values : 1998 , 1988 ) , Age ( NUMBER | values : 48 , 46 ) ]\ntable exhibition , columns = [ Exhibition_ID ( NUMBER | primary key | values : 1 , 3 ) , Year ( NUMBER | values : 2005 , 2009 ) , Theme ( VARCHAR2 | values : Summer , Christmas Tree ) , Artist_ID ( NUMBER | values : 2 , 1 ) , Ticket_Price ( NUMBER | values : 19.95 , 19.95 ) ]\ntable exhibition_record , columns = [ Exhibition_ID ( NUMBER | primary key | values : 3 , 1 ) , NUMBER ( VARCHAR2 | values : February 26 , February 25 ) , Attendance ( NUMBER | values : 9089 , 3139 ) ]\nforeign keys : None",
+   "spent": 1.0
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Year_Join NUMBER, para_Artist_ID NUMBER, para_Ticket_Price NUMBER, para_Year NUMBER, para_Exhibition_ID NUMBER) IS\n    CURSOR ref_cursor1 IS\n        SELECT * FROM \"artist\" FOR UPDATE;\n\n    CURSOR ref_cursor2 IS\n        SELECT *\n        FROM \"exhibition\"\n        WHERE \"Artist_ID\" BETWEEN para_Artist_ID AND para_Ticket_Price\n        FOR UPDATE;\n\n    rec1 ref_cursor1%ROWTYPE;\n    rec2 ref_cursor2%ROWTYPE;\n    v_old_year_join NUMBER;\n    v_old_age NUMBER;\n    v_artist_id NUMBER;\nBEGIN\n    -- Phase 1: process artist\n    OPEN ref_cursor1;\n    LOOP\n        FETCH ref_cursor1 INTO rec1;\n        EXIT WHEN ref_cursor1%NOTFOUND;\n\n        v_artist_id := rec1.\"Artist_ID\";\n        v_old_year_join := rec1.\"Year_Join\";\n        v_old_age := rec1.\"Age\";\n\n        UPDATE \"artist\"\n        SET \"Year_Join\" = para_Year_Join\n        WHERE CURRENT OF ref_cursor1;\n\n        UPDATE \"artist\"\n        SET \"Age\" = v_old_age + (para_Year_Join - v_old_year_join)\n        WHERE \"Artist_ID\" = v_artist_id;\n    END LOOP;\n    CLOSE ref_cursor1;\n\n    -- Phase 2: process exhibition\n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN ref_cursor2%NOTFOUND;\n\n        IF rec2.\"Ticket_Price\" IS NOT NULL THEN\n            UPDATE \"exhibition\"\n            SET \"Year\" = para_Year\n            WHERE CURRENT OF ref_cursor2;\n        ELSE\n            BEGIN\n                INSERT INTO \"exhibition_record\" (\"Exhibition_ID\")\n                VALUES (para_Exhibition_ID);\n            EXCEPTION\n                WHEN DUP_VAL_ON_INDEX THEN\n                    UPDATE \"exhibition_record\"\n                    SET \"Attendance\" = NVL(\"Attendance\", 0) + 1\n                    WHERE \"Exhibition_ID\" = para_Exhibition_ID;\n            END;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\nEND;\n"
+   },
+   "result": "compiled",
+   "spent": 1.5,
+   "compiled": true
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "artist",
+    "limit": 10
+   },
+   "result": "Artist_ID | Name | Country | Year_Join | Age\n1 | Vijay Singh | Fiji | 1998 | 45\n2 | John Daly | United States | 1991 | 46\n3 | Paul Azinger | United States | 1993 | 47\n4 | Jeff Sluman | United States | 1988 | 57\n5 | Mark Brooks | United States | 1996 | 48\n6 | Nick Price | Zimbabwe | 1994 | 48\n7 | Larry Nelson | United States | 1981 | 50",
+   "spent": 2.0
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "exhibition",
+    "limit": 20
+   },
+   "result": "Exhibition_ID | Year | Theme | Artist_ID | Ticket_Price\n1 | 2004 | Santa Claus | 1 | 19.95\n2 | 2005 | Christmas stocking | 2 | 19.95\n3 | 2006 | Santa Claus and Rudolph the Red-Nosed Reindeer | 4 | 14.95\n4 | 2007 | Christmas Tree | 1 | 16.95\n5 | 2008 | Spring | 6 | 29.95\n6 | 2009 | Summer | 3 | 9.95",
+   "spent": 2.5
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "exhibition_record",
+    "limit": 20
+   },
+   "result": "Exhibition_ID | NUMBER | Attendance\n1 | December 2 | 965\n1 | December 5 | 1098\n1 | December 7 | 2983\n2 | December 12 | 1313\n2 | December 13 | 10908\n2 | December 9 | 1239\n3 | December 16 | 1134\n3 | February 19 | 1233\n3 | February 21 | 9089\n4 | February 23 | 3139\n5 | February 25 | 24808\n5 | February 26 | 13142\n5 | February 28 | 4231",
+   "spent": 3.0
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "exhibition_record"
+   },
+   "result": "table exhibition_record , columns = [ Exhibition_ID ( NUMBER | primary key | values : 3 , 1 ) , NUMBER ( VARCHAR2 | values : February 26 , February 25 ) , Attendance ( NUMBER | values : 9089 , 3139 ) ]",
+   "spent": 3.5
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT c.constraint_name, c.constraint_type, cc.column_name, cc.position\nFROM user_constraints c\nJOIN user_cons_columns cc ON cc.constraint_name = c.constraint_name\nWHERE c.table_name = 'EXHIBITION_RECORD'\nORDER BY c.constraint_name, cc.position"
+   },
+   "result": "(CONSTRAINT_NAME | CONSTRAINT_TYPE | COLUMN_NAME | POSITION)\n(no rows)",
+   "spent": 4.5
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables WHERE table_name LIKE '%exhibition%'"
+   },
+   "result": "(TABLE_NAME)\n(no rows)",
+   "spent": 5.5
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables"
+   },
+   "result": "TABLE_NAME\nLOGMNR_SESSION_EVOLVE$\nLOGMNR_GLOBAL$\nLOGMNR_PDB_INFO$\nLOGMNR_DID$\nLOGMNR_UID$\nLOGMNRGGC_GTLO\nLOGMNRGGC_GTCS\nLOGMNRC_DBNAME_UID_MAP\nLOGMNR_LOG$\nLOGMNR_PROCESSED_LOG$\nLOGMNR_SPILL$\nLOGMNR_AGE_SPILL$\nLOGMNR_RESTART_CKPT_TXINFO$\nLOGMNR_ERROR$\nLOGMNR_RESTART_CKPT$\nLOGMNR_FILTER$\nLOGMNR_SESSION_ACTIONS$\nLOGMNR_PARAMETER$\nLOGMNR_SESSION$\nLOGMNR_PROFILE_TABLE_STATS$\nLOGMNR_PROFILE_PLSQL_STATS$\nREDO_DB\nREDO_LOG\nROLLING$CONNECTIONS\nROLLING$DATABASES\nROLLING$DIRECTIVES\nROLLING$EVENTS\nROLLING$PARAMETERS\nROLLING$PLAN\nROLLING$STATISTICS\nROLLING$STATUS\nMVIEW$_ADV_WORKLOAD\nMVIEW$_ADV_BASETABLE\nMVIEW$_ADV_SQLDEPEND\nMVIEW$_ADV_PRETTY\nMVIEW$_ADV_TEMP\nMVIEW$_ADV_FILTER\nMVIEW$_ADV_LOG\nMVIEW$_ADV_FILTERINSTANCE\nMVIEW$_ADV_LEVEL\nMVIEW$_ADV_ROLLUP\nMVIEW$_ADV_AJG\nMVIEW$_ADV_FJG\nMVIEW$_ADV_GC\nMVIEW$_ADV_CLIQUE\nMVIEW$_ADV_ELIGIBLE\nMVIEW$_ADV_OUTPUT\nMVIEW$_ADV_EXCEPTIONS\nMVIEW$_ADV_PARAMETERS\nMVIEW$_ADV_INFO\n... (more rows not shown)",
+   "spent": 6.5
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT table_name FROM user_tables WHERE table_name IN ('artist','exhibition','exhibition_record')"
+   },
+   "result": "(TABLE_NAME)\n(no rows)",
+   "spent": 7.5
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, table_name FROM all_tables WHERE table_name IN ('artist','exhibition','exhibition_record','ARTIST','EXHIBITION','EXHIBITION_RECORD')"
+   },
+   "result": "OWNER | TABLE_NAME\nMUSIC_1 | artist\nMUSIC_4 | artist\nTHEME_GALLERY | artist\nTHEME_GALLERY | exhibition\nTHEME_GALLERY | exhibition_record\nTHEME_GALLERY_EP79320233 | artist\nTHEME_GALLERY_EP79320233 | exhibition\nTHEME_GALLERY_EP79320233 | exhibition_record",
+   "spent": 8.5
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT c.owner, c.constraint_name, c.constraint_type, c.status\nFROM all_constraints c\nWHERE c.table_name = 'exhibition_record'\n  AND c.owner LIKE 'THEME_GALLERY%'\nORDER BY c.owner, c.constraint_name"
+   },
+   "result": "OWNER | CONSTRAINT_NAME | CONSTRAINT_TYPE | STATUS\nTHEME_GALLERY | SYS_C0010555 | P | ENABLED\nTHEME_GALLERY_EP79320233 | SYS_C00151139 | P | ENABLED",
+   "spent": 9.5
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT cc.owner, cc.constraint_name, cc.column_name, cc.position\nFROM all_cons_columns cc\nWHERE cc.constraint_name IN ('SYS_C0010555','SYS_C00151139')\nORDER BY cc.owner, cc.position"
+   },
+   "result": "OWNER | CONSTRAINT_NAME | COLUMN_NAME | POSITION\nTHEME_GALLERY | SYS_C0010555 | Exhibition_ID | 1\nTHEME_GALLERY | SYS_C0010555 | NUMBER | 2\nTHEME_GALLERY_EP79320233 | SYS_C00151139 | Exhibition_ID | 1\nTHEME_GALLERY_EP79320233 | SYS_C00151139 | NUMBER | 2",
+   "spent": 10.5
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT column_name, data_default, nullable\nFROM all_tab_columns\nWHERE owner LIKE 'THEME_GALLERY%'\n  AND table_name = 'exhibition_record'\nORDER BY owner, column_id"
+   },
+   "result": "COLUMN_NAME | DATA_DEFAULT | NULLABLE\nExhibition_ID | NULL | N\nNUMBER | NULL | N\nAttendance | NULL | Y\nExhibition_ID | NULL | N\nNUMBER | NULL | N\nAttendance | NULL | Y",
+   "spent": 11.5
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT owner, trigger_name, triggering_event, trigger_type, status\nFROM all_triggers\nWHERE table_name = 'exhibition_record'\n  AND owner LIKE 'THEME_GALLERY%'\nORDER BY owner, trigger_name"
+   },
+   "result": "(OWNER | TRIGGER_NAME | TRIGGERING_EVENT | TRIGGER_TYPE | STATUS)\n(no rows)",
+   "spent": 12.5
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT COUNT(*) FROM \"artist\""
+   },
+   "result": "COUNT(*)\n7",
+   "spent": 13.5
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "{\"edits\":[{\"line\":2,\"old\":\"    CURSR ref_cursor1 IS SELECT * FROM \\\"artist\\\" FOR UPDATE;\\n    CURSOR ref_cursor2 IS SELECT * FROM \\\"exhibition\\\" WHERE \\\"Artist_ID\\\" BETWEEN para_Artist_ID AND para_Ticket_Price FOR UPDATE;\\n    rec1 ref_cursor1%ROWTYPE;\\n    rec2 ref_cursor2%ROWTYPE;\\n    v_old_year_join NUMBER;\\n    v_old_age NUMBER;\\n    v_artist_id NUMBER;\",\"new\":\"    CURSOR ref_cursor1 IS\\n        SELECT * FROM \\\"artist\\\" FOR UPDATE;\\n\\n    CURSOR ref_cursor2 IS\\n        SELECT *\\n        FROM \\\"exhibition\\\"\\n        WHERE \\\"Artist_ID\\\" BETWEEN para_Artist_ID AND para_Ticket_Price\\n        FOR UPDATE;\\n\\n    rec1 ref_cursor1%ROWTYPE;\\n    rec2 ref_cursor2%ROWTYPE;\\n    v_old_year_join NUMBER;\\n    v_old_age NUMBER;\\n    v_artist_id NUMBER;\"},{\"line\":10,\"old\":\"    OPEN ref_cursor1;\\n    \\n        FETCH ref_cursor1 INTO rec1;\\n        EXIT WHEN ref_cursor1%NOTFOUND;\\n        v_old_year_join := rec1.\\\"Year_Join\\\";\\n        v_old_age := rec1.\\\"Age\\\";\\n        v_artist_id := rec1.\\\"Artist_ID\\\";\\n        UPDATE \\\"artist\\\" SET \\\"Year_Join\\\" = para_Artist_ID WHERE CURRENT OF ref_cursor1;\",\"new\":\"    OPEN ref_cursor1;\\n    LOOP\\n        FETCH ref_cursor1 INTO rec1;\\n        EXIT WHEN ref_cursor1%NOTFOUND;\\n\\n        v_artist_id := rec1.\\\"Artist_ID\\\";\\n        v_old_year_join := rec1.\\\"Year_Join\\\";\\n        v_old_age := rec1.\\\"Age\\\";\\n\\n        UPDATE \\\"artist\\\"\\n        SET \\\"Year_Join\\\" = para_Year_Join\\n        WHERE CURRENT OF ref_cursor1;\"},{\"line\":18,\"old\":\"        UPDATE \\\"artist\\\"\\n        SET SET \\\"Age\\\" = v_old_age - (para_Year_Join - v_old_year_join\\n        WHERE \\\"Artist_ID\\\" = v_artist_id;\\n    END IF;\\n    CLOSE ref_cursor1;\",\"new\":\"        UPDATE \\\"artist\\\"\\n        SET \\\"Age\\\" = v_old_age + (para_Year_Join - v_old_year_join)\\n        WHERE \\\"Artist_ID\\\" = v_artist_id;\\n    END LOOP;\\n    CLOSE ref_cursor1;\"},{\"line\":24,\"old\":\"    OPEN ref_cursor2,\\n    LOOP\\n        FETCH ref_cursor2  rec2;\\n        EXIT WHEN ref_cursor2%NOTFOUND;\\n        IF rec2.\\\"Ticket_Price\\\" IS NULL \\n            UPDATE \\\"exhibition SET \\\"Year\\\" = para_Year WHERE CURRENT OF ref_cursor2;\\n        ELSE\\n            BEGIN\",\"new\":\"    OPEN ref_cursor2;\\n    LOOP\\n        FETCH ref_cursor2 INTO rec2;\\n        EXIT WHEN ref_cursor2%NOTFOUND;\\n\\n        IF rec2.\\\"Ticket_Price\\\" IS NOT NULL THEN\\n            UPDATE \\\"exhibition\\\"\\n            SET \\\"Year\\\" = para_Year\\n            WHERE CURRENT OF ref_cursor2;\\n        ELSE\\n            BEGIN\"},{\"line\":32,\"old\":\"                INSERT INTO \\\"exhibition_record\\\" (\\\"Exhibition_ID\\\") VALUES (para_Exhibition_ID);\\n            EXCEPTION\\n                WHEN DUP_VAL_ON_INDEX THEN\\n                    UPDATE \\\"exhibition_record\\\"\\n                    SET \\\"Attendance\\\" = NVL\\\"Attendance\\\" 10) + 2\\n                    WHERE \\\"Exhibition_ID\\\" = para_Exhibition_ID;\\n            ;\",\"new\":\"                INSERT INTO \\\"exhibition_record\\\" (\\\"Exhibition_ID\\\")\\n                VALUES (para_Exhibition_ID);\\n            EXCEPTION\\n                WHEN DUP_VAL_ON_INDEX THEN\\n                    UPDATE \\\"exhibition_record\\\"\\n                    SET \\\"Attendance\\\" = NVL(\\\"Attendance\\\", 0) + 1\\n                    WHERE \\\"Exhibition_ID\\\" = para_Exhibition_ID;\\n            END;\"},{\"line\":39,\"old\":\"        ;\\n    ;\\n    CLOSE ref_cursor2;\",\"new\":\"        END IF;\\n    END LOOP;\\n    CLOSE ref_cursor2;\"},{\"line\":42,\"old\":\"END\",\"new\":\"END;\"}]}"
+   },
+   "result": "received",
+   "spent": 13.5,
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "diff",
+  "text": "{\"edits\":[{\"line\":2,\"old\":\"    CURSR ref_cursor1 IS SELECT * FROM \\\"artist\\\" FOR UPDATE;\\n    CURSOR ref_cursor2 IS SELECT * FROM \\\"exhibition\\\" WHERE \\\"Artist_ID\\\" BETWEEN para_Artist_ID AND para_Ticket_Price FOR UPDATE;\\n    rec1 ref_cursor1%ROWTYPE;\\n    rec2 ref_cursor2%ROWTYPE;\\n    v_old_year_join NUMBER;\\n    v_old_age NUMBER;\\n    v_artist_id NUMBER;\",\"new\":\"    CURSOR ref_cursor1 IS\\n        SELECT * FROM \\\"artist\\\" FOR UPDATE;\\n\\n    CURSOR ref_cursor2 IS\\n        SELECT *\\n        FROM \\\"exhibition\\\"\\n        WHERE \\\"Artist_ID\\\" BETWEEN para_Artist_ID AND para_Ticket_Price\\n        FOR UPDATE;\\n\\n    rec1 ref_cursor1%ROWTYPE;\\n    rec2 ref_cursor2%ROWTYPE;\\n    v_old_year_join NUMBER;\\n    v_old_age NUMBER;\\n    v_artist_id NUMBER;\"},{\"line\":10,\"old\":\"    OPEN ref_cursor1;\\n    \\n        FETCH ref_cursor1 INTO rec1;\\n        EXIT WHEN ref_cursor1%NOTFOUND;\\n        v_old_year_join := rec1.\\\"Year_Join\\\";\\n        v_old_age := rec1.\\\"Age\\\";\\n        v_artist_id := rec1.\\\"Artist_ID\\\";\\n        UPDATE \\\"artist\\\" SET \\\"Year_Join\\\" = para_Artist_ID WHERE CURRENT OF ref_cursor1;\",\"new\":\"    OPEN ref_cursor1;\\n    LOOP\\n        FETCH ref_cursor1 INTO rec1;\\n        EXIT WHEN ref_cursor1%NOTFOUND;\\n\\n        v_artist_id := rec1.\\\"Artist_ID\\\";\\n        v_old_year_join := rec1.\\\"Year_Join\\\";\\n        v_old_age := rec1.\\\"Age\\\";\\n\\n        UPDATE \\\"artist\\\"\\n        SET \\\"Year_Join\\\" = para_Year_Join\\n        WHERE CURRENT OF ref_cursor1;\"},{\"line\":18,\"old\":\"        UPDATE \\\"artist\\\"\\n        SET SET \\\"Age\\\" = v_old_age - (para_Year_Join - v_old_year_join\\n        WHERE \\\"Artist_ID\\\" = v_artist_id;\\n    END IF;\\n    CLOSE ref_cursor1;\",\"new\":\"        UPDATE \\\"artist\\\"\\n        SET \\\"Age\\\" = v_old_age + (para_Year_Join - v_old_year_join)\\n        WHERE \\\"Artist_ID\\\" = v_artist_id;\\n    END LOOP;\\n    CLOSE ref_cursor1;\"},{\"line\":24,\"old\":\"    OPEN ref_cursor2,\\n    LOOP\\n        FETCH ref_cursor2  rec2;\\n        EXIT WHEN ref_cursor2%NOTFOUND;\\n        IF rec2.\\\"Ticket_Price\\\" IS NULL \\n            UPDATE \\\"exhibition SET \\\"Year\\\" = para_Year WHERE CURRENT OF ref_cursor2;\\n        ELSE\\n            BEGIN\",\"new\":\"    OPEN ref_cursor2;\\n    LOOP\\n        FETCH ref_cursor2 INTO rec2;\\n        EXIT WHEN ref_cursor2%NOTFOUND;\\n\\n        IF rec2.\\\"Ticket_Price\\\" IS NOT NULL THEN\\n            UPDATE \\\"exhibition\\\"\\n            SET \\\"Year\\\" = para_Year\\n            WHERE CURRENT OF ref_cursor2;\\n        ELSE\\n            BEGIN\"},{\"line\":32,\"old\":\"                INSERT INTO \\\"exhibition_record\\\" (\\\"Exhibition_ID\\\") VALUES (para_Exhibition_ID);\\n            EXCEPTION\\n                WHEN DUP_VAL_ON_INDEX THEN\\n                    UPDATE \\\"exhibition_record\\\"\\n                    SET \\\"Attendance\\\" = NVL\\\"Attendance\\\" 10) + 2\\n                    WHERE \\\"Exhibition_ID\\\" = para_Exhibition_ID;\\n            ;\",\"new\":\"                INSERT INTO \\\"exhibition_record\\\" (\\\"Exhibition_ID\\\")\\n                VALUES (para_Exhibition_ID);\\n            EXCEPTION\\n                WHEN DUP_VAL_ON_INDEX THEN\\n                    UPDATE \\\"exhibition_record\\\"\\n                    SET \\\"Attendance\\\" = NVL(\\\"Attendance\\\", 0) + 1\\n                    WHERE \\\"Exhibition_ID\\\" = para_Exhibition_ID;\\n            END;\"},{\"line\":39,\"old\":\"        ;\\n    ;\\n    CLOSE ref_cursor2;\",\"new\":\"        END IF;\\n    END LOOP;\\n    CLOSE ref_cursor2;\"},{\"line\":42,\"old\":\"END\",\"new\":\"END;\"}]}"
+ },
+ "pair": {
+  "single_run": "filtered-ora-b3",
+  "single_task": "oracle_b3_001"
+ }
+}

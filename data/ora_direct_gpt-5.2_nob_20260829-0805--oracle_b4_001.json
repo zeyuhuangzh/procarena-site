@@ -1,0 +1,139 @@
+{
+ "id": "ora_direct_gpt-5.2_nob_20260829-0805--oracle_b4_001",
+ "run": "ora_direct_gpt-5.2_nob_20260829-0805",
+ "task_id": "oracle_b4_001",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "b4",
+ "dialect": "oracle",
+ "model": "gpt-5.2",
+ "model_label": "GPT-5.2",
+ "solver_id": "gpt-5.2",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "database state differs after call 3",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "impl",
+  "diagnosis": {
+   "kind": "state_differs",
+   "message": "call 3/8 CALL sp(NULL, 'R3', 51, 9999); -- database state differs; differing table(s): Voting_record"
+  },
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 44.8,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 1,
+   "wasted_calls": 0,
+   "input_tokens": 1166,
+   "output_tokens": 3235,
+   "cached_input_tokens": 0,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 1166,
+   "max_input_tokens": 1166,
+   "cost_usd": 0.0,
+   "turns": 1,
+   "cache_sources": {
+    "reported": 1
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 1,
+    "wasted_calls": 0,
+    "input_tokens": 1166,
+    "output_tokens": 3235,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 1166,
+    "max_input_tokens": 1166,
+    "cost_usd": 0.0
+   }
+  }
+ },
+ "task": {
+  "prompt": "Complete the missing block in the attached incomplete procedure. Keep the procedure named `sp` with exactly the signature `sp(VARCHAR2, VARCHAR2, NUMBER, NUMBER)`; the four arguments are, in order, the election cycle, the registration integer, the treasurer vote, and the advisor. Only fill in the TODO inside the first cursor loop; leave everything else in the file exactly as written.\n\nFor each voting record from the cursor, use the fetched values. Set registration integer to the second argument concatenated with the fetched election cycle; if the fetched treasurer vote strictly equals the third argument, append the fetched secretary vote after that. If the fetched treasurer vote is null and the third argument isn't, set treasurer vote to the third argument. If the fetched election cycle matches the first argument, set president vote to the third argument.\n\nDo not add exception handling, COMMIT, or ROLLBACK. Return the completed stored procedure and nothing else.",
+  "materials": [
+   {
+    "file": "incomplete_procedure.sql",
+    "kind": "incomplete procedure",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_Election_Cycle VARCHAR2, para_Registration_integer VARCHAR2, para_Treasurer_Vote NUMBER, para_Advisor NUMBER) IS\n    CURSOR ref_cursor1 IS SELECT * FROM \"Voting_record\" FOR UPDATE;\n    CURSOR ref_cursor2 IS SELECT * FROM \"Student\" FOR UPDATE;\n    rec1 ref_cursor1%ROWTYPE;\n    rec2 ref_cursor2%ROWTYPE;\nBEGIN\n    INSERT INTO \"Voting_record\" (\"Election_Cycle\") VALUES (para_Election_Cycle);\n    OPEN ref_cursor1;\n    LOOP\n        FETCH ref_cursor1 INTO rec1;-- TODO: Handle each voting record fetched by ref_cursor1: update its registration from the parameters, backfill the treasurer vote when appropriate, and propagate the vote to rows for the matching election cycle.\n\n    END LOOP;\n    CLOSE ref_cursor1;\n    IF para_Treasurer_Vote > 50 THEN\n        DELETE FROM \"Voting_record\" vr WHERE vr.\"StuID\" IN (SELECT s.\"StuID\" FROM \"Student\" s WHERE s.\"Advisor\" = para_Advisor);\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN ref_cursor2%NOTFOUND;\n            IF rec2.\"Advisor\" = para_Advisor THEN\n                DELETE FROM \"Student\" WHERE CURRENT OF ref_cursor2;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END IF;\nEND;"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_Election_Cycle VARCHAR2, para_Registration_integer VARCHAR2, para_Treasurer_Vote NUMBER, para_Advisor NUMBER) IS\n    CURSOR ref_cursor1 IS SELECT * FROM \"Voting_record\" FOR UPDATE;\n    CURSOR ref_cursor2 IS SELECT * FROM \"Student\" FOR UPDATE;\n    rec1 ref_cursor1%ROWTYPE;\n    rec2 ref_cursor2%ROWTYPE;\nBEGIN\n    INSERT INTO \"Voting_record\" (\"Election_Cycle\") VALUES (para_Election_Cycle);\n    OPEN ref_cursor1;\n    LOOP\n        FETCH ref_cursor1 INTO rec1;-- TODO: Handle each voting record fetched by ref_cursor1: update its registration from the parameters, backfill the treasurer vote when appropriate, and propagate the vote to rows for the matching election cycle.\n        EXIT WHEN ref_cursor1%NOTFOUND;\n\n        IF rec1.\"Treasurer_Vote\" = para_Treasurer_Vote THEN\n            UPDATE \"Voting_record\"\n               SET \"Registration_integer\" = para_Registration_integer || rec1.\"Election_Cycle\" || TO_CHAR(rec1.\"Secretary_Vote\"),\n                   \"Treasurer_Vote\" = CASE\n                                         WHEN rec1.\"Treasurer_Vote\" IS NULL AND para_Treasurer_Vote IS NOT NULL THEN para_Treasurer_Vote\n                                         ELSE rec1.\"Treasurer_Vote\"\n                                       END,\n                   \"President_Vote\" = CASE\n                                         WHEN rec1.\"Election_Cycle\" = para_Election_Cycle THEN para_Treasurer_Vote\n                                         ELSE rec1.\"President_Vote\"\n                                       END\n             WHERE CURRENT OF ref_cursor1;\n        ELSE\n            UPDATE \"Voting_record\"\n               SET \"Registration_integer\" = para_Registration_integer || rec1.\"Election_Cycle\",\n                   \"Treasurer_Vote\" = CASE\n                                         WHEN rec1.\"Treasurer_Vote\" IS NULL AND para_Treasurer_Vote IS NOT NULL THEN para_Treasurer_Vote\n                                         ELSE rec1.\"Treasurer_Vote\"\n                                       END,\n                   \"President_Vote\" = CASE\n                                         WHEN rec1.\"Election_Cycle\" = para_Election_Cycle THEN para_Treasurer_Vote\n                                         ELSE rec1.\"President_Vote\"\n                                       END\n             WHERE CURRENT OF ref_cursor1;\n        END IF;\n\n    END LOOP;\n    CLOSE ref_cursor1;\n    IF para_Treasurer_Vote > 50 THEN\n        DELETE FROM \"Voting_record\" vr WHERE vr.\"StuID\" IN (SELECT s.\"StuID\" FROM \"Student\" s WHERE s.\"Advisor\" = para_Advisor);\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN ref_cursor2%NOTFOUND;\n            IF rec2.\"Advisor\" = para_Advisor THEN\n                DELETE FROM \"Student\" WHERE CURRENT OF ref_cursor2;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END IF;\nEND;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_Election_Cycle VARCHAR2, para_Registration_integer VARCHAR2, para_Treasurer_Vote NUMBER, para_Advisor NUMBER) IS\n    CURSOR ref_cursor1 IS SELECT * FROM \"Voting_record\" FOR UPDATE;\n    CURSOR ref_cursor2 IS SELECT * FROM \"Student\" FOR UPDATE;\n    rec1 ref_cursor1%ROWTYPE;\n    rec2 ref_cursor2%ROWTYPE;\nBEGIN\n    INSERT INTO \"Voting_record\" (\"Election_Cycle\") VALUES (para_Election_Cycle);\n    OPEN ref_cursor1;\n    LOOP\n        FETCH ref_cursor1 INTO rec1;-- TODO: Handle each voting record fetched by ref_cursor1: update its registration from the parameters, backfill the treasurer vote when appropriate, and propagate the vote to rows for the matching election cycle.\n        EXIT WHEN ref_cursor1%NOTFOUND;\n\n        IF rec1.\"Treasurer_Vote\" = para_Treasurer_Vote THEN\n            UPDATE \"Voting_record\"\n               SET \"Registration_integer\" = para_Registration_integer || rec1.\"Election_Cycle\" || TO_CHAR(rec1.\"Secretary_Vote\"),\n                   \"Treasurer_Vote\" = CASE\n                                         WHEN rec1.\"Treasurer_Vote\" IS NULL AND para_Treasurer_Vote IS NOT NULL THEN para_Treasurer_Vote\n                                         ELSE rec1.\"Treasurer_Vote\"\n                                       END,\n                   \"President_Vote\" = CASE\n                                         WHEN rec1.\"Election_Cycle\" = para_Election_Cycle THEN para_Treasurer_Vote\n                                         ELSE rec1.\"President_Vote\"\n                                       END\n             WHERE CURRENT OF ref_cursor1;\n        ELSE\n            UPDATE \"Voting_record\"\n               SET \"Registration_integer\" = para_Registration_integer || rec1.\"Election_Cycle\",\n                   \"Treasurer_Vote\" = CASE\n                                         WHEN rec1.\"Treasurer_Vote\" IS NULL AND para_Treasurer_Vote IS NOT NULL THEN para_Treasurer_Vote\n                                         ELSE rec1.\"Treasurer_Vote\"\n                                       END,\n                   \"President_Vote\" = CASE\n                                         WHEN rec1.\"Election_Cycle\" = para_Election_Cycle THEN para_Treasurer_Vote\n                                         ELSE rec1.\"President_Vote\"\n                                       END\n             WHERE CURRENT OF ref_cursor1;\n        END IF;\n\n    END LOOP;\n    CLOSE ref_cursor1;\n    IF para_Treasurer_Vote > 50 THEN\n        DELETE FROM \"Voting_record\" vr WHERE vr.\"StuID\" IN (SELECT s.\"StuID\" FROM \"Student\" s WHERE s.\"Advisor\" = para_Advisor);\n        OPEN ref_cursor2;\n        LOOP\n            FETCH ref_cursor2 INTO rec2;\n            EXIT WHEN ref_cursor2%NOTFOUND;\n            IF rec2.\"Advisor\" = para_Advisor THEN\n                DELETE FROM \"Student\" WHERE CURRENT OF ref_cursor2;\n            END IF;\n        END LOOP;\n        CLOSE ref_cursor2;\n    END IF;\nEND;"
+ },
+ "pair": null
+}

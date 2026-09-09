@@ -1,0 +1,149 @@
+{
+ "id": "pg_direct_gpt-5.2_nob_20260828-1010--postgres_b3_000",
+ "run": "pg_direct_gpt-5.2_nob_20260828-1010",
+ "task_id": "postgres_b3_000",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "b3",
+ "dialect": "postgres",
+ "model": "gpt-5.2",
+ "model_label": "GPT-5.2",
+ "solver_id": "gpt-5.2",
+ "effort": "medium",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "database state differs after call 1",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "impl",
+  "diagnosis": {
+   "kind": "state_differs",
+   "message": "call 1/4 CALL sp(15, '2020-01-01 00:00:00', 1, 6, 2, 1); -- database state differs; differing table(s): Engineer_Visits, Maintenance_Contracts"
+  },
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 160.2,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 1,
+   "wasted_calls": 0,
+   "input_tokens": 2679,
+   "output_tokens": 10523,
+   "cached_input_tokens": 0,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 2679,
+   "max_input_tokens": 2679,
+   "cost_usd": 0.0,
+   "turns": 1,
+   "cache_sources": {
+    "reported": 1
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 1,
+    "wasted_calls": 0,
+    "input_tokens": 2679,
+    "output_tokens": 10523,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 2679,
+    "max_input_tokens": 2679,
+    "cost_usd": 0.0
+   }
+  }
+ },
+ "task": {
+  "prompt": "Implement a PostgreSQL PL/pgSQL procedure:\nsp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer).\n\nParameters: para_engineer_id is the engineer value to apply; para_visit_start_text is the visit start text to apply; para_skill_id is the skill cutoff; para_part_fault_id is the fault part to target; para_maintenance_contract_company_id is the contract-related comparison value; para_maintenance_contract_id is the contract adjustment value.\n\nThe procedure must not return rows or have output parameters. Work only with Engineer_Visits, Skills_Required_To_Fix, Maintenance_Contracts, and Fault_Log_Parts. In a sensible order, refresh Engineer_Visits.engineer_id and Engineer_Visits.visit_start_text from the inputs, remove unneeded Skills_Required_To_Fix rows by skill_id, adjust Maintenance_Contracts.maintenance_contract_id based on the remaining skills, and mark the relevant Fault_Log_Parts.fault_status and matching Engineer_Visits.fault_status as Fixed. Do not add special exception handling.",
+  "materials": [
+   {
+    "file": "buggy_procedure.sql",
+    "kind": "defective procedure",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$\nDECLARE\n    ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\";\n    ref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\";\n    rec RECORD;\n    rec2 RECORD,\nBEGIN\n    UPDATE \"Engineer_Visits\"\n    SET \"engineer_id\" = para_engineer_id + 76\n        \"visit_start_text\" = para_visit_start_text;\n\n    OPEN ref_cursor;\n    LOOP\n        FETCH ref_cursor INTO rec;\n        EXIT WHEN NOT FOUND;\n\n        OPEN ref_cursor2;\n        \n            FETCH ref_cursor2  rec2;\n            EXIT WHEN NOT FOUND;\n\n            IF rec2.\"skill_id\" < para_maintenance_contract_company_id \n                UPDATE \"Maintenance_Contracts\"\n                SET \"maintenance_contract_id\" = \"maintenance_contract_id\" + para_maintenance_contract_id - 43;\n            END LOOP;\n        END LOOP;\n        CLOSE ref_cursor2;\n    ;\n    CLOSE ref_cursor;\n\n    IF para_engineer_id <> -1001 THEN\n        UPDATE \"Engineer_Visits\"\n        SET \"engineer_id\" = para_engineer_id;\n    ;\n\n    UPDTE \"Fault_Log_Parts\"\n    SET \"fault_status\" = 'Fixed'\n    WHERE \"part_fault_id\" = para_part_fault_id\n\n    UPDATE \"Engineer_Visits\" ev\n    SET \"fault_status\" = 'Fixed'\n    WHERE NOT EXISTS \n        SELECT 1\n        FROM \"Fault_Log_Parts\" flp\n        WHERE flp.\"fault_log_entry_id\" = ev.\"fault_log_entry_id\"\n          AND flp.\"part_fault_id\" = para_part_fault_id\n          AND flp.\"fault_status\" = 'Fixed'\n    ;\nEND;\n$$;"
+   },
+   {
+    "file": "error.txt",
+    "kind": "server diagnostic",
+    "text": "Compilation fails with a syntax error near a comma."
+   },
+   {
+    "file": "observed_behaviour.md",
+    "kind": "bug report",
+    "text": "# Reported behaviour\n\nThe procedure does not compile. After fixing that, the first test call still leaves Engineer_Visits and Maintenance_Contracts with the wrong data."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "{\"edits\":[{\"line\":2,\"old\":\"DECLARE\\n    ref_cursor CURSOR FOR SELECT * FROM \\\"Engineer_Visits\\\";\\n    ref_cursor2 CURSOR FOR SELECT * FROM \\\"Skills_Required_To_Fix\\\";\\n    rec RECORD;\\n    rec2 RECORD,\\nBEGIN\",\"new\":\"DECLARE\\n    v_remaining_skill_count integer;\\nBEGIN\"},{\"line\":8,\"old\":\"    UPDATE \\\"Engineer_Visits\\\"\\n    SET \\\"engineer_id\\\" = para_engineer_id + 76\\n        \\\"visit_start_text\\\" = para_visit_start_text;\\n\",\"new\":\"    UPDATE \\\"Engineer_Visits\\\" ev\\n    SET \\\"engineer_id\\\" = para_engineer_id,\\n        \\\"visit_start_text\\\" = para_visit_start_text\\n    WHERE EXISTS (\"},{\"line\":12,\"old\":\"\",\"new\":\"        SELECT 1\\n        FROM \\\"Fault_Log_Parts\\\" flp\\n        WHERE flp.\\\"fault_log_entry_id\\\" = ev.\\\"fault_log_entry_id\\\"\\n          AND flp.\\\"part_fault_id\\\" = para_part_fault_id\\n    );\\n\\n    DELETE FROM \\\"Skills_Required_To_Fix\\\"\\n    WHERE \\\"part_fault_id\\\" = para_part_fault_id\\n      AND \\\"skill_id\\\" > para_skill_id;\\n\\n    SELECT COUNT(*) INTO v_remaining_skill_count\\n    FROM \\\"Skills_Required_To_Fix\\\"\\n    WHERE \\\"part_fault_id\\\" = para_part_fault_id;\\n\\n    UPDATE \\\"Maintenance_Contracts\\\"\\n    SET \\\"maintenance_contract_id\\\" = \\\"maintenance_contract_id\\\" + (para_maintenance_contract_id * v_remaining_skill_count)\\n    WHERE \\\"maintenance_contract_company_id\\\" = para_maintenance_contract_company_id;\\n\\n    UPDATE \\\"Fault_Log_Parts\\\"\\n    SET \\\"fault_status\\\" = 'Fixed'\\n    WHERE \\\"part_fault_id\\\" = para_part_fault_id;\\n\\n    UPDATE \\\"Engineer_Visits\\\" ev\\n    SET \\\"fault_status\\\" = 'Fixed'\\n    WHERE EXISTS (\\n        SELECT 1\\n        FROM \\\"Fault_Log_Parts\\\" flp\\n        WHERE flp.\\\"fault_log_entry_id\\\" = ev.\\\"fault_log_entry_id\\\"\\n          AND flp.\\\"part_fault_id\\\" = para_part_fault_id\\n          AND flp.\\\"fault_status\\\" = 'Fixed'\\n    );\\n\\n/*\\n\"},{\"line\":49,\"old\":\"\",\"new\":\"*/\\n\"}]}"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "diff",
+  "text": "{\"edits\":[{\"line\":2,\"old\":\"DECLARE\\n    ref_cursor CURSOR FOR SELECT * FROM \\\"Engineer_Visits\\\";\\n    ref_cursor2 CURSOR FOR SELECT * FROM \\\"Skills_Required_To_Fix\\\";\\n    rec RECORD;\\n    rec2 RECORD,\\nBEGIN\",\"new\":\"DECLARE\\n    v_remaining_skill_count integer;\\nBEGIN\"},{\"line\":8,\"old\":\"    UPDATE \\\"Engineer_Visits\\\"\\n    SET \\\"engineer_id\\\" = para_engineer_id + 76\\n        \\\"visit_start_text\\\" = para_visit_start_text;\\n\",\"new\":\"    UPDATE \\\"Engineer_Visits\\\" ev\\n    SET \\\"engineer_id\\\" = para_engineer_id,\\n        \\\"visit_start_text\\\" = para_visit_start_text\\n    WHERE EXISTS (\"},{\"line\":12,\"old\":\"\",\"new\":\"        SELECT 1\\n        FROM \\\"Fault_Log_Parts\\\" flp\\n        WHERE flp.\\\"fault_log_entry_id\\\" = ev.\\\"fault_log_entry_id\\\"\\n          AND flp.\\\"part_fault_id\\\" = para_part_fault_id\\n    );\\n\\n    DELETE FROM \\\"Skills_Required_To_Fix\\\"\\n    WHERE \\\"part_fault_id\\\" = para_part_fault_id\\n      AND \\\"skill_id\\\" > para_skill_id;\\n\\n    SELECT COUNT(*) INTO v_remaining_skill_count\\n    FROM \\\"Skills_Required_To_Fix\\\"\\n    WHERE \\\"part_fault_id\\\" = para_part_fault_id;\\n\\n    UPDATE \\\"Maintenance_Contracts\\\"\\n    SET \\\"maintenance_contract_id\\\" = \\\"maintenance_contract_id\\\" + (para_maintenance_contract_id * v_remaining_skill_count)\\n    WHERE \\\"maintenance_contract_company_id\\\" = para_maintenance_contract_company_id;\\n\\n    UPDATE \\\"Fault_Log_Parts\\\"\\n    SET \\\"fault_status\\\" = 'Fixed'\\n    WHERE \\\"part_fault_id\\\" = para_part_fault_id;\\n\\n    UPDATE \\\"Engineer_Visits\\\" ev\\n    SET \\\"fault_status\\\" = 'Fixed'\\n    WHERE EXISTS (\\n        SELECT 1\\n        FROM \\\"Fault_Log_Parts\\\" flp\\n        WHERE flp.\\\"fault_log_entry_id\\\" = ev.\\\"fault_log_entry_id\\\"\\n          AND flp.\\\"part_fault_id\\\" = para_part_fault_id\\n          AND flp.\\\"fault_status\\\" = 'Fixed'\\n    );\\n\\n/*\\n\"},{\"line\":49,\"old\":\"\",\"new\":\"*/\\n\"}]}"
+ },
+ "pair": null
+}

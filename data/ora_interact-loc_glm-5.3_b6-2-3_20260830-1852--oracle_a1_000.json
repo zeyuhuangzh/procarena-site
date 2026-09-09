@@ -1,0 +1,398 @@
+{
+ "id": "ora_interact-loc_glm-5.3_b6-2-3_20260830-1852--oracle_a1_000",
+ "run": "ora_interact-loc_glm-5.3_b6-2-3_20260830-1852",
+ "task_id": "oracle_a1_000",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "a1",
+ "dialect": "oracle",
+ "model": "glm-5.3",
+ "model_label": "GLM-5.3",
+ "solver_id": "glm-5.3",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 0,
+  "oracle_size": 7
+ },
+ "summary": {
+  "steps": 17,
+  "seconds": 64.7,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 7,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "sample_rows": 2,
+   "compile_plsql": 2,
+   "execute_scratch": 10,
+   "reset_scratch": 1,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 23.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 13.5,
+   "by_tool": {
+    "get_schema": 1.0,
+    "sample_rows": 1.0,
+    "compile_plsql": 1.0,
+    "execute_scratch": 10.0,
+    "reset_scratch": 0.5,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 14,
+   "wasted_calls": 0,
+   "input_tokens": 48054,
+   "output_tokens": 3237,
+   "cached_input_tokens": 36096,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 11958,
+   "max_input_tokens": 5346,
+   "cost_usd": 0.0,
+   "turns": 14,
+   "cache_sources": {
+    "reported": 14
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 14,
+    "wasted_calls": 0,
+    "input_tokens": 48054,
+    "output_tokens": 3237,
+    "cached_input_tokens": 36096,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 11958,
+    "max_input_tokens": 5346,
+    "cost_usd": 0.0
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 0,
+   "blocked": 0,
+   "none": 0,
+   "items_used": [],
+   "inventory_size": 9
+  }
+ },
+ "task": {
+  "prompt": "Create an Oracle PL/SQL procedure named `sp` with exactly this signature: `sp(arg1 NUMBER, arg2 VARCHAR2, arg3 VARCHAR2, arg4 VARCHAR2)`. It returns nothing. The arguments follow the muster accord.\n\nBefore deleting anything, for every operator whose age is strictly greater than the first argument: set that operator's name to the second argument; for each school-bus record assigned to that operator, add 1 to years worked, treating a null years-worked as 0 before adding; and if the third argument is not null and that operator's party equals it, set that school-bus record's full-time flag to T. If the third argument is null, skip that flag update. This must be done before the deletion, so school-bus records for drivers who are later deleted still get those changes.\n\nThen delete every operator whose party is null. For all remaining drivers, set home city to the fourth argument. Even when the third argument is non-null, a operator whose party is null and whose age is greater than the first argument is deleted; the third-argument party assignment does not rescue such a operator.\n\nIf the third argument is not null, also do both of these: set party to the third argument for every remaining operator whose age is strictly greater than the first argument; and set the full-time flag to F for every school-bus record whose operator is one of the remaining drivers with party equal to the third argument and age less than or equal to the first argument. If the third argument is null, skip both. An update uses standard SQL UPDATE semantics.\n\nUse only operator records and school-bus records; do not read or change school records, and do not read or change the school-bus record's own ID. Observe the caller-leash rule. Return the complete stored procedure and nothing else.",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "S1",
+   "op": "commonsense",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What happens when an UPDATE matches no rows?",
+   "answer": "In standard SQL, an UPDATE that matches no rows simply changes no rows."
+  },
+  {
+   "id": "R1",
+   "op": "reasoning",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "When must the deletion of null-party drivers be performed relative to the party update?",
+   "answer": "Delete every driver whose party is null before performing the party update in the non-null third-argument branch. In particular, do not set party to the third argument for an above-threshold driver whose party is null before deleting it."
+  },
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the muster accord?",
+   "answer": "The first argument is the age threshold; the second is the driver name to assign; the third is a party value, which may be null; the fourth is the home city to assign."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the caller-leash rule?",
+   "answer": "Do not commit or rollback, and do not define exception handlers."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Besides the third argument being null, what other condition causes that flag update to be skipped?",
+   "answer": "The flag update is also skipped when the driver's party does not match the third argument."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What particular standard SQL UPDATE behavior is being called out?",
+   "answer": "The behavior is no-match semantics: if an UPDATE's search condition matches no rows, the UPDATE succeeds and changes no rows."
+  },
+  {
+   "id": "E1",
+   "op": "env_contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is 'operator'?",
+   "answer": "No object named operator exists in the schema; the intended table is driver."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable driver , columns = [ Driver_ID ( NUMBER | primary key | values : 3 , 4 ) , Name ( VARCHAR2 | values : Douglas McCrory , Minnie Gonzalez ) , Party ( VARCHAR2 | values : Dem , Dem ) , Home_city ( VARCHAR2 | values : Hartford , Coventry ) , Age ( NUMBER | values : 52 , 38 ) ]\ntable school , columns = [ School_ID ( NUMBER | primary key | values : 2 , 3 ) , Grade ( VARCHAR2 | values : 1st-3rd grade , College ) , School ( VARCHAR2 | values : Harvard Law School , Harvard Law School ) , Location ( VARCHAR2 | values : Los Angeles, California , Jakarta, Indonesia ) , Type ( VARCHAR2 | values : Private , Public ) ]\ntable school_bus , columns = [ School_ID ( NUMBER | primary key | values : 7 , 1 ) , Driver_ID ( NUMBER | values : 3 , 9 ) , Years_Working ( NUMBER | values : 6 , 3 ) , If_full_time ( VARCHAR2 | values : F , F ) ]\nforeign keys : None",
+   "spent": 1.0
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "driver"
+   },
+   "result": "Driver_ID | Name | Party | Home_city | Age\n1 | Matthew Ritter | Dem | Hartford | 40\n2 | Dan Carter | Rep | Bethel | 30\n3 | Minnie Gonzalez | Dem | Hartford | 46\n4 | Angel Acre | Dem | Hartford | 42\n5 | Brandon McGee | Dem | Hartford | 45\n6 | Edwin Vargas | Dem | Hartford | 52\n7 | Douglas McCrory | Dem | Hartford | 36\n8 | Timothy Ackert | Rep | Coventry | 35\n9 | Jason Rojas | Dem | East Hartford | 38\n10 | Henry Genga | Dem | East Hartford | 37\n11 | Tim Larson | Dem | East Hartford | 36\n12 | Geoff Luxenberg | Dem | Manchester | 52",
+   "spent": 1.5
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "sample_rows",
+   "args": {
+    "table": "school_bus"
+   },
+   "result": "School_ID | Driver_ID | Years_Working | If_full_time\n1 | 10 | 10 | F\n3 | 4 | 6 | T\n4 | 3 | 3 | T\n5 | 7 | 8 | T\n7 | 9 | 2 | T",
+   "spent": 2.0
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 NUMBER,\n    arg2 VARCHAR2,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n)\nAS\nBEGIN\n    -- 1. Pre-deletion pass over operators older than arg1\n    UPDATE driver d\n       SET d.\"Name\" = arg2\n     WHERE d.\"Age\" > arg1;\n\n    FOR rec IN (\n        SELECT b.\"School_ID\", b.\"Driver_ID\"\n          FROM school_bus b\n          JOIN driver d ON d.\"Driver_ID\" = b.\"Driver_ID\"\n         WHERE d.\"Age\" > arg1\n    ) LOOP\n        UPDATE school_bus b\n           SET b.\"Years_Working\" = NVL(b.\"Years_Working\", 0) + 1\n         WHERE b.\"School_ID\" = rec.\"School_ID\";\n\n        IF arg3 IS NOT NULL THEN\n            FOR drec IN (\n                SELECT \"Party\" FROM driver\n                 WHERE \"Driver_ID\" = rec.\"Driver_ID\"\n            ) LOOP\n                IF drec.\"Party\" = arg3 THEN\n                    UPDATE school_bus b\n                       SET b.\"If_full_time\" = 'T'\n                     WHERE b.\"School_ID\" = rec.\"School_ID\";\n                END IF;\n            END LOOP;\n        END IF;\n    END LOOP;\n\n    -- 2. Delete operators with null party\n    DELETE FROM driver WHERE \"Party\" IS NULL;\n\n    -- 3. All remaining drivers: home city = arg4\n    UPDATE driver SET \"Home_city\" = arg4;\n\n    -- 4. Only when arg3 is not null\n    IF arg3 IS NOT NULL THEN\n        UPDATE driver\n           SET \"Party\" = arg3\n         WHERE \"Age\" > arg1;\n\n        UPDATE school_bus b\n           SET b.\"If_full_time\" = 'F'\n         WHERE b.\"Driver_ID\" IN (\n                   SELECT d.\"Driver_ID\" FROM driver d\n                    WHERE d.\"Party\" = arg3 AND d.\"Age\" <= arg1\n               );\n    END IF;\nEND sp;"
+   },
+   "result": "compile error: line 10:12 PL/SQL: ORA-00942: table or view does not exist; line 10:5 PL/SQL: SQL Statement ignored; line 17:16 PL/SQL: ORA-00942: table or view does not exist; line 15:9 PL/SQL: SQL Statement ignored; line 20:16 PL/SQL: ORA-00942: table or view does not exist; line 20:9 PL/SQL: SQL Statement ignored; line 26:38 PL/SQL: ORA-00942: table or view does not exist; line 26:17 PL/SQL: SQL Statement ignored; line 29:20 PLS-00364: loop index variable 'DREC' use is invalid; line 29:17 PL/SQL: Statement ignored; line 39:17 PL/SQL: ORA-00942: table or view does not exist; line 39:5 PL/SQL: SQL Statement ignored; line 42:12 PL/SQL: ORA-00942: table or view does not exist; line 42:5 PL/SQL: SQL Statement ignored; line 46:16 PL/SQL: ORA-00942: table or view does not exist; line 46:9 PL/SQL: SQL Statement ignored; line 50:16 PL/SQL: ORA-00942: table or view does not exist; line 50:9 PL/SQL: SQL Statement ignored",
+   "spent": 2.5,
+   "compiled": false
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 NUMBER,\n    arg2 VARCHAR2,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n)\nAS\nBEGIN\n    -- 1. Pre-deletion pass over operators older than arg1\n    UPDATE \"driver\" d\n       SET d.\"Name\" = arg2\n     WHERE d.\"Age\" > arg1;\n\n    FOR rec IN (\n        SELECT b.\"School_ID\" AS school_id, b.\"Driver_ID\" AS driver_id\n          FROM \"school_bus\" b\n          JOIN \"driver\" d ON d.\"Driver_ID\" = b.\"Driver_ID\"\n         WHERE d.\"Age\" > arg1\n    ) LOOP\n        UPDATE \"school_bus\" b\n           SET b.\"Years_Working\" = NVL(b.\"Years_Working\", 0) + 1\n         WHERE b.\"School_ID\" = rec.school_id;\n\n        IF arg3 IS NOT NULL THEN\n            FOR drec IN (\n                SELECT \"Party\" AS party FROM \"driver\"\n                 WHERE \"Driver_ID\" = rec.driver_id\n            ) LOOP\n                IF drec.party = arg3 THEN\n                    UPDATE \"school_bus\" b\n                       SET b.\"If_full_time\" = 'T'\n                     WHERE b.\"School_ID\" = rec.school_id;\n                END IF;\n            END LOOP;\n        END IF;\n    END LOOP;\n\n    -- 2. Delete operators with null party\n    DELETE FROM \"driver\" WHERE \"Party\" IS NULL;\n\n    -- 3. All remaining drivers: home city = arg4\n    UPDATE \"driver\" SET \"Home_city\" = arg4;\n\n    -- 4. Only when arg3 is not null\n    IF arg3 IS NOT NULL THEN\n        UPDATE \"driver\"\n           SET \"Party\" = arg3\n         WHERE \"Age\" > arg1;\n\n        UPDATE \"school_bus\" b\n           SET b.\"If_full_time\" = 'F'\n         WHERE b.\"Driver_ID\" IN (\n                   SELECT d.\"Driver_ID\" FROM \"driver\" d\n                    WHERE d.\"Party\" = arg3 AND d.\"Age\" <= arg1\n               );\n    END IF;\nEND sp;"
+   },
+   "result": "compiled",
+   "spent": 3.0,
+   "compiled": true
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 NUMBER,\n    arg2 VARCHAR2,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n)\nAS\nBEGIN\n    UPDATE \"driver\" d\n       SET d.\"Name\" = arg2\n     WHERE d.\"Age\" > arg1;\n\n    FOR rec IN (\n        SELECT b.\"School_ID\" AS school_id, b.\"Driver_ID\" AS driver_id\n          FROM \"school_bus\" b\n          JOIN \"driver\" d ON d.\"Driver_ID\" = b.\"Driver_ID\"\n         WHERE d.\"Age\" > arg1\n    ) LOOP\n        UPDATE \"school_bus\" b\n           SET b.\"Years_Working\" = NVL(b.\"Years_Working\", 0) + 1\n         WHERE b.\"School_ID\" = rec.school_id;\n\n        IF arg3 IS NOT NULL THEN\n            FOR drec IN (\n                SELECT \"Party\" AS party FROM \"driver\"\n                 WHERE \"Driver_ID\" = rec.driver_id\n            ) LOOP\n                IF drec.party = arg3 THEN\n                    UPDATE \"school_bus\" b\n                       SET b.\"If_full_time\" = 'T'\n                     WHERE b.\"School_ID\" = rec.school_id;\n                END IF;\n            END LOOP;\n        END IF;\n    END LOOP;\n\n    DELETE FROM \"driver\" WHERE \"Party\" IS NULL;\n\n    UPDATE \"driver\" SET \"Home_city\" = arg4;\n\n    IF arg3 IS NOT NULL THEN\n        UPDATE \"driver\"\n           SET \"Party\" = arg3\n         WHERE \"Age\" > arg1;\n\n        UPDATE \"school_bus\" b\n           SET b.\"If_full_time\" = 'F'\n         WHERE b.\"Driver_ID\" IN (\n                   SELECT d.\"Driver_ID\" FROM \"driver\" d\n                    WHERE d.\"Party\" = arg3 AND d.\"Age\" <= arg1\n               );\n    END IF;\nEND sp;"
+   },
+   "result": "ok, 0 row(s) affected",
+   "spent": 4.0
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "UPDATE \"driver\" SET \"Party\" = NULL WHERE \"Driver_ID\" IN (6, 10)"
+   },
+   "result": "ok, 2 row(s) affected",
+   "spent": 5.0
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(40, 'NewName', 'Dem', 'NewCity')"
+   },
+   "result": "ok, 0 row(s) affected",
+   "spent": 6.0
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"driver\" ORDER BY \"Driver_ID\""
+   },
+   "result": "Driver_ID | Name | Party | Home_city | Age\n1 | Matthew Ritter | Dem | NewCity | 40\n2 | Dan Carter | Rep | NewCity | 30\n3 | NewName | Dem | NewCity | 46\n4 | NewName | Dem | NewCity | 42\n5 | NewName | Dem | NewCity | 45\n7 | Douglas McCrory | Dem | NewCity | 36\n8 | Timothy Ackert | Rep | NewCity | 35\n9 | Jason Rojas | Dem | NewCity | 38\n11 | Tim Larson | Dem | NewCity | 36\n12 | NewName | Dem | NewCity | 52",
+   "spent": 7.0
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"school_bus\" ORDER BY \"School_ID\""
+   },
+   "result": "School_ID | Driver_ID | Years_Working | If_full_time\n1 | 10 | 10 | F\n3 | 4 | 7 | T\n4 | 3 | 4 | T\n5 | 7 | 8 | F\n7 | 9 | 2 | F",
+   "spent": 8.0
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL reset_nothing(0)"
+   },
+   "result": "error: DatabaseError: ORA-06576: not a valid function or procedure name\nHelp: https://docs.oracle.com/error-help/db/ora-06576/",
+   "spent": 9.0
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset",
+   "spent": 9.5
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 NUMBER,\n    arg2 VARCHAR2,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n)\nAS\nBEGIN\n    UPDATE \"driver\" d\n       SET d.\"Name\" = arg2\n     WHERE d.\"Age\" > arg1;\n\n    FOR rec IN (\n        SELECT b.\"School_ID\" AS school_id, b.\"Driver_ID\" AS driver_id\n          FROM \"school_bus\" b\n          JOIN \"driver\" d ON d.\"Driver_ID\" = b.\"Driver_ID\"\n         WHERE d.\"Age\" > arg1\n    ) LOOP\n        UPDATE \"school_bus\" b\n           SET b.\"Years_Working\" = NVL(b.\"Years_Working\", 0) + 1\n         WHERE b.\"School_ID\" = rec.school_id;\n\n        IF arg3 IS NOT NULL THEN\n            FOR drec IN (\n                SELECT \"Party\" AS party FROM \"driver\"\n                 WHERE \"Driver_ID\" = rec.driver_id\n            ) LOOP\n                IF drec.party = arg3 THEN\n                    UPDATE \"school_bus\" b\n                       SET b.\"If_full_time\" = 'T'\n                     WHERE b.\"School_ID\" = rec.school_id;\n                END IF;\n            END LOOP;\n        END IF;\n    END LOOP;\n\n    DELETE FROM \"driver\" WHERE \"Party\" IS NULL;\n\n    UPDATE \"driver\" SET \"Home_city\" = arg4;\n\n    IF arg3 IS NOT NULL THEN\n        UPDATE \"driver\"\n           SET \"Party\" = arg3\n         WHERE \"Age\" > arg1;\n\n        UPDATE \"school_bus\" b\n           SET b.\"If_full_time\" = 'F'\n         WHERE b.\"Driver_ID\" IN (\n                   SELECT d.\"Driver_ID\" FROM \"driver\" d\n                    WHERE d.\"Party\" = arg3 AND d.\"Age\" <= arg1\n               );\n    END IF;\nEND sp;"
+   },
+   "result": "ok, 0 row(s) affected",
+   "spent": 10.5
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(40, 'NewName', NULL, 'NewCity')"
+   },
+   "result": "ok, 0 row(s) affected",
+   "spent": 11.5
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"driver\" ORDER BY \"Driver_ID\""
+   },
+   "result": "Driver_ID | Name | Party | Home_city | Age\n1 | Matthew Ritter | Dem | NewCity | 40\n2 | Dan Carter | Rep | NewCity | 30\n3 | NewName | Dem | NewCity | 46\n4 | NewName | Dem | NewCity | 42\n5 | NewName | Dem | NewCity | 45\n6 | NewName | Dem | NewCity | 52\n7 | Douglas McCrory | Dem | NewCity | 36\n8 | Timothy Ackert | Rep | NewCity | 35\n9 | Jason Rojas | Dem | NewCity | 38\n10 | Henry Genga | Dem | NewCity | 37\n11 | Tim Larson | Dem | NewCity | 36\n12 | NewName | Dem | NewCity | 52",
+   "spent": 12.5
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"school_bus\" ORDER BY \"School_ID\""
+   },
+   "result": "School_ID | Driver_ID | Years_Working | If_full_time\n1 | 10 | 10 | F\n3 | 4 | 7 | T\n4 | 3 | 4 | T\n5 | 7 | 8 | T\n7 | 9 | 2 | T",
+   "spent": 13.5
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 NUMBER,\n    arg2 VARCHAR2,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n)\nAS\nBEGIN\n    -- 1. Pre-deletion pass: operators with age strictly greater than arg1\n    UPDATE \"driver\" d\n       SET d.\"Name\" = arg2\n     WHERE d.\"Age\" > arg1;\n\n    FOR rec IN (\n        SELECT b.\"School_ID\" AS school_id, b.\"Driver_ID\" AS driver_id\n          FROM \"school_bus\" b\n          JOIN \"driver\" d ON d.\"Driver_ID\" = b.\"Driver_ID\"\n         WHERE d.\"Age\" > arg1\n    ) LOOP\n        UPDATE \"school_bus\" b\n           SET b.\"Years_Working\" = NVL(b.\"Years_Working\", 0) + 1\n         WHERE b.\"School_ID\" = rec.school_id;\n\n        IF arg3 IS NOT NULL THEN\n            FOR drec IN (\n                SELECT \"Party\" AS party FROM \"driver\"\n                 WHERE \"Driver_ID\" = rec.driver_id\n            ) LOOP\n                IF drec.party = arg3 THEN\n                    UPDATE \"school_bus\" b\n                       SET b.\"If_full_time\" = 'T'\n                     WHERE b.\"School_ID\" = rec.school_id;\n                END IF;\n            END LOOP;\n        END IF;\n    END LOOP;\n\n    -- 2. Delete every operator whose party is null\n    DELETE FROM \"driver\" WHERE \"Party\" IS NULL;\n\n    -- 3. All remaining drivers: home city = arg4\n    UPDATE \"driver\" SET \"Home_city\" = arg4;\n\n    -- 4. Only when arg3 is not null\n    IF arg3 IS NOT NULL THEN\n        UPDATE \"driver\"\n           SET \"Party\" = arg3\n         WHERE \"Age\" > arg1;\n\n        UPDATE \"school_bus\" b\n           SET b.\"If_full_time\" = 'F'\n         WHERE b.\"Driver_ID\" IN (\n                   SELECT d.\"Driver_ID\" FROM \"driver\" d\n                    WHERE d.\"Party\" = arg3 AND d.\"Age\" <= arg1\n               );\n    END IF;\nEND sp;"
+   },
+   "result": "received",
+   "spent": 13.5,
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 NUMBER,\n    arg2 VARCHAR2,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n)\nAS\nBEGIN\n    -- 1. Pre-deletion pass: operators with age strictly greater than arg1\n    UPDATE \"driver\" d\n       SET d.\"Name\" = arg2\n     WHERE d.\"Age\" > arg1;\n\n    FOR rec IN (\n        SELECT b.\"School_ID\" AS school_id, b.\"Driver_ID\" AS driver_id\n          FROM \"school_bus\" b\n          JOIN \"driver\" d ON d.\"Driver_ID\" = b.\"Driver_ID\"\n         WHERE d.\"Age\" > arg1\n    ) LOOP\n        UPDATE \"school_bus\" b\n           SET b.\"Years_Working\" = NVL(b.\"Years_Working\", 0) + 1\n         WHERE b.\"School_ID\" = rec.school_id;\n\n        IF arg3 IS NOT NULL THEN\n            FOR drec IN (\n                SELECT \"Party\" AS party FROM \"driver\"\n                 WHERE \"Driver_ID\" = rec.driver_id\n            ) LOOP\n                IF drec.party = arg3 THEN\n                    UPDATE \"school_bus\" b\n                       SET b.\"If_full_time\" = 'T'\n                     WHERE b.\"School_ID\" = rec.school_id;\n                END IF;\n            END LOOP;\n        END IF;\n    END LOOP;\n\n    -- 2. Delete every operator whose party is null\n    DELETE FROM \"driver\" WHERE \"Party\" IS NULL;\n\n    -- 3. All remaining drivers: home city = arg4\n    UPDATE \"driver\" SET \"Home_city\" = arg4;\n\n    -- 4. Only when arg3 is not null\n    IF arg3 IS NOT NULL THEN\n        UPDATE \"driver\"\n           SET \"Party\" = arg3\n         WHERE \"Age\" > arg1;\n\n        UPDATE \"school_bus\" b\n           SET b.\"If_full_time\" = 'F'\n         WHERE b.\"Driver_ID\" IN (\n                   SELECT d.\"Driver_ID\" FROM \"driver\" d\n                    WHERE d.\"Party\" = arg3 AND d.\"Age\" <= arg1\n               );\n    END IF;\nEND sp;"
+ },
+ "pair": {
+  "single_run": "filtered-ora-a1",
+  "single_task": "oracle_a1_000"
+ }
+}

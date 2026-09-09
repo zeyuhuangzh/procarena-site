@@ -1,0 +1,136 @@
+{
+ "id": "pg_direct_ali-deepseek-r1_nob_20260828-1852--postgres_a2_000",
+ "run": "pg_direct_ali-deepseek-r1_nob_20260828-1852",
+ "task_id": "postgres_a2_000",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "a2",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "model_label": "DeepSeek V4 Pro",
+ "solver_id": "ali-deepseek-r1",
+ "effort": "medium",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 33.1,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 1,
+   "wasted_calls": 0,
+   "input_tokens": 2336,
+   "output_tokens": 1247,
+   "cached_input_tokens": 0,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 2336,
+   "max_input_tokens": 2336,
+   "cost_usd": 0.0,
+   "turns": 1,
+   "cache_sources": {
+    "reported": 1
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 1,
+    "wasted_calls": 0,
+    "input_tokens": 2336,
+    "output_tokens": 1247,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 2336,
+    "max_input_tokens": 2336,
+    "cost_usd": 0.0
+   }
+  }
+ },
+ "task": {
+  "prompt": "Please write the PostgreSQL PL/pgSQL procedure described in design_document.md. Use this exact signature: sp(arg1 integer, arg2 text, arg3 integer, arg4 integer, arg5 text, arg6 integer).\n\nArguments: arg1 is the player height limit; arg2 is unused; arg3 is the baseline player API number; arg4 is the minimum team API number; arg5 is the requested team long-name value; arg6 is the baseline team FIFA API number.\n\nPlease return the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "design_document.md",
+    "kind": "design document",
+    "text": "Implement the football cleanup as PostgreSQL PL/pgSQL procedure sp(arg1 integer, arg2 text, arg3 integer, arg4 integer, arg5 text, arg6 integer).\n\nParameter guide: arg1 is the height limit for the remaining-player weight bump; arg2 is unused; arg3 is the baseline player API number; arg4 is the minimum team API number for the long-name update; arg5 is the requested team long-name value; arg6 is the baseline team FIFA API number.\n\nThe procedure works only on players, teams, player skill snapshots, and team tactical snapshots. Country records and league records are not part of this cleanup.\n\nRun nine cleanup phases in order. In phase i, from 1 through 9, mark every current player’s birthday text with that phase’s marker, 'phase_1' through 'phase_9'; remove current players whose player API number is below arg3 + i - 1; mark every current team’s short team code with that phase’s marker, 'log_phase_1' through 'log_phase_9'; then remove current teams whose team FIFA API number is below arg6 + i - 1. Later phases and later corrections only see rows left by earlier work.\n\nAfter the phase pass, increase weight by 1 for each remaining player whose height is below arg1.\n\nIf arg5 is not NULL, set the long team name to arg5 for current teams whose short team code is 'log_phase_9' and whose team API number is at least arg4.\n\nThen correct player skill snapshots by setting potential to overall rating where the snapshot’s player API number is at least arg3 + 8 and potential is below overall rating. This does not depend on whether the player still exists.\n\nFinally, correct team tactical snapshots by setting defensive aggression to defensive pressure where defensive aggression is below defensive pressure, but only when a current team with the same team API number has team FIFA API number at least arg6 + 8.\n\nUse normal PL/pgSQL behavior; no explicit transaction control or custom error handling."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 integer, \n    arg2 text, \n    arg3 integer, \n    arg4 integer, \n    arg5 text, \n    arg6 integer\n)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    phase INTEGER;\nBEGIN\n    FOR phase IN 1..9 LOOP\n        -- Phase marker update and deletions\n        UPDATE \"Player\" \n        SET \"birthday\" = 'phase_' || phase;\n\n        DELETE FROM \"Player\" \n        WHERE \"player_api_id\" < arg3 + phase - 1;\n\n        UPDATE \"Team\" \n        SET \"team_short_name\" = 'log_phase_' || phase;\n\n        DELETE FROM \"Team\" \n        WHERE \"team_fifa_api_id\" < arg6 + phase - 1;\n    END LOOP;\n\n    -- Post-phase updates\n    UPDATE \"Player\" \n    SET \"weight\" = \"weight\" + 1 \n    WHERE \"height\" < arg1;\n\n    IF arg5 IS NOT NULL THEN\n        UPDATE \"Team\" \n        SET \"team_long_name\" = arg5\n        WHERE \"team_short_name\" = 'log_phase_9' \n              AND \"team_api_id\" >= arg4;\n    END IF;\n\n    UPDATE \"Player_Attributes\" \n    SET \"potential\" = \"overall_rating\"\n    WHERE \"player_api_id\" >= arg3 + 8 \n          AND \"potential\" < \"overall_rating\";\n\n    UPDATE \"Team_Attributes\" AS ta \n    SET \"defenceAggression\" = ta.\"defencePressure\"\n    WHERE ta.\"defenceAggression\" < ta.\"defencePressure\" \n          AND EXISTS (\n            SELECT 1 \n            FROM \"Team\" t \n            WHERE t.\"team_api_id\" = ta.\"team_api_id\" \n                  AND t.\"team_fifa_api_id\" >= arg6 + 8\n          );\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 integer, \n    arg2 text, \n    arg3 integer, \n    arg4 integer, \n    arg5 text, \n    arg6 integer\n)\nLANGUAGE plpgsql\nAS $$\nDECLARE\n    phase INTEGER;\nBEGIN\n    FOR phase IN 1..9 LOOP\n        -- Phase marker update and deletions\n        UPDATE \"Player\" \n        SET \"birthday\" = 'phase_' || phase;\n\n        DELETE FROM \"Player\" \n        WHERE \"player_api_id\" < arg3 + phase - 1;\n\n        UPDATE \"Team\" \n        SET \"team_short_name\" = 'log_phase_' || phase;\n\n        DELETE FROM \"Team\" \n        WHERE \"team_fifa_api_id\" < arg6 + phase - 1;\n    END LOOP;\n\n    -- Post-phase updates\n    UPDATE \"Player\" \n    SET \"weight\" = \"weight\" + 1 \n    WHERE \"height\" < arg1;\n\n    IF arg5 IS NOT NULL THEN\n        UPDATE \"Team\" \n        SET \"team_long_name\" = arg5\n        WHERE \"team_short_name\" = 'log_phase_9' \n              AND \"team_api_id\" >= arg4;\n    END IF;\n\n    UPDATE \"Player_Attributes\" \n    SET \"potential\" = \"overall_rating\"\n    WHERE \"player_api_id\" >= arg3 + 8 \n          AND \"potential\" < \"overall_rating\";\n\n    UPDATE \"Team_Attributes\" AS ta \n    SET \"defenceAggression\" = ta.\"defencePressure\"\n    WHERE ta.\"defenceAggression\" < ta.\"defencePressure\" \n          AND EXISTS (\n            SELECT 1 \n            FROM \"Team\" t \n            WHERE t.\"team_api_id\" = ta.\"team_api_id\" \n                  AND t.\"team_fifa_api_id\" >= arg6 + 8\n          );\nEND;\n$$;"
+ },
+ "pair": null
+}

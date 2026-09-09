@@ -1,0 +1,141 @@
+{
+ "id": "ora_direct_ali-deepseek-r1_nob_20260901-0628--oracle_a2_001",
+ "run": "ora_direct_ali-deepseek-r1_nob_20260901-0628",
+ "task_id": "oracle_a2_001",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "a2",
+ "dialect": "oracle",
+ "model": "deepseek-v4-pro",
+ "model_label": "DeepSeek V4 Pro",
+ "solver_id": "ali-deepseek-r1",
+ "effort": "medium",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "no submission",
+  "checks": null,
+  "metrics": null,
+  "attribution": "impl",
+  "diagnosis": {
+   "kind": "no_submission",
+   "message": "the episode ended without a submission (termination: no_tool_calls)"
+  },
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 3,
+  "seconds": 477.2,
+  "termination": "no_tool_calls",
+  "submitted": false,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {},
+  "final_warning": false,
+  "tokens": {
+   "calls": 3,
+   "wasted_calls": 0,
+   "input_tokens": 6095,
+   "output_tokens": 10790,
+   "cached_input_tokens": 3072,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 3023,
+   "max_input_tokens": 2618,
+   "cost_usd": 0.0,
+   "turns": 3,
+   "cache_sources": {
+    "reported": 3
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 3,
+    "wasted_calls": 0,
+    "input_tokens": 6095,
+    "output_tokens": 10790,
+    "cached_input_tokens": 3072,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 3023,
+    "max_input_tokens": 2618,
+    "cost_usd": 0.0
+   }
+  }
+ },
+ "task": {
+  "prompt": "Write the stored procedure sp(arg1 VARCHAR2, arg2 NUMBER, arg3 VARCHAR2, arg4 VARCHAR2), exactly as required by the attached design document. In business terms, it should set the percentage budgeted on budget rows that match the first argument and meet the document's conditions, and set the location on school rows that match the third argument and meet its conditions. The first argument is the budget-invested percentage to match against on budget rows; the second is the new percentage budgeted for those rows; the third is the mascot to match against on school rows; the fourth is the new location for those rows. The attached design document is the full set of requirements, including all thresholds, text values, and error handling. Return only the complete stored procedure.",
+  "materials": [
+   {
+    "file": "design_document.md",
+    "kind": "design document",
+    "text": "## 1. Overview\nThe sp procedure is an Oracle PL/SQL stored procedure with exactly four arguments. It updates budget percentage and school location when the usual checks pass, keeps one updated-row count across both parts, and uses `sp_savepoint`.\n\n## 2. Interface\n\n| Position | Type | Meaning |\n| --- | --- | --- |\n| 1 | VARCHAR2 | The exact budget-invested percentage text that makes a budget row eligible for the budget update. |\n| 2 | NUMBER | The new percentage budgeted assigned to eligible budget rows. |\n| 3 | VARCHAR2 | The exact mascot text that makes a school row eligible for the school update. |\n| 4 | VARCHAR2 | The new location assigned to eligible school rows. |\n\n## 3. Data\nUses the budget records and the school records: the budget-invested/budgeted fields and amount on one side, mascot/enrollment/location on the other.\n\n## 4. Rule catalogue\nText matches are exact. If the mascot side has no match for the third argument, raise application error -20002 with the exact message `No School record matches the mascot; budget updates skipped`. If the combined work changes nothing, raise application error -20001 with the exact message `No matching records were updated`.\n\n## 5. Processing specification\nCreate `sp_savepoint` first, check the mascot side early, and use the overall budgeted-amount and enrollment averages for the two passes. Do the budget pass before the school pass: set qualifying budget percentages to the second argument, then set qualifying school locations to the fourth. Count each qualifying update, including the already-same-value kind.\n\n## 6. Edge cases and error behaviour\nAfter the savepoint, every exception rolls back to `sp_savepoint` and re-raises the original exception. A successful finish issues no COMMIT; the caller deals with the transaction. That’s it."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "To solve this problem, we need to create a stored procedure that updates budget and school records based on specific conditions. The procedure must handle early checks for school record existence, maintain a count of updated rows across both operations, and implement proper error handling with savepoints.\n\n### Approach\n1. **Savepoint Creation**: Start by creating a savepoint named `sp_savepoint` to manage transactions.\n2. **Early School Check**: Verify if any school records match the given mascot (third argument). If none are found, raise an error (-20002) and skip the budget updates.\n3. **Budget Update**: Update the `total_budget_percent_budgeted` for budget records where `Budget_invested_percent` matches the first argument.\n4. **School Update**: Update the `Location` for school records where `Mascot` matches the third argument.\n5. **Row Counting**: Track the total number of rows updated across both operations.\n6. **No Update Handling**: If no rows were updated, raise an error (-20001).\n7. **Exception Handling**: Roll back to the savepoint on any exception and re-raise the error.\n\n### Solution Code\n```sql\nCREATE OR REPLACE PROCEDURE sp(\n    arg1 VARCHAR2,\n    arg2 NUMBER,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n) AS\n    v_update_count NUMBER := 0;\nBEGIN\n    SAVEPOINT sp_savepoint;\n    \n    -- Check for matching school records\n    BEGIN\n        FOR r IN (SELECT 1 FROM \"School\" WHERE \"Mascot\" = arg3)\n        LOOP\n            v_update_count := v_update_count + 1;\n            EXIT;\n        END LOOP;\n        \n        IF v_update_count = 0 THEN\n            RAISE_APPLICATION_ERROR(-20002, 'No School record matches the mascot; budget updates skipped');\n        END IF;\n    END;\n    \n    -- Reset count for updates\n    v_update_count := 0;\n    \n    -- Update budget rows\n    UPDATE \"budget\"\n    SET \"total_budget_percent_budgeted\" = arg2\n    WHERE \"Budget_invested_percent\" = arg1;\n    v_update_count := v_update_count + SQL%ROWCOUNT;\n    \n    -- Update school rows\n    UPDATE \"Schoo"
+  },
+  {
+   "step": 2,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "Now I will call the `submit` tool with the complete stored procedure code. \n\n```json\n[\n  {\n    \"name\": \"submit\",\n    \"arguments\": {\n      \"answer\": \"CREATE OR REPLACE PROCEDURE sp(\\n    arg1 VARCHAR2,\\n    arg2 NUMBER,\\n    arg3 VARCHAR2,\\n    arg4 VARCHAR2\\n) AS\\n    v_update_count NUMBER := 0;\\nBEGIN\\n    SAVEPOINT sp_savepoint;\\n    \\n    -- Check for matching school records\\n    BEGIN\\n        FOR r IN (SELECT 1 FROM \\\"School\\\" WHERE \\\"Mascot\\\" = arg3)\\n        LOOP\\n            v_update_count := v_update_count + 1;\\n            EXIT;\\n        END LOOP;\\n        \\n        IF v_update_count = 0 THEN\\n            RAISE_APPLICATION_ERROR(-20002, 'No School record matches the mascot; budget updates skipped');\\n        END IF;\\n    END;\\n    \\n    -- Reset count for updates\\n    v_update_count := 0;\\n    \\n    -- Update budget rows\\n    UPDATE \\\"budget\\\"\\n    SET \\\"total_budget_percent_budgeted\\\" = arg2\\n    WHERE \\\"Budget_invested_percent\\\" = arg1;\\n    v_update_count := v_update_count + SQL%ROWCOUNT;\\n    \\n    -- Update school rows\\n    UPDATE \\\"School\\\"\\n    SET \\\"Location\\\" = arg4\\n    WHERE \\\"Mascot\\\" = arg3;\\n    v_update_count := v_update_count + SQL%ROWCOUNT;\\n    \\n    -- Check for updated rows\\n    IF v_update_count = 0 THEN\\n        RAISE_APPLICATION_ERROR(-20001, 'No matching records were updated');\\n    END IF;\\n    \\nEXCEPTION\\n    WHEN OTHERS THEN\\n        ROLLBACK TO sp_savepoint;\\n        RAISE;\\nEND;\\n/\"\n    }\n  }\n]\n```"
+  },
+  {
+   "step": 3,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "I'll submit the complete stored procedure as per the requirements.\n\n```json\n[\n  {\n    \"name\": \"submit\",\n    \"arguments\": {\n      \"answer\": \"CREATE OR REPLACE PROCEDURE sp(\\n    arg1 VARCHAR2,\\n    arg2 NUMBER,\\n    arg3 VARCHAR2,\\n    arg4 VARCHAR2\\n) AS\\n    v_exists NUMBER;\\n    v_update_count NUMBER := 0;\\nBEGIN\\n    SAVEPOINT sp_savepoint;\\n    \\n    -- Check for at least one matching school record\\n    SELECT COUNT(*) INTO v_exists FROM \\\"School\\\" WHERE \\\"Mascot\\\" = arg3;\\n    IF v_exists = 0 THEN\\n        RAISE_APPLICATION_ERROR(-20002, 'No School record matches the mascot; budget updates skipped');\\n    END IF;\\n    \\n    -- Update budget rows\\n    UPDATE \\\"budget\\\"\\n    SET \\\"total_budget_percent_budgeted\\\" = arg2\\n    WHERE \\\"Budget_invested_percent\\\" = arg1;\\n    v_update_count := SQL%ROWCOUNT;\\n    \\n    -- Update school rows\\n    UPDATE \\\"School\\\"\\n    SET \\\"Location\\\" = arg4\\n    WHERE \\\"Mascot\\\" = arg3;\\n    v_update_count := v_update_count + SQL%ROWCOUNT;\\n    \\n    -- Check for any updates\\n    IF v_update_count = 0 THEN\\n        RAISE_APPLICATION_ERROR(-20001, 'No matching records were updated');\\n    END IF;\\n\\nEXCEPTION\\n    WHEN OTHERS THEN\\n        ROLLBACK TO sp_savepoint;\\n        RAISE;\\nEND;\\n/\"\n    }\n  }\n]\n```"
+  }
+ ],
+ "submission": null,
+ "pair": null
+}

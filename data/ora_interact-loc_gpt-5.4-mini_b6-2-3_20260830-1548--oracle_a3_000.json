@@ -1,0 +1,283 @@
+{
+ "id": "ora_interact-loc_gpt-5.4-mini_b6-2-3_20260830-1548--oracle_a3_000",
+ "run": "ora_interact-loc_gpt-5.4-mini_b6-2-3_20260830-1548",
+ "task_id": "oracle_a3_000",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "a3",
+ "dialect": "oracle",
+ "model": "gpt-5.4-mini",
+ "model_label": "GPT-5.4 Mini",
+ "solver_id": "gpt-5.4-mini",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "database state differs after call 1",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "spec",
+  "diagnosis": {
+   "kind": "state_differs",
+   "message": "call 1/7 CALL sp(2, '%', '3233 St Paul St, Baltimore, MD 21218', 1001, 'Smith', 1) -- database state differs; differing table(s): Restaurant"
+  },
+  "recovered": 2,
+  "oracle_size": 6
+ },
+ "summary": {
+  "steps": 5,
+  "seconds": 415.6,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 2,
+  "oracle_size": 6,
+  "entries_per_question": 2.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "ask_user": 1,
+   "compile_plsql": 1,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 21.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 3.5,
+   "by_tool": {
+    "get_schema": 1.0,
+    "ask_user": 2.0,
+    "compile_plsql": 0.5,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 5,
+   "wasted_calls": 0,
+   "input_tokens": 17876,
+   "output_tokens": 30946,
+   "cached_input_tokens": 0,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 17876,
+   "max_input_tokens": 5763,
+   "cost_usd": 0.0,
+   "turns": 5,
+   "cache_sources": {
+    "reported": 8
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 3,
+    "wasted_calls": 0,
+    "input_tokens": 1837,
+    "output_tokens": 1179,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 1837,
+    "max_input_tokens": 936,
+    "cost_usd": 0.0006
+   },
+   "total": {
+    "calls": 8,
+    "wasted_calls": 0,
+    "input_tokens": 19713,
+    "output_tokens": 32125,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 19713,
+    "max_input_tokens": 5763,
+    "cost_usd": 0.0006
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 0,
+   "blocked": 0,
+   "none": 1,
+   "items_used": [],
+   "inventory_size": 8
+  }
+ },
+ "task": {
+  "prompt": "Write one Oracle stored procedure named sp with exactly this signature: sp(arg1 IN NUMBER, arg2 IN VARCHAR2, arg3 IN VARCHAR2, arg4 IN NUMBER, arg5 IN VARCHAR2, arg6 IN NUMBER). The names in that signature are placeholders; below I refer to them by position: the first argument is a restaurant ID, the second is a restaurant-name pattern, the third is a restaurant address, the fourth is a Enrollee ID, the fifth is a Enrollee last name, the sixth is a restaurant-type ID. The attached examples.md shows the call form; use it as a check.\n\nAssume the opening docket.\n\nChoose exactly one case in this order, from the threshold:\n\n- Below 3: consider restaurants with ID less than the first argument and name matching the second argument as a SQL LIKE pattern. For each such restaurant:\n  If its ID is sufficiently high, set its name to 'PROMOTED' and do no other work for that restaurant.\n  * Otherwise, if its address equals the third argument, count visits to it by students whose last name equals the fifth argument. If the count is above 0, set its address to 'RETAINED' and make no deletions for it. If the count is 0, delete that restaurant row (by its ID and the name as read), then delete its visits, then delete its restaurant-type assignments, in that order.\n  * Otherwise, the restaurant's rating is set to the sixth argument only after its address has been set to 'PENDING'.\n- Below 8: consider students with ID between the fourth argument - 5 and the fourth argument + 15 inclusive. For each such Enrollee, using the ID and last name as read:\n  * First set the Enrollee's major to 700 if the last name equals the fifth argument.\n  * Then, if the last name begins with 'ACTIVE', set that Enrollee's last name to 'PROCESSED'.\n  * Otherwise, if the Enrollee's ID is greater than the fourth argument + 5, add that Enrollee's ID to the internal threshold.\n  * Otherwise, delete that Enrollee only if the last name is 'EXPIRED'.\n- Below 18: consider restaurant types with ID greater than the sixth argument - 20. For each such type:\n  * Set the internal status text to 'LOW_PRIORITY' if the type ID is below 50, 'MEDIUM_PRIORITY' if it is below 150, and 'HIGH_PRIORITY' otherwise.\n  * Then increase that type's own ID by 10, and then increase every restaurant-type assignment whose type ID was the read value by 10. The type ID update happens before the assignment update, and the assignment update uses the original read type ID.\n- Below 25: set address to 'ARCHIVED' for every restaurant with ID less than the first argument and name not equal to the second argument. Then stop immediately with the normal unhandled Oracle error that occurs when a row read is attempted with no row source available; do no further work.\n- Below 40: delete every Enrollee with ID less than the fourth argument and last name exactly 'OBSOLETE'. Then stop immediately with the same unhandled error; do no further work.\n- Otherwise: for every restaurant type with ID greater than 200, set its ID to the sixth argument + 100. Then stop immediately with the same unhandled error; do no further work.\n\nIn the first three cases, do not impose an order on the rows; the database's natural order is acceptable. A row that is successfully read is counted before its processing. After a row is processed, if the row count is at least the current batch size, increase the batch size by 5. This is internal only.\n\nAfter the first three cases finish, perform these final checks in this exact order:\n1. If the internal status text is 'HIGH_PRIORITY', double the ID of every restaurant type with ID greater than 100, and skip the remaining checks.\n2. Otherwise, if the selected case was the archive case, delete restaurants with address 'ARCHIVED' and ID less than the internal threshold minus 10.\nOtherwise, if the row count is high enough, set the last name to 'BULK_PROCESSED' for every Enrollee with ID between the fourth argument and the fourth argument + 50 inclusive.\n4. Otherwise, set the name to the third argument for every restaurant with ID greater than the internal threshold.\n\nThe final checks use the turn-in basis.\n\nReturn the complete stored procedure source and nothing else.",
+  "materials": [
+   {
+    "file": "examples.md",
+    "kind": "how the procedure is called",
+    "text": "# How the procedure is called\n\nIt is invoked with `CALL`, never as a function, and takes its arguments by position:\n\n```sql\nCALL sp(<arg1>, <arg2>, <arg3>, <arg4>, <arg5>, <arg6>);\n```\n\n| argument | position | type |\n| --- | --- | --- |\n| arg1 | 1 | IN NUMBER |\n| arg2 | 2 | IN VARCHAR2 |\n| arg3 | 3 | IN VARCHAR2 |\n| arg4 | 4 | IN NUMBER |\n| arg5 | 5 | IN VARCHAR2 |\n| arg6 | 6 | IN NUMBER |\n\nThe names above are placeholders. Declare the parameters in this order with these types; what each one means is in the request.\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "R1",
+   "op": "reasoning",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What precondition must be satisfied before the rating is set to the sixth argument?",
+   "answer": "In the otherwise branch, first set the restaurant's address to 'PENDING'; only then set its rating to the sixth argument. The rating update must never occur before, or without, the address having been set to 'PENDING'."
+  },
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the opening docket?",
+   "answer": "At procedure start, set the internal threshold to ROUND(first argument), the status text to the second argument, the row count to 0, and the batch size to 10; do not commit or rollback, and let any database error propagate."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the turn-in basis?",
+   "answer": "The turn-in basis is the current internal threshold at the time of the final checks, including any student IDs that were added during the student case."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 2,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "how high must a restaurant's ID be for its name to be set to 'PROMOTED'?",
+   "answer": "The restaurant's ID must be greater than 25."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": 2,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "how high must the row count be for the BULK_PROCESSED update to apply?",
+   "answer": "The row count must be greater than 15."
+  },
+  {
+   "id": "E1",
+   "op": "env_contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is Enrollee?",
+   "answer": "No object named Enrollee exists in the schema; the intended table is Student."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Restaurant , columns = [ ResID ( NUMBER | primary key | values : 1 , 2 ) , ResName ( VARCHAR2 | values : Subway , Honeygrow ) , Address ( VARCHAR2 | values : 3233 St Paul St, Baltimore, MD 21218 , 3212 St Paul St, Baltimore, MD 21218 ) , Rating ( NUMBER | values : 3 , 4 ) ]\ntable Restaurant_Type , columns = [ ResTypeID ( NUMBER | primary key | values : 1 , 2 ) , ResTypeName ( VARCHAR2 | values : Sandwich , Stir-fry ) , ResTypeDescription ( VARCHAR2 | values : Simplest there is. , Classic Chinese cooking. ) ]\ntable Student , columns = [ StuID ( NUMBER | primary key | values : 1001 , 1002 ) , LName ( VARCHAR2 | values : Smith , Kim ) , Fname ( VARCHAR2 | values : Linda , Tracy ) , Age ( NUMBER | values : 18 , 19 ) , Sex ( VARCHAR2 | values : F ) , Major ( NUMBER | values : 600 ) , Advisor ( NUMBER | values : 1121 , 7712 ) , city_code ( VARCHAR2 | values : BAL , HKG ) ]\ntable Type_Of_Restaurant , columns = [ ResID ( NUMBER | values : 1 , 2 ) , ResTypeID ( NUMBER | values : 1 , 2 ) ]\ntable Visits_Restaurant , columns = [ StuID ( NUMBER | values : 1001 , 1032 ) , ResID ( NUMBER | values : 1 , 2 ) , Time ( TIMESTAMP(6) | values : 2017-10-09T18:15:00 , 2017-10-08T13:00:30 ) , Spent ( NUMBER | values : 6.53 , 13.2 ) ]\nforeign keys : None",
+   "spent": 1.0
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "I can infer the case split is based on arg1 (<3, <8, <18, <25, <40, otherwise), but I need three details to implement it correctly: (1) in case 1, what does \"its ID is sufficiently high\" mean exactly—compare to a fixed cutoff, or to an internal threshold? (2) what are the initial values of the internal threshold and batch size? (3) for the final check that says \"if the row count is high enough\", what is the intended condition?"
+   },
+   "result": "The restaurant's ID must be greater than 25.\n\nThe row count must be greater than 15.\n\nSorry -- I don't have anything more on that one.",
+   "spent": 3.0,
+   "revealed": [
+    "M1",
+    "M2"
+   ],
+   "suppressed": [],
+   "unmatched": [
+    "what are the initial values of the internal threshold and batch size?"
+   ],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 1,
+    "items": []
+   }
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": "{\"code\":\"CREATE OR REPLACE PROCEDURE sp(\\n  arg1 IN NUMBER,\\n  arg2 IN VARCHAR2,\\n  arg3 IN VARCHAR2,\\n  arg4 IN NUMBER,\\n  arg5 IN VARCHAR2,\\n  arg6 IN NUMBER\\n) IS\\n  v_row_count NUMBER := 0;\\n  v_batch_size NUMBER := 5;\\n  v_internal_threshold NUMBER := 0;\\n  v_internal_status VARCHAR2(30);\\n  v_case VARCHAR2(20);\\n  v_dummy NUMBER;\\nBEGIN\\n  IF arg1 < 3 THEN\\n    v_case := 'RESTAURANT';\\n    FOR r IN (\\n      SELECT ROWID rid,\\n             \\\"ResID\\\" resid,\\n             \\\"ResName\\\" resname,\\n             \\\"Address\\\" addr,\\n             \\\"Rating\\\" rating\\n        FROM \\\"Restaurant\\\"\\n       WHERE \\\"ResID\\\" < arg1\\n         AND \\\"ResName\\\" LIKE arg2\\n    ) LOOP\\n      v_row_count := v_row_count + 1;\\n      IF r.resid > 25 THEN\\n        UPDATE \\\"Restaurant\\\"\\n           SET \\\"ResName\\\" = 'PROMOTED'\\n         WHERE ROWID = r.rid;\\n      ELSIF r.addr = arg3 THEN\\n        SELECT COUNT(*)\\n          INTO v_dummy\\n          FROM \\\"Visits_Restaurant\\\" vr\\n          JOIN \\\"Student\\\" s ON s.\\\"StuID\\\" = vr.\\\"StuID\\\"\\n         WHERE vr.\\\"ResID\\\" = r.resid\\n           AND s.\\\"LName\\\" = arg5;\\n        IF v_dummy > 0 THEN\\n          UPDATE \\\"Restaurant\\\"\\n             SET \\\"Address\\\" = 'RETAINED'\\n           WHERE ROWID = r.rid;\\n        ELSE\\n          DELETE FROM \\\"Restaurant\\\"\\n           WHERE \\\"ResID\\\" = r.resid\\n             AND \\\"ResName\\\" = r.resname;\\n          DELETE FROM \\\"Visits_Restaurant\\\"\\n           WHERE \\\"ResID\\\" = r.resid;\\n          DELETE FROM \\\"Type_Of_Restaurant\\\"\\n           WHERE \\\"ResID\\\" = r.resid;\\n        END IF;\\n      ELSE\\n        UPDATE \\\"Restaurant\\\"\\n           SET \\\"Address\\\" = 'PENDING'\\n         WHERE ROWID = r.rid;\\n        UPDATE \\\"Restaurant\\\"\\n           SET \\\"Rating\\\" = arg6\\n         WHERE ROWID = r.rid;\\n      END IF;\\n      IF v_row_count >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF arg1 < 8 THEN\\n    v_case := 'STUDENT';\\n    FOR s IN (\\n      SELECT ROWID rid,\\n             \\\"StuID\\\" stuid,\\n             \\\"LName\\\" lname\\n        FROM \\\"Student\\\"\\n       WHERE \\\"StuID\\\" BETWEEN arg4 - 5 AND arg4 + 15\\n    ) LOOP\\n      v_row_count := v_row_count + 1;\\n      IF s.lname = arg5 THEN\\n        UPDATE \\\"Student\\\"\\n           SET \\\"Major\\\" = 700\\n         WHERE ROWID = s.rid;\\n      END IF;\\n      IF s.lname LIKE 'ACTIVE%' THEN\\n        UPDATE \\\"Student\\\"\\n           SET \\\"LName\\\" = 'PROCESSED'\\n         WHERE ROWID = s.rid;\\n      ELSIF s.stuid > arg4 + 5 THEN\\n        v_internal_threshold := v_internal_threshold + s.stuid;\\n      ELSIF s.lname = 'EXPIRED' THEN\\n        DELETE FROM \\\"Student\\\"\\n         WHERE ROWID = s.rid;\\n      END IF;\\n      IF v_row_count >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF arg1 < 18 THEN\\n    v_case := 'TYPE';\\n    FOR t IN (\\n      SELECT ROWID rid,\\n             \\\"ResTypeID\\\" restypeid\\n        FROM \\\"Restaurant_Type\\\"\\n       WHERE \\\"ResTypeID\\\" > arg6 - 20\\n    ) LOOP\\n      v_row_count := v_row_count + 1;\\n      IF t.restypeid < 50 THEN\\n        v_internal_status := 'LOW_PRIORITY';\\n      ELSIF t.restypeid < 150 THEN\\n        v_internal_status := 'MEDIUM_PRIORITY';\\n      ELSE\\n        v_internal_status := 'HIGH_PRIORITY';\\n      END IF;\\n      UPDATE \\\"Restaurant_Type\\\"\\n         SET \\\"ResTypeID\\\" = \\\"ResTypeID\\\" + 10\\n       WHERE ROWID = t.rid;\\n      UPDATE \\\"Type_Of_Restaurant\\\"\\n         SET \\\"ResTypeID\\\" = \\\"ResTypeID\\\" + 10\\n       WHERE \\\"ResTypeID\\\" = t.restypeid;\\n      IF v_row_count >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF arg1 < 25 THEN\\n    v_case := 'ARCHIVE';\\n    UPDATE \\\"Restaurant\\\"\\n       SET \\\"Address\\\" = 'ARCHIVED'\\n     WHERE \\\"ResID\\\" < arg1\\n       AND \\\"ResName\\\" <> arg2;\\n    SELECT 1 INTO v_dummy FROM dual WHERE 1 = 0;\\n\\n  ELSIF arg1 < 40 THEN\\n    v_case := 'OBSOLETE';\\n    DELETE FROM \\\"Student\\\"\\n     WHERE \\\"StuID\\\" < arg4\\n       AND \\\"LName\\\" =... (+851)",
+   "result": "compiled",
+   "spent": 3.5,
+   "compiled": true
+  },
+  {
+   "step": 4,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "CREATE OR REPLACE PROCEDURE sp(\n  arg1 IN NUMBER,\n  arg2 IN VARCHAR2,\n  arg3 IN VARCHAR2,\n  arg4 IN NUMBER,\n  arg5 IN VARCHAR2,\n  arg6 IN NUMBER\n) IS\n  v_row_count NUMBER := 0;\n  v_batch_size NUMBER := 5;\n  v_internal_threshold NUMBER := 0;\n  v_internal_status VARCHAR2(30);\n  v_case VARCHAR2(20);\n  v_dummy NUMBER;\nBEGIN\n  IF arg1 < 3 THEN\n    v_case := 'RESTAURANT';\n    FOR r IN (\n      SELECT ROWID rid,\n             \"ResID\" resid,\n             \"ResName\" resname,\n             \"Address\" addr,\n             \"Rating\" rating\n        FROM \"Restaurant\"\n       WHERE \"ResID\" < arg1\n         AND \"ResName\" LIKE arg2\n    ) LOOP\n      v_row_count := v_row_count + 1;\n\n      IF r.resid > 25 THEN\n        UPDATE \"Restaurant\"\n           SET \"ResName\" = 'PROMOTED'\n         WHERE ROWID = r.rid;\n      ELSIF r.addr = arg3 THEN\n        SELECT COUNT(*)\n          INTO v_dummy\n          FROM \"Visits_Restaurant\" vr\n          JOIN \"Student\" s\n            ON s.\"StuID\" = vr.\"StuID\"\n         WHERE vr.\"ResID\" = r.resid\n           AND s.\"LName\" = arg5;\n\n        IF v_dummy > 0 THEN\n          UPDATE \"Restaurant\"\n             SET \"Address\" = 'RETAINED'\n           WHERE ROWID = r.rid;\n        ELSE\n          DELETE FROM \"Restaurant\"\n           WHERE \"ResID\" = r.resid\n             AND \"ResName\" = r.resname;\n          DELETE FROM \"Visits_Restaurant\"\n           WHERE \"ResID\" = r.resid;\n          DELETE FROM \"Type_Of_Restaurant\"\n           WHERE \"ResID\" = r.resid;\n        END IF;\n      ELSE\n        UPDATE \"Restaurant\"\n           SET \"Address\" = 'PENDING'\n         WHERE ROWID = r.rid;\n\n        UPDATE \"Restaurant\"\n           SET \"Rating\" = arg6\n         WHERE ROWID = r.rid;\n      END IF;\n\n      IF v_row_count >= v_batch_size THEN\n        v_batch_size := v_batch_size + 5;\n      END IF;\n    END LOOP;\n\n  ELSIF arg1 < 8 THEN\n    v_case := 'STUDENT';\n    FOR s IN (\n      SELECT ROWID rid,\n             \"StuID\" stuid,\n             \"LName\" lname\n        FROM \"Student\"\n       WHERE \"StuID\" BETWEEN arg4 - 5 AND arg4 + "
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "submit",
+   "args": "{\"answer\":\"CREATE OR REPLACE PROCEDURE sp(\\n  arg1 IN NUMBER,\\n  arg2 IN VARCHAR2,\\n  arg3 IN VARCHAR2,\\n  arg4 IN NUMBER,\\n  arg5 IN VARCHAR2,\\n  arg6 IN NUMBER\\n) IS\\n  v_row_count NUMBER := 0;\\n  v_batch_size NUMBER := 5;\\n  v_internal_threshold NUMBER := 0;\\n  v_internal_status VARCHAR2(30);\\n  v_case VARCHAR2(20);\\n  v_dummy NUMBER;\\nBEGIN\\n  IF arg1 < 3 THEN\\n    v_case := 'RESTAURANT';\\n    FOR r IN (\\n      SELECT ROWID rid,\\n             \\\"ResID\\\" resid,\\n             \\\"ResName\\\" resname,\\n             \\\"Address\\\" addr,\\n             \\\"Rating\\\" rating\\n        FROM \\\"Restaurant\\\"\\n       WHERE \\\"ResID\\\" < arg1\\n         AND \\\"ResName\\\" LIKE arg2\\n    ) LOOP\\n      v_row_count := v_row_count + 1;\\n\\n      IF r.resid > 25 THEN\\n        UPDATE \\\"Restaurant\\\"\\n           SET \\\"ResName\\\" = 'PROMOTED'\\n         WHERE ROWID = r.rid;\\n      ELSIF r.addr = arg3 THEN\\n        SELECT COUNT(*)\\n          INTO v_dummy\\n          FROM \\\"Visits_Restaurant\\\" vr\\n          JOIN \\\"Student\\\" s\\n            ON s.\\\"StuID\\\" = vr.\\\"StuID\\\"\\n         WHERE vr.\\\"ResID\\\" = r.resid\\n           AND s.\\\"LName\\\" = arg5;\\n\\n        IF v_dummy > 0 THEN\\n          UPDATE \\\"Restaurant\\\"\\n             SET \\\"Address\\\" = 'RETAINED'\\n           WHERE ROWID = r.rid;\\n        ELSE\\n          DELETE FROM \\\"Restaurant\\\"\\n           WHERE \\\"ResID\\\" = r.resid\\n             AND \\\"ResName\\\" = r.resname;\\n          DELETE FROM \\\"Visits_Restaurant\\\"\\n           WHERE \\\"ResID\\\" = r.resid;\\n          DELETE FROM \\\"Type_Of_Restaurant\\\"\\n           WHERE \\\"ResID\\\" = r.resid;\\n        END IF;\\n      ELSE\\n        UPDATE \\\"Restaurant\\\"\\n           SET \\\"Address\\\" = 'PENDING'\\n         WHERE ROWID = r.rid;\\n\\n        UPDATE \\\"Restaurant\\\"\\n           SET \\\"Rating\\\" = arg6\\n         WHERE ROWID = r.rid;\\n      END IF;\\n\\n      IF v_row_count >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF arg1 < 8 THEN\\n    v_case := 'STUDENT';\\n    FOR s IN (\\n      SELECT ROWID rid,\\n             \\\"StuID\\\" stuid,\\n             \\\"LName\\\" lname\\n        FROM \\\"Student\\\"\\n       WHERE \\\"StuID\\\" BETWEEN arg4 - 5 AND arg4 + 15\\n    ) LOOP\\n      v_row_count := v_row_count + 1;\\n\\n      IF s.lname = arg5 THEN\\n        UPDATE \\\"Student\\\"\\n           SET \\\"Major\\\" = 700\\n         WHERE ROWID = s.rid;\\n      END IF;\\n\\n      IF s.lname LIKE 'ACTIVE%' THEN\\n        UPDATE \\\"Student\\\"\\n           SET \\\"LName\\\" = 'PROCESSED'\\n         WHERE ROWID = s.rid;\\n      ELSIF s.stuid > arg4 + 5 THEN\\n        v_internal_threshold := v_internal_threshold + s.stuid;\\n      ELSIF s.lname = 'EXPIRED' THEN\\n        DELETE FROM \\\"Student\\\"\\n         WHERE ROWID = s.rid;\\n      END IF;\\n\\n      IF v_row_count >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF arg1 < 18 THEN\\n    v_case := 'TYPE';\\n    FOR t IN (\\n      SELECT ROWID rid,\\n             \\\"ResTypeID\\\" restypeid\\n        FROM \\\"Restaurant_Type\\\"\\n       WHERE \\\"ResTypeID\\\" > arg6 - 20\\n    ) LOOP\\n      v_row_count := v_row_count + 1;\\n\\n      IF t.restypeid < 50 THEN\\n        v_internal_status := 'LOW_PRIORITY';\\n      ELSIF t.restypeid < 150 THEN\\n        v_internal_status := 'MEDIUM_PRIORITY';\\n      ELSE\\n        v_internal_status := 'HIGH_PRIORITY';\\n      END IF;\\n\\n      UPDATE \\\"Restaurant_Type\\\"\\n         SET \\\"ResTypeID\\\" = \\\"ResTypeID\\\" + 10\\n       WHERE ROWID = t.rid;\\n\\n      UPDATE \\\"Type_Of_Restaurant\\\"\\n         SET \\\"ResTypeID\\\" = \\\"ResTypeID\\\" + 10\\n       WHERE \\\"ResTypeID\\\" = t.restypeid;\\n\\n      IF v_row_count >= v_batch_size THEN\\n        v_batch_size := v_batch_size + 5;\\n      END IF;\\n    END LOOP;\\n\\n  ELSIF arg1 < 25 THEN\\n    v_case := 'ARCHIVE';\\n    UPDATE \\\"Restaurant\\\"\\n       SET \\\"Address\\\" = 'ARCHIVED'\\n     WHERE \\\"ResID\\\" < arg1\\n       AND \\\"ResName\\\" <> arg2;\\n\\n    SELECT 1 INTO v_dummy FROM dual WHERE 1 = 0;\\n\\n  ELSIF arg1 < 40 THEN\\n    v_case := 'OBSOLETE';\\n    DELETE FROM \\\"Student\\\"\\n     WHERE \\... (+894)",
+   "result": "received",
+   "spent": 3.5,
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n  arg1 IN NUMBER,\n  arg2 IN VARCHAR2,\n  arg3 IN VARCHAR2,\n  arg4 IN NUMBER,\n  arg5 IN VARCHAR2,\n  arg6 IN NUMBER\n) IS\n  v_row_count NUMBER := 0;\n  v_batch_size NUMBER := 5;\n  v_internal_threshold NUMBER := 0;\n  v_internal_status VARCHAR2(30);\n  v_case VARCHAR2(20);\n  v_dummy NUMBER;\nBEGIN\n  IF arg1 < 3 THEN\n    v_case := 'RESTAURANT';\n    FOR r IN (\n      SELECT ROWID rid,\n             \"ResID\" resid,\n             \"ResName\" resname,\n             \"Address\" addr,\n             \"Rating\" rating\n        FROM \"Restaurant\"\n       WHERE \"ResID\" < arg1\n         AND \"ResName\" LIKE arg2\n    ) LOOP\n      v_row_count := v_row_count + 1;\n\n      IF r.resid > 25 THEN\n        UPDATE \"Restaurant\"\n           SET \"ResName\" = 'PROMOTED'\n         WHERE ROWID = r.rid;\n      ELSIF r.addr = arg3 THEN\n        SELECT COUNT(*)\n          INTO v_dummy\n          FROM \"Visits_Restaurant\" vr\n          JOIN \"Student\" s\n            ON s.\"StuID\" = vr.\"StuID\"\n         WHERE vr.\"ResID\" = r.resid\n           AND s.\"LName\" = arg5;\n\n        IF v_dummy > 0 THEN\n          UPDATE \"Restaurant\"\n             SET \"Address\" = 'RETAINED'\n           WHERE ROWID = r.rid;\n        ELSE\n          DELETE FROM \"Restaurant\"\n           WHERE \"ResID\" = r.resid\n             AND \"ResName\" = r.resname;\n          DELETE FROM \"Visits_Restaurant\"\n           WHERE \"ResID\" = r.resid;\n          DELETE FROM \"Type_Of_Restaurant\"\n           WHERE \"ResID\" = r.resid;\n        END IF;\n      ELSE\n        UPDATE \"Restaurant\"\n           SET \"Address\" = 'PENDING'\n         WHERE ROWID = r.rid;\n\n        UPDATE \"Restaurant\"\n           SET \"Rating\" = arg6\n         WHERE ROWID = r.rid;\n      END IF;\n\n      IF v_row_count >= v_batch_size THEN\n        v_batch_size := v_batch_size + 5;\n      END IF;\n    END LOOP;\n\n  ELSIF arg1 < 8 THEN\n    v_case := 'STUDENT';\n    FOR s IN (\n      SELECT ROWID rid,\n             \"StuID\" stuid,\n             \"LName\" lname\n        FROM \"Student\"\n       WHERE \"StuID\" BETWEEN arg4 - 5 AND arg4 + 15\n    ) LOOP\n      v_row_count := v_row_count + 1;\n\n      IF s.lname = arg5 THEN\n        UPDATE \"Student\"\n           SET \"Major\" = 700\n         WHERE ROWID = s.rid;\n      END IF;\n\n      IF s.lname LIKE 'ACTIVE%' THEN\n        UPDATE \"Student\"\n           SET \"LName\" = 'PROCESSED'\n         WHERE ROWID = s.rid;\n      ELSIF s.stuid > arg4 + 5 THEN\n        v_internal_threshold := v_internal_threshold + s.stuid;\n      ELSIF s.lname = 'EXPIRED' THEN\n        DELETE FROM \"Student\"\n         WHERE ROWID = s.rid;\n      END IF;\n\n      IF v_row_count >= v_batch_size THEN\n        v_batch_size := v_batch_size + 5;\n      END IF;\n    END LOOP;\n\n  ELSIF arg1 < 18 THEN\n    v_case := 'TYPE';\n    FOR t IN (\n      SELECT ROWID rid,\n             \"ResTypeID\" restypeid\n        FROM \"Restaurant_Type\"\n       WHERE \"ResTypeID\" > arg6 - 20\n    ) LOOP\n      v_row_count := v_row_count + 1;\n\n      IF t.restypeid < 50 THEN\n        v_internal_status := 'LOW_PRIORITY';\n      ELSIF t.restypeid < 150 THEN\n        v_internal_status := 'MEDIUM_PRIORITY';\n      ELSE\n        v_internal_status := 'HIGH_PRIORITY';\n      END IF;\n\n      UPDATE \"Restaurant_Type\"\n         SET \"ResTypeID\" = \"ResTypeID\" + 10\n       WHERE ROWID = t.rid;\n\n      UPDATE \"Type_Of_Restaurant\"\n         SET \"ResTypeID\" = \"ResTypeID\" + 10\n       WHERE \"ResTypeID\" = t.restypeid;\n\n      IF v_row_count >= v_batch_size THEN\n        v_batch_size := v_batch_size + 5;\n      END IF;\n    END LOOP;\n\n  ELSIF arg1 < 25 THEN\n    v_case := 'ARCHIVE';\n    UPDATE \"Restaurant\"\n       SET \"Address\" = 'ARCHIVED'\n     WHERE \"ResID\" < arg1\n       AND \"ResName\" <> arg2;\n\n    SELECT 1 INTO v_dummy FROM dual WHERE 1 = 0;\n\n  ELSIF arg1 < 40 THEN\n    v_case := 'OBSOLETE';\n    DELETE FROM \"Student\"\n     WHERE \"StuID\" < arg4\n       AND \"LName\" = 'OBSOLETE';\n\n    SELECT 1 INTO v_dummy FROM dual WHERE 1 = 0;\n\n  ELSE\n    v_case := 'OTHER';\n    UPDATE \"Restaurant_Type\"\n       SET \"ResTypeID\" = arg6 + 100\n     WHERE \"ResTypeID\" > 200;\n\n    SELECT 1 INTO v_dummy FROM dual WHERE 1 = 0;\n  END IF;\n\n  IF v_internal_status = 'HIGH_PRIORITY' THEN\n    UPDATE \"Restaurant_Type\"\n       SET \"ResTypeID\" = \"ResTypeID\" * 2\n     WHERE \"ResTypeID\" > 100;\n  ELSIF v_case = 'ARCHIVE' THEN\n    DELETE FROM \"Restaurant\"\n     WHERE \"Address\" = 'ARCHIVED'\n       AND \"ResID\" < v_internal_threshold - 10;\n  ELSIF v_row_count > 15 THEN\n    UPDATE \"Student\"\n       SET \"LName\" = 'BULK_PROCESSED'\n     WHERE \"StuID\" BETWEEN arg4 AND arg4 + 50;\n  ELSE\n    UPDATE \"Restaurant\"\n       SET \"ResName\" = arg3\n     WHERE \"ResID\" > v_internal_threshold;\n  END IF;\nEND;"
+ },
+ "pair": {
+  "single_run": "filtered-ora-a3",
+  "single_task": "oracle_a3_000"
+ }
+}

@@ -1,0 +1,305 @@
+{
+ "id": "ora_interact-loc_ali-deepseek-r1_b6-2-3_20260831-1832--oracle_a2_001",
+ "run": "ora_interact-loc_ali-deepseek-r1_b6-2-3_20260831-1832",
+ "task_id": "oracle_a2_001",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "a2",
+ "dialect": "oracle",
+ "model": "deepseek-v4-pro",
+ "model_label": "DeepSeek V4 Pro",
+ "solver_id": "ali-deepseek-r1",
+ "effort": "medium",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 2,
+  "oracle_size": 9
+ },
+ "summary": {
+  "steps": 4,
+  "seconds": 402.2,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 1,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 2,
+  "oracle_size": 9,
+  "entries_per_question": 2.0,
+  "fallback_answers": 0,
+  "tools": {
+   "ask_user": 1,
+   "get_schema": 1,
+   "compile_plsql": 1,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 27.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 3.5,
+   "by_tool": {
+    "ask_user": 2.0,
+    "get_schema": 1.0,
+    "compile_plsql": 0.5,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 4,
+   "wasted_calls": 0,
+   "input_tokens": 13185,
+   "output_tokens": 12824,
+   "cached_input_tokens": 9984,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 3201,
+   "max_input_tokens": 4332,
+   "cost_usd": 0.0,
+   "turns": 4,
+   "cache_sources": {
+    "reported": 6
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 2,
+    "wasted_calls": 0,
+    "input_tokens": 1321,
+    "output_tokens": 455,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 1321,
+    "max_input_tokens": 999,
+    "cost_usd": 0.0003
+   },
+   "total": {
+    "calls": 6,
+    "wasted_calls": 0,
+    "input_tokens": 14506,
+    "output_tokens": 13279,
+    "cached_input_tokens": 9984,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 4522,
+    "max_input_tokens": 4332,
+    "cost_usd": 0.0003
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 0,
+   "blocked": 0,
+   "none": 0,
+   "items_used": [],
+   "inventory_size": 9
+  }
+ },
+ "task": {
+  "prompt": "Write the stored procedure sp(arg1 VARCHAR2, arg2 NUMBER, arg3 VARCHAR2, arg4 VARCHAR2), exactly as required by the attached design document. In business terms, it should set the percentage budgeted on budget rows that match the first argument and meet the document's conditions, and set the location on school rows that match the third argument and meet its conditions. The first argument is the budget-invested percentage to match against on budget rows; the second is the new percentage budgeted for those rows; the third is the mascot to match against on school rows; the fourth is the new location for those rows. The attached design document is the full set of requirements, including all thresholds, text values, and error handling. Return only the complete stored procedure.",
+  "materials": [
+   {
+    "file": "design_document.md",
+    "kind": "design document",
+    "text": "## 1. Overview\nThe sp procedure is an Oracle PL/SQL stored procedure with exactly four arguments. It conditionally updates the percentage budgeted on budget rows and the location on school rows, keeps a single updated-row count across both sets of rows, and rolls back to its savepoint and re-raises on any error.\n\n## 2. Interface\n\n| Position | Type | Meaning |\n| --- | --- | --- |\n| 1 | VARCHAR2 | The exact budget-invested percentage text that makes a budget row eligible for the budget update. |\n| 2 | NUMBER | The new percentage budgeted assigned to eligible budget rows. |\n| 3 | VARCHAR2 | The exact mascot text that makes a school row eligible for the school update. |\n| 4 | VARCHAR2 | The new location assigned to eligible school rows. |\n\n## 3. Data\n\nThe procedure uses the budget records and the school records.\n\nFor each budget row, it reads the row's budget-invested percentage, its percentage budgeted, and its budgeted amount. It writes the budget row's percentage budgeted.\n\nFor each school row, it reads the school's mascot and enrollment. It writes the school's location.\n\n## 4. Rule catalogue\n\n| Rule name | Definition |\n| --- | --- |\n| **Savepoint name** | The **acorn peg**, created as the first thing inside the procedure body. |\n| **Case-sensitive equality** | Oracle's default text equality |\n| **Mascot match count** | The number of school rows whose mascot is equal to the third argument, counted before any update and before the averages are computed. |\n| **Zero match threshold** | 0, the count that triggers the no-school-match error. |\n| **Budgeted average** | The arithmetic average of the budgeted amount over every budget row, computed before any row is updated. |\n| **Enrollment average** | The **fall-line constant**, computed before any row is updated. |\n| **Updated-row count** | The count of rows updated by this procedure. It is maintained so that, at every point, it equals the number of rows examined so far whose update conditions were fully met, irrespective of whether the assigned value equals the existing value. |\n| **Zero update threshold** | The count that triggers the no-update error. |\n| **No-school match error** | Application error -20002 with the exact message `No School record matches the mascot; budget updates skipped`. |\n| **No-update error** | The **umber flag**. |\n## 5. Processing specification\n\n1. Create the **acorn peg** as the first thing in the procedure body.\n\n2. Determine the **Mascot match count**. If it equals the **Zero match threshold**, raise the **No-school match error**; no budget or school row has been updated at this point. Otherwise continue.\n\n3. Compute the **Budgeted average** and the **fall-line constant**.\n\n4. Budget pass: examine every budget row exactly once. For the row currently being examined, update its percentage budgeted to the second argument only if all three conditions are true:\n   - its budget-invested percentage equals the first argument under the **Case-sensitive equality** rule;\n   - its percentage budgeted, as it currently stands, is less than or equal to the second argument;\n   - its budgeted amount meets the **Budgeted average** requirement.\n\n   If all three are true, set the row's percentage budgeted to the second argument and increment the **Updated-row count** by one, even if the existing value is already the same as the second argument. Otherwise leave the row unchanged and do not increment the count.\n\n5. School pass: examine every school row exactly once. For the row currently being examined, update its location to the fourth argument only if both conditions are true:\n   - its mascot equals the third argument under the **Case-sensitive equality** rule;\n   - its enrollment is strictly greater than the **fall-line constant**.\n\n   If both are true, set the row's location to the fourth argument and increment the **Updated-row count** by one, even if the existing location is already the same as the fourth argument. Otherwise leave the row unchanged and do not increment the count.\n\n6. After both passes are complete, inspect the **Updated-row count**. If it equals the **Zero update threshold**, raise the **umber flag**. Otherwise finish normally.\n\nThe Budgeted average is the arithmetic average of the budgeted amount over every budget row, computed after the budget pass completes.\n\n## 6. Edge cases and error behaviour\n\nNull handling: no separate null branch is defined; the stated equality and comparison conditions are the only tests.\n\nEmpty-table behaviour: if there are no school rows, or no school row matching the third argument, the **Mascot match count** is zero and the **No-school match error** path is followed before averages. No separate empty-budget-table result is defined; the averages and row visits apply to whatever rows exist.\n\nOrdering: no row order is guaranteed within either pass. Each row is examined exactly once, and the budget pass is specified before the school pass.\n\nFailure handling: after the **acorn peg** is created, every exception (the **No-school match error**, the **umber flag**, or any other runtime error) rolls back to the **acorn peg** and re-raises the original exception. This undoes every update made after the savepoint.\n\nA successful finish issues no COMMIT; the updates remain in the current transaction for the caller to commit or roll back."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "S1",
+   "op": "commonsense",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is Oracle's default text equality?",
+   "answer": "Text equality is exact and case-sensitive; uppercase and lowercase are different."
+  },
+  {
+   "id": "R1",
+   "op": "reasoning",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "How must the updated-row count behave as each row is examined?",
+   "answer": "The updated-row count starts at zero before any row is examined. For each row examined, if its update conditions are fully met, the count is incremented by exactly one; otherwise it is unchanged. This applies to both the budget pass and the school pass. A row whose update conditions are fully met is counted even when the new value equals the old value."
+  },
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the acorn peg?",
+   "answer": "The acorn peg is the savepoint named `sp_savepoint`, created as the first thing inside the procedure body."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the fall-line constant?",
+   "answer": "The fall-line constant is the arithmetic average of enrollment over every school row, computed before any row is updated."
+  },
+  {
+   "id": "J3",
+   "op": "jargon",
+   "revealed_at": 1,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the umber flag?",
+   "answer": "The umber flag is application error -20001 with the exact message `No matching records were updated`."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What equality semantics are used when counting mascot matches?",
+   "answer": "Case-sensitively, under the Case-sensitive equality rule (Oracle's default text equality)."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the exact value of the Zero update threshold?",
+   "answer": "0."
+  },
+  {
+   "id": "M3",
+   "op": "mask",
+   "revealed_at": 1,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "How must the budgeted amount compare with the Budgeted average in the budget pass?",
+   "answer": "It must be strictly greater than the Budgeted average."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "When is the Budgeted average computed?",
+   "answer": "The rule catalogue and step 3 are correct: the Budgeted average is the arithmetic average of the budgeted amount over every budget row, computed before any row is updated. The statement saying it is computed after the budget pass completes is wrong."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "1. For the budget row update condition regarding Budgeted average - what specific requirement should be applied (e.g. greater than, less than, or equal to the average)? 2. What is the exact error number and message for the umber flag error?"
+   },
+   "result": "It must be strictly greater than the Budgeted average.\n\nThe umber flag is application error -20001 with the exact message `No matching records were updated`.",
+   "spent": 2.0,
+   "revealed": [
+    "M3",
+    "J3"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable School , columns = [ School_id ( VARCHAR2 | primary key | values : 7 , 5 ) , School_name ( VARCHAR2 | values : Culver Community , LaVille ) , Location ( VARCHAR2 | values : Knox , Culver ) , Mascot ( VARCHAR2 | values : Trojans , Redskins ) , Enrollment ( NUMBER | values : 601 , 316 ) , IHSAA_Class ( VARCHAR2 | values : A , AA ) , IHSAA_Football_Class ( VARCHAR2 | values : AAAA , A ) , County ( VARCHAR2 | values : 71 St. Joseph , 46 LaPorte 71 St. Joseph ) ]\ntable budget , columns = [ School_id ( NUMBER | primary key | values : 2 , 2 ) , Year ( NUMBER | values : 1999 , 2006 ) , Budgeted ( NUMBER | values : 6803 , 119527 ) , total_budget_percent_budgeted ( NUMBER | values : 2.4 , 2.0 ) , Invested ( NUMBER | values : 5840 , 95542 ) , total_budget_percent_invested ( NUMBER | values : 2.2 , 2.0 ) , Budget_invested_percent ( VARCHAR2 | values : 228.8 , 42.9 ) ]\ntable endowment , columns = [ endowment_id ( NUMBER | primary key | values : 2 , 2 ) , School_id ( NUMBER | values : 5 , 2 ) , donator_name ( VARCHAR2 | values : Valverde , Duarte ) , amount ( NUMBER | values : 9.55 , 8.82 ) ]\nforeign keys : None",
+   "spent": 3.0
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 VARCHAR2,\n    arg2 NUMBER,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n) AS\n    v_mascot_count NUMBER;\n    v_budget_avg NUMBER;\n    v_enrollment_avg NUMBER;\n    v_updated_count NUMBER := 0;\nBEGIN\n    SAVEPOINT acorn_peg;\n\n    -- Get the mascot match count\n    SELECT COUNT(*) INTO v_mascot_count FROM \"School\" WHERE \"Mascot\" = arg3;\n    \n    -- Check for no-school-match error\n    IF v_mascot_count <= 0 THEN\n        RAISE_APPLICATION_ERROR(-20002, 'No School record matches the mascot; budget updates skipped');\n    END IF;\n    \n    -- Compute the averages\n    SELECT AVG(\"Budgeted\") INTO v_budget_avg FROM \"budget\";\n    SELECT AVG(\"Enrollment\") INTO v_enrollment_avg FROM \"School\";\n    \n    -- Budget pass\n    UPDATE \"budget\"\n    SET \"total_budget_percent_budgeted\" = arg2\n    WHERE \"Budget_invested_percent\" = arg1\n        AND \"total_budget_percent_budgeted\" <= arg2\n        AND \"Budgeted\" > v_budget_avg;\n    \n    v_updated_count := v_updated_count + SQL%ROWCOUNT;\n    \n    -- School pass\n    UPDATE \"School\"\n    SET \"Location\" = arg4\n    WHERE \"Mascot\" = arg3\n        AND \"Enrollment\" > v_enrollment_avg;\n    \n    v_updated_count := v_updated_count + SQL%ROWCOUNT;\n    \n    -- Check for no-update error\n    IF v_updated_count <= 0 THEN\n        RAISE_APPLICATION_ERROR(-20001, 'No matching records were updated');\n    END IF;\nEXCEPTION\n    WHEN OTHERS THEN\n        ROLLBACK TO acorn_peg;\n        RAISE;\nEND;/\n"
+   },
+   "result": "compiled",
+   "spent": 3.5,
+   "compiled": true
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 VARCHAR2,\n    arg2 NUMBER,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n) AS\n    v_mascot_count NUMBER;\n    v_budget_avg NUMBER;\n    v_enrollment_avg NUMBER;\n    v_updated_count NUMBER := 0;\nBEGIN\n    SAVEPOINT acorn_peg;\n\n    SELECT COUNT(*) INTO v_mascot_count FROM \"School\" WHERE \"Mascot\" = arg3;\n    IF v_mascot_count <= 0 THEN\n        RAISE_APPLICATION_ERROR(-20002, 'No School record matches the mascot; budget updates skipped');\n    END IF;\n    \n    SELECT AVG(\"Budgeted\") INTO v_budget_avg FROM \"budget\";\n    SELECT AVG(\"Enrollment\") INTO v_enrollment_avg FROM \"School\";\n    \n    UPDATE \"budget\"\n    SET \"total_budget_percent_budgeted\" = arg2\n    WHERE \"Budget_invested_percent\" = arg1\n        AND \"total_budget_percent_budgeted\" <= arg2\n        AND \"Budgeted\" > v_budget_avg;\n    v_updated_count := v_updated_count + SQL%ROWCOUNT;\n    \n    UPDATE \"School\"\n    SET \"Location\" = arg4\n    WHERE \"Mascot\" = arg3\n        AND \"Enrollment\" > v_enrollment_avg;\n    v_updated_count := v_updated_count + SQL%ROWCOUNT;\n    \n    IF v_updated_count <= 0 THEN\n        RAISE_APPLICATION_ERROR(-20001, 'No matching records were updated');\n    END IF;\nEXCEPTION\n    WHEN OTHERS THEN\n        ROLLBACK TO acorn_peg;\n        RAISE;\nEND;\n"
+   },
+   "result": "received",
+   "spent": 3.5,
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 VARCHAR2,\n    arg2 NUMBER,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n) AS\n    v_mascot_count NUMBER;\n    v_budget_avg NUMBER;\n    v_enrollment_avg NUMBER;\n    v_updated_count NUMBER := 0;\nBEGIN\n    SAVEPOINT acorn_peg;\n\n    SELECT COUNT(*) INTO v_mascot_count FROM \"School\" WHERE \"Mascot\" = arg3;\n    IF v_mascot_count <= 0 THEN\n        RAISE_APPLICATION_ERROR(-20002, 'No School record matches the mascot; budget updates skipped');\n    END IF;\n    \n    SELECT AVG(\"Budgeted\") INTO v_budget_avg FROM \"budget\";\n    SELECT AVG(\"Enrollment\") INTO v_enrollment_avg FROM \"School\";\n    \n    UPDATE \"budget\"\n    SET \"total_budget_percent_budgeted\" = arg2\n    WHERE \"Budget_invested_percent\" = arg1\n        AND \"total_budget_percent_budgeted\" <= arg2\n        AND \"Budgeted\" > v_budget_avg;\n    v_updated_count := v_updated_count + SQL%ROWCOUNT;\n    \n    UPDATE \"School\"\n    SET \"Location\" = arg4\n    WHERE \"Mascot\" = arg3\n        AND \"Enrollment\" > v_enrollment_avg;\n    v_updated_count := v_updated_count + SQL%ROWCOUNT;\n    \n    IF v_updated_count <= 0 THEN\n        RAISE_APPLICATION_ERROR(-20001, 'No matching records were updated');\n    END IF;\nEXCEPTION\n    WHEN OTHERS THEN\n        ROLLBACK TO acorn_peg;\n        RAISE;\nEND;\n"
+ },
+ "pair": {
+  "single_run": "filtered-ora-a2",
+  "single_task": "oracle_a2_001"
+ }
+}

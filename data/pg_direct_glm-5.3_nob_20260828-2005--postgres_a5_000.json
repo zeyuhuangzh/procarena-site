@@ -1,0 +1,137 @@
+{
+ "id": "pg_direct_glm-5.3_nob_20260828-2005--postgres_a5_000",
+ "run": "pg_direct_glm-5.3_nob_20260828-2005",
+ "task_id": "postgres_a5_000",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "a5",
+ "dialect": "postgres",
+ "model": "glm-5.3",
+ "model_label": "GLM-5.3",
+ "solver_id": "glm-5.3",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "component_usage": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 139.5,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 1,
+   "wasted_calls": 0,
+   "input_tokens": 1998,
+   "output_tokens": 8476,
+   "cached_input_tokens": 0,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 1998,
+   "max_input_tokens": 1998,
+   "cost_usd": 0.0,
+   "turns": 1,
+   "cache_sources": {
+    "reported": 1
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 1,
+    "wasted_calls": 0,
+    "input_tokens": 1998,
+    "output_tokens": 8476,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 1998,
+    "max_input_tokens": 1998,
+    "cost_usd": 0.0
+   }
+  }
+ },
+ "task": {
+  "prompt": "Please write a PostgreSQL PL/pgSQL procedure named `sp` with exactly this interface: `sp(arg1 integer, arg2 text, arg3 integer, arg4 integer, arg5 text, arg6 integer)`. The six inputs are, in order: manager age, manager work-start year, manager level, manager identifier, assignment from-year, and railway identifier.\n\nUse the attached set of existing procedures in `components.sql`; call the component or components that fit the path, and don't recreate or modify them.\n\nBefore anything changes, remember the smallest railway identifier among management assignments whose from-year equals the fifth input. If nothing matches, remember null. Ordinary PostgreSQL equality applies, including nulls.\n\nIf that remembered identifier exists and the third input is strictly greater than 3, this is the high-level path: both components take part, and the railway picked by the sixth input has its construction year/value set to the third input. The component work in this path should reflect the requested manager, railway, and year values, plus the remembered earliest matching railway for the year cleanup.\n\nOtherwise, run the alternate path: include the year cleanup component for the fifth input's year, using the railway number one higher than the sixth input as the cutoff. Also, if the third input is less than or equal to 3, remove management assignments for the fourth input's manager where the railway number is strictly below the sixth input. If not, remove management assignments for the sixth input's railway and the fifth input's from-year.\n\nAfter the branch, if the second input isn't null, archive the matching manager profile's home country: same manager as the fourth input, same work-start year as the second input, country present, and not already beginning with exact 8-character prefix `archive_`; prefix the existing country with `archive_`.\n\nThen use what's left. If that manager has no management assignments, prefix their non-null displayed name with exact 9-character prefix `inactive_`, unless it already starts that way. If that railway has no management assignments, prefix its non-null location with exact 11-character prefix `unassigned_`, unless it already starts that way. If that railway has no train records, prefix its non-null builder name with exact 9-character prefix `no_train_`, unless it already starts that way.\n\nDon't add special null handling beyond the explicit checks above. Use normal PostgreSQL behavior for comparisons, text matching, concatenation, and assignments. Don't add custom exception handling; errors should bubble normally.\n\nReturn the complete stored procedure only, nothing else.",
+  "materials": [
+   {
+    "file": "components.sql",
+    "kind": "existing component procedures",
+    "text": "-- These procedures already exist in the database. Call them.\n-- Do not recreate them, and do not change them.\n\nCREATE OR REPLACE PROCEDURE sp_part1(para_Age integer, para_Working_year_starts text, para_Level integer, para_Manager_ID integer, para_From_Year text, para_Railway_ID integer) LANGUAGE plpgsql AS\n$$\nDECLARE\n    rec_id integer;\n    v_del_count integer := 0;\n    cur CURSOR FOR SELECT \"Age\" FROM \"manager\" WHERE \"Working_year_starts\" = 'MARK_FOR_DELETION' LIMIT 8;\nBEGIN\n    UPDATE \"manager\" SET \"Level\" = - 1;\n    OPEN cur;\n    LOOP\n        FETCH cur INTO rec_id;\n        EXIT WHEN NOT FOUND;\n        DELETE FROM \"manager\" WHERE \"Age\" = rec_id;\n        DELETE FROM \"railway_manage\" WHERE \"Manager_ID\" = rec_id;\n        DELETE FROM \"manager\" WHERE \"Level\" = rec_id;\n        DELETE FROM \"railway_manage\" WHERE \"Railway_ID\" = rec_id;\n        v_del_count := v_del_count + 1;\n    END LOOP;\n    CLOSE cur;\n    UPDATE \"manager\" SET \"Level\" = - 2;\n    UPDATE \"railway_manage\" SET \"Railway_ID\" = v_del_count WHERE \"Manager_ID\" = para_Manager_ID;\n    DELETE FROM \"manager\" WHERE \"Working_year_starts\" IS NULL;\n    DELETE FROM \"railway_manage\" WHERE \"From_Year\" IS NULL;\n    DELETE FROM \"manager\" WHERE \"Level\" < 0;\n    DELETE FROM \"railway_manage\" WHERE \"Railway_ID\" < 0;\n    DELETE FROM \"manager\" WHERE \"Age\" = para_Age - 1;\n    DELETE FROM \"railway_manage\" WHERE \"Manager_ID\" = para_Manager_ID - 1;\n    DELETE FROM \"manager\" WHERE \"Age\" = para_Age - 2;\n    DELETE FROM \"railway_manage\" WHERE \"Manager_ID\" = para_Manager_ID - 2;\n    DELETE FROM \"manager\" WHERE \"Age\" = para_Age - 3;\n    DELETE FROM \"railway_manage\" WHERE \"Manager_ID\" = para_Manager_ID - 3;\n    DELETE FROM \"manager\" WHERE \"Working_year_starts\" = 'extra_stale';\n    DELETE FROM \"railway_manage\" WHERE \"From_Year\" = 'extra_stale_log';\n    DELETE FROM \"manager\" WHERE \"Working_year_starts\" = 'more_stale';\n    DELETE FROM \"railway_manage\" WHERE \"From_Year\" = 'more_stale_log';\n    DELETE FROM \"manager\" WHERE \"Working_year_starts\" = 'final_stale';\n    DELETE FROM \"railway_manage\" WHERE \"From_Year\" = 'final_stale_log';\nEND;\n$$;\n\nCREATE OR REPLACE PROCEDURE sp_part2(para_From_Year text, para_Railway_ID integer) LANGUAGE plpgsql AS\n$$\nBEGIN\n    DELETE FROM \"railway_manage\" WHERE \"From_Year\" = para_From_Year AND \"Railway_ID\" <= para_Railway_ID;\n    UPDATE \"railway_manage\" SET \"From_Year\" = 'archive_' || para_From_Year WHERE \"From_Year\" = para_From_Year AND \"Railway_ID\" > para_Railway_ID;\nEND;\n$$;\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(arg1 integer, arg2 text, arg3 integer, arg4 integer, arg5 text, arg6 integer)\nLANGUAGE plpgsql AS\n$$\nDECLARE\n    v_min_railway integer;\nBEGIN\n    -- Remember the smallest railway identifier among management assignments\n    -- whose from-year equals the fifth input (null if nothing matches).\n    SELECT MIN(\"Railway_ID\")\n    INTO v_min_railway\n    FROM \"railway_manage\"\n    WHERE \"From_Year\" = arg5;\n\n    IF v_min_railway IS NOT NULL AND arg3 > 3 THEN\n        -- High-level path: both components take part.\n        CALL sp_part1(arg1, arg2, arg3, arg4, arg5, arg6);\n        CALL sp_part2(arg5, v_min_railway);\n\n        -- The railway picked by the sixth input gets its construction year/value\n        -- set to the third input.\n        UPDATE \"railway\"\n        SET \"Built\" = arg3::text\n        WHERE \"Railway_ID\" = arg6;\n    ELSE\n        -- Alternate path: year cleanup with cutoff one higher than the sixth input.\n        CALL sp_part2(arg5, arg6 + 1);\n\n        IF arg3 <= 3 THEN\n            DELETE FROM \"railway_manage\"\n            WHERE \"Manager_ID\" = arg4\n              AND \"Railway_ID\" < arg6;\n        ELSE\n            DELETE FROM \"railway_manage\"\n            WHERE \"Railway_ID\" = arg6\n              AND \"From_Year\" = arg5;\n        END IF;\n    END IF;\n\n    -- Archive the matching manager profile's home country.\n    IF arg2 IS NOT NULL THEN\n        UPDATE \"manager\"\n        SET \"Country\" = 'archive_' || \"Country\"\n        WHERE \"Manager_ID\" = arg4\n          AND \"Working_year_starts\" = arg2\n          AND \"Country\" IS NOT NULL\n          AND left(\"Country\", 8) <> 'archive_';\n    END IF;\n\n    -- If the manager has no management assignments left, mark the name inactive.\n    UPDATE \"manager\"\n    SET \"Name\" = 'inactive_' || \"Name\"\n    WHERE \"Manager_ID\" = arg4\n      AND \"Name\" IS NOT NULL\n      AND left(\"Name\", 9) <> 'inactive_'\n      AND NOT EXISTS (SELECT 1 FROM \"railway_manage\" WHERE \"Manager_ID\" = arg4);\n\n    -- If the railway has no management assignments left, mark the location unassigned.\n    UPDATE \"railway\"\n    SET \"Location\" = 'unassigned_' || \"Location\"\n    WHERE \"Railway_ID\" = arg6\n      AND \"Location\" IS NOT NULL\n      AND left(\"Location\", 11) <> 'unassigned_'\n      AND NOT EXISTS (SELECT 1 FROM \"railway_manage\" WHERE \"Railway_ID\" = arg6);\n\n    -- If the railway has no train records, mark the builder name.\n    UPDATE \"railway\"\n    SET \"Builder\" = 'no_train_' || \"Builder\"\n    WHERE \"Railway_ID\" = arg6\n      AND \"Builder\" IS NOT NULL\n      AND left(\"Builder\", 9) <> 'no_train_'\n      AND NOT EXISTS (SELECT 1 FROM \"train\" WHERE \"Railway_ID\" = arg6);\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(arg1 integer, arg2 text, arg3 integer, arg4 integer, arg5 text, arg6 integer)\nLANGUAGE plpgsql AS\n$$\nDECLARE\n    v_min_railway integer;\nBEGIN\n    -- Remember the smallest railway identifier among management assignments\n    -- whose from-year equals the fifth input (null if nothing matches).\n    SELECT MIN(\"Railway_ID\")\n    INTO v_min_railway\n    FROM \"railway_manage\"\n    WHERE \"From_Year\" = arg5;\n\n    IF v_min_railway IS NOT NULL AND arg3 > 3 THEN\n        -- High-level path: both components take part.\n        CALL sp_part1(arg1, arg2, arg3, arg4, arg5, arg6);\n        CALL sp_part2(arg5, v_min_railway);\n\n        -- The railway picked by the sixth input gets its construction year/value\n        -- set to the third input.\n        UPDATE \"railway\"\n        SET \"Built\" = arg3::text\n        WHERE \"Railway_ID\" = arg6;\n    ELSE\n        -- Alternate path: year cleanup with cutoff one higher than the sixth input.\n        CALL sp_part2(arg5, arg6 + 1);\n\n        IF arg3 <= 3 THEN\n            DELETE FROM \"railway_manage\"\n            WHERE \"Manager_ID\" = arg4\n              AND \"Railway_ID\" < arg6;\n        ELSE\n            DELETE FROM \"railway_manage\"\n            WHERE \"Railway_ID\" = arg6\n              AND \"From_Year\" = arg5;\n        END IF;\n    END IF;\n\n    -- Archive the matching manager profile's home country.\n    IF arg2 IS NOT NULL THEN\n        UPDATE \"manager\"\n        SET \"Country\" = 'archive_' || \"Country\"\n        WHERE \"Manager_ID\" = arg4\n          AND \"Working_year_starts\" = arg2\n          AND \"Country\" IS NOT NULL\n          AND left(\"Country\", 8) <> 'archive_';\n    END IF;\n\n    -- If the manager has no management assignments left, mark the name inactive.\n    UPDATE \"manager\"\n    SET \"Name\" = 'inactive_' || \"Name\"\n    WHERE \"Manager_ID\" = arg4\n      AND \"Name\" IS NOT NULL\n      AND left(\"Name\", 9) <> 'inactive_'\n      AND NOT EXISTS (SELECT 1 FROM \"railway_manage\" WHERE \"Manager_ID\" = arg4);\n\n    -- If the railway has no management assignments left, mark the location unassigned.\n    UPDATE \"railway\"\n    SET \"Location\" = 'unassigned_' || \"Location\"\n    WHERE \"Railway_ID\" = arg6\n      AND \"Location\" IS NOT NULL\n      AND left(\"Location\", 11) <> 'unassigned_'\n      AND NOT EXISTS (SELECT 1 FROM \"railway_manage\" WHERE \"Railway_ID\" = arg6);\n\n    -- If the railway has no train records, mark the builder name.\n    UPDATE \"railway\"\n    SET \"Builder\" = 'no_train_' || \"Builder\"\n    WHERE \"Railway_ID\" = arg6\n      AND \"Builder\" IS NOT NULL\n      AND left(\"Builder\", 9) <> 'no_train_'\n      AND NOT EXISTS (SELECT 1 FROM \"train\" WHERE \"Railway_ID\" = arg6);\nEND;\n$$;"
+ },
+ "pair": null
+}

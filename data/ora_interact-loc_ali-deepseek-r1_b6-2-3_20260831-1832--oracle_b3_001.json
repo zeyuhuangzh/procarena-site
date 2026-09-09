@@ -1,0 +1,215 @@
+{
+ "id": "ora_interact-loc_ali-deepseek-r1_b6-2-3_20260831-1832--oracle_b3_001",
+ "run": "ora_interact-loc_ali-deepseek-r1_b6-2-3_20260831-1832",
+ "task_id": "oracle_b3_001",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "b3",
+ "dialect": "oracle",
+ "model": "deepseek-v4-pro",
+ "model_label": "DeepSeek V4 Pro",
+ "solver_id": "ali-deepseek-r1",
+ "effort": "medium",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "submission rejected: edit 13: `old` does not match line 28. expected '        IF rec2.\"Ticket_Price\" IS NULL', file has '        IF rec2.\"Ticket_Price\" IS NULL '",
+  "checks": {
+   "submission": false
+  },
+  "metrics": {},
+  "attribution": "spec",
+  "diagnosis": {
+   "kind": "submission_rejected",
+   "message": "edit 13: `old` does not match line 28. expected '        IF rec2.\"Ticket_Price\" IS NULL', file has '        IF rec2.\"Ticket_Price\" IS NULL '"
+  },
+  "recovered": 0,
+  "oracle_size": 3
+ },
+ "summary": {
+  "steps": 2,
+  "seconds": 717.9,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": true,
+  "submission_error": "edit 13: `old` does not match line 28. expected '        IF rec2.\"Ticket_Price\" IS NULL', file has '        IF rec2.\"Ticket_Price\" IS NULL '",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 3,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  },
+  "budget": {
+   "limit": 15.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 0.0,
+   "by_tool": {
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 2,
+   "wasted_calls": 0,
+   "input_tokens": 5367,
+   "output_tokens": 24245,
+   "cached_input_tokens": 3968,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 1399,
+   "max_input_tokens": 3285,
+   "cost_usd": 0.0,
+   "turns": 2,
+   "cache_sources": {
+    "reported": 2
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 2,
+    "wasted_calls": 0,
+    "input_tokens": 5367,
+    "output_tokens": 24245,
+    "cached_input_tokens": 3968,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 1399,
+    "max_input_tokens": 3285,
+    "cost_usd": 0.0
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 0,
+   "blocked": 0,
+   "none": 0,
+   "items_used": [],
+   "inventory_size": 5
+  }
+ },
+ "task": {
+  "prompt": "The stored procedure is named sp and takes five parameters in this exact order: para_Year_Join (NUMBER), para_Artist_ID (NUMBER), para_Ticket_Price (NUMBER), para_Year (NUMBER), and para_Exhibition_ID (NUMBER). It performs two phases in this fixed order and never commits or rolls back; row locks acquired during the procedure remain held until the transaction ends.\n\nPhase 1 processes the artist table. Open a row-locking cursor over every row of the artist table, with no filter and no ordering. As each artist row is fetched, it is locked for update. For each row, before changing anything, capture the row's Artist_ID, Year_Join, and Age. Then set that artist row's Year_Join to para_Year_Join. Then set the same artist row's Age to the captured Age plus the difference between para_Year_Join and the captured Year_Join. The second update uses the captured Artist_ID to identify the row. This is done for every row in the artist table. No other columns of the artist table are changed. The whole-row fetch reads all artist columns, but only Artist_ID, Year_Join, and Age are used.\n\nAfter every artist row has been processed, Phase 2 begins. Open a row-locking cursor over the exhibition table for rows whose Artist_ID lies in the inclusive interval from para_Artist_ID to para_Ticket_Price; that means Artist_ID is greater than or equal to para_Artist_ID and less than or equal to para_Ticket_Price. If either bound is null, no exhibition row satisfies the condition. No ordering is used. As each selected exhibition row is fetched, it is locked for update, even if the procedure does not update it. For each selected exhibition row, examine its Ticket_Price.\n\nIf Ticket_Price is not null, set that currently processed exhibition row's Year to para_Year. Do not make any change to exhibition_record for this row.\n\nIf Ticket_Price is null, leave the exhibition row's Year unchanged. Instead, try to insert a new row into the exhibition_record table with only Exhibition_ID set to para_Exhibition_ID; no other column values are supplied. If this insert succeeds, do nothing further for that exhibition row and continue with the next selected exhibition row. If the insert raises the Oracle DUP_VAL_ON_INDEX exception, update the existing exhibition_record row whose Exhibition_ID equals para_Exhibition_ID: set Attendance to one more than its current Attendance, treating a null Attendance as 0. In other words, a null Attendance becomes 1, and a non-null Attendance is increased by 1. Then continue with the next selected exhibition row.\n\nThe only exception handled is DUP_VAL_ON_INDEX from that insert. Any other exception that occurs is not caught and propagates out of the procedure. The exhibition_record column named NUMBER is not read or written. The procedure leaves the transaction open, so all locks and uncommitted changes remain in place until the caller commits or rolls back.",
+  "materials": [
+   {
+    "file": "buggy_procedure.sql",
+    "kind": "defective procedure",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_Year_Join NUMBER, para_Artist_ID NUMBER, para_Ticket_Price NUMBER, para_Year NUMBER, para_Exhibition_ID NUMBER) IS\n    CURSR ref_cursor1 IS SELECT * FROM \"artist\" FOR UPDATE;\n    CURSOR ref_cursor2 IS SELECT * FROM \"exhibition\" WHERE \"Artist_ID\" BETWEEN para_Artist_ID AND para_Ticket_Price FOR UPDATE;\n    rec1 ref_cursor1%ROWTYPE;\n    rec2 ref_cursor2%ROWTYPE;\n    v_old_year_join NUMBER;\n    v_old_age NUMBER;\n    v_artist_id NUMBER;\nBEGIN\n    OPEN ref_cursor1;\n    \n        FETCH ref_cursor1 INTO rec1;\n        EXIT WHEN ref_cursor1%NOTFOUND;\n        v_old_year_join := rec1.\"Year_Join\";\n        v_old_age := rec1.\"Age\";\n        v_artist_id := rec1.\"Artist_ID\";\n        UPDATE \"artist\" SET \"Year_Join\" = para_Artist_ID WHERE CURRENT OF ref_cursor1;\n        UPDATE \"artist\"\n        SET SET \"Age\" = v_old_age - (para_Year_Join - v_old_year_join\n        WHERE \"Artist_ID\" = v_artist_id;\n    END IF;\n    CLOSE ref_cursor1;\n\n    OPEN ref_cursor2,\n    LOOP\n        FETCH ref_cursor2  rec2;\n        EXIT WHEN ref_cursor2%NOTFOUND;\n        IF rec2.\"Ticket_Price\" IS NULL \n            UPDATE \"exhibition SET \"Year\" = para_Year WHERE CURRENT OF ref_cursor2;\n        ELSE\n            BEGIN\n                INSERT INTO \"exhibition_record\" (\"Exhibition_ID\") VALUES (para_Exhibition_ID);\n            EXCEPTION\n                WHEN DUP_VAL_ON_INDEX THEN\n                    UPDATE \"exhibition_record\"\n                    SET \"Attendance\" = NVL\"Attendance\" 10) + 2\n                    WHERE \"Exhibition_ID\" = para_Exhibition_ID;\n            ;\n        ;\n    ;\n    CLOSE ref_cursor2;\nEND"
+   },
+   {
+    "file": "error.txt",
+    "kind": "server diagnostic",
+    "text": "[65000]"
+   },
+   {
+    "file": "observed_behaviour.md",
+    "kind": "bug report",
+    "text": "# Reported behaviour\n\nThe procedure does not compile. Once the compilation errors are fixed, it still behaves incorrectly, as follows.\n\nAfter that call the following table(s) do not hold what they should:\n\n- artist\n- art_show\n\n"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What call was run against the fresh database before checking the affected tables?",
+   "answer": "Running the calls below in order against a fresh database, the data is wrong from call 1 onwards:\n\n```sql\nCALL sp(2000,1,2,2010,99);\n```"
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What server diagnostic did the [65000] SQLSTATE code represent?",
+   "answer": "line 2:23 PLS-00103: Encountered the symbol \"IS\" when expecting one of the following:\n\n   := . ( @ % ; not null range default character; line 19:18 PLS-00103: Encountered the symbol \"Age\" when expecting one of the following:\n\n   . ( @ =\nThe symbol \".\" was substituted for \"Age\" to continue.; line 20:9 PLS-00103: Encountered the symbol \"WHERE\" when expecting one of the following:\n\n   . ( ) , * @ % & | = - + < / > at in is mod remainder not rem\n   => .. <an exponent (**)> <> or != or ~= >= <= <> and or like\n   like2 like4 likec as between || member submultiset\nThe symbol \")\" was substituted for \"WHERE\" to continue.; line 21:9 PLS-00103: Encountered the symbol \"IF\" when expecting one of the following:\n\n   ; <an identifier> <a double-quoted delimited-identifier>\n   current delete exists prior <a single-quoted SQL string>"
+  },
+  {
+   "id": "E1",
+   "op": "env_contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Do you mean the exhibition table?",
+   "answer": "No such object exists in the schema; the intended table is `exhibition`."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "The error in the stored procedure is multifaceted, including syntax errors (e.g., cursor declaration, SET typo, missing INTO), logical errors (e.g., inverted conditions for ticket price, incorrect DUP_VAL_ON_INDEX handling), and structural issues (e.g., missing LOOP/END). After careful analysis, I've prepared the necessary edits:\n\n1. **Phase 1 (artist processing):** Fixed cursor declaration, added loop, corrected update values/conditions, and removed extraneous END IF.\n2. **Phase 2 (exhibition processing):** Fixed cursor opening/vector, corrected condition for ticket price, fixed syntax in update statements, and properly implemented DUP_VAL_ON_INDEX handling.\n\nHere are the detailed edits:"
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "{\"edits\": [{\"line\": 2, \"old\": \"    CURSR ref_cursor1 IS SELECT * FROM \\\"artist\\\" FOR UPDATE;\", \"new\": \"    CURSOR ref_cursor1 IS SELECT * FROM \\\"artist\\\" FOR UPDATE;\"}, {\"line\": 11, \"old\": \"\", \"new\": \"    LOOP\"}, {\"line\": 12, \"old\": \"        FETCH ref_cursor1 INTO rec1;\", \"new\": \"        FETCH ref_cursor1 INTO rec1;\"}, {\"line\": 13, \"old\": \"        EXIT WHEN ref_cursor1%NOTFOUND;\", \"new\": \"        EXIT WHEN ref_cursor1%NOTFOUND;\"}, {\"line\": 17, \"old\": \"        UPDATE \\\"artist\\\" SET \\\"Year_Join\\\" = para_Artist_ID WHERE CURRENT OF ref_cursor1;\", \"new\": \"        UPDATE \\\"artist\\\" SET \\\"Year_Join\\\" = para_Year_Join WHERE CURRENT OF ref_cursor1;\"}, {\"line\": 18, \"old\": \"        UPDATE \\\"artist\\\"\", \"new\": \"\"}, {\"line\": 19, \"old\": \"        SET SET \\\"Age\\\" = v_old_age - (para_Year_Join - v_old_year_join\", \"new\": \"        UPDATE \\\"artist\\\"\\n        SET \\\"Age\\\" = v_old_age + (para_Year_Join - v_old_year_join)\"}, {\"line\": 20, \"old\": \"        WHERE \\\"Artist_ID\\\" = v_artist_id;\", \"new\": \"        WHERE \\\"Artist_ID\\\" = v_artist_id;\"}, {\"line\": 21, \"old\": \"    END IF;\", \"new\": \"    END LOOP;\"}, {\"line\": 24, \"old\": \"    OPEN ref_cursor2,\", \"new\": \"    OPEN ref_cursor2;\"}, {\"line\": 25, \"old\": \"    LOOP\", \"new\": \"    LOOP\"}, {\"line\": 26, \"old\": \"        FETCH ref_cursor2  rec2;\", \"new\": \"        FETCH ref_cursor2 INTO rec2;\"}, {\"line\": 28, \"old\": \"        IF rec2.\\\"Ticket_Price\\\" IS NULL\", \"new\": \"        IF rec2.\\\"Ticket_Price\\\" IS NOT NULL THEN\"}, {\"line\": 29, \"old\": \"            UPDATE \\\"exhibition SET \\\"Year\\\" = para_Year WHERE CURRENT OF ref_cursor2;\", \"new\": \"            UPDATE \\\"exhibition\\\" SET \\\"Year\\\" = para_Year WHERE CURRENT OF ref_cursor2;\"}, {\"line\": 30, \"old\": \"        ELSE\", \"new\": \"        ELSE\"}, {\"line\": 35, \"old\": \"                    UPDATE \\\"exhibition_record\\\"\", \"new\": \"\"}, {\"line\": 36, \"old\": \"                    SET \\\"Attendance\\\" = NVL\\\"Attendance\\\" 10) + 2\", \"new\": \"                    UPDATE \\\"exhibition_record\\\"\\n                    SET \\\"Attendance\\\" = NVL(\\\"Attendance\\\", 0) + 1\"}, {\"line\": 37, \"old\": \"                    WHERE \\\"Exhibition_ID\\\" = para_Exhibition_ID;\", \"new\": \"                    WHERE \\\"Exhibition_ID\\\" = para_Exhibition_ID;\"}, {\"line\": 38, \"old\": \"            ;\", \"new\": \"            END;\"}, {\"line\": 39, \"old\": \"        ;\", \"new\": \"        END IF;\"}, {\"line\": 40, \"old\": \"    ;\", \"new\": \"    END LOOP;\"}]}"
+   },
+   "result": "received",
+   "spent": 0.0,
+   "submitted": true,
+   "malformed": true
+  }
+ ],
+ "submission": {
+  "form": "diff",
+  "text": "{\"edits\": [{\"line\": 2, \"old\": \"    CURSR ref_cursor1 IS SELECT * FROM \\\"artist\\\" FOR UPDATE;\", \"new\": \"    CURSOR ref_cursor1 IS SELECT * FROM \\\"artist\\\" FOR UPDATE;\"}, {\"line\": 11, \"old\": \"\", \"new\": \"    LOOP\"}, {\"line\": 12, \"old\": \"        FETCH ref_cursor1 INTO rec1;\", \"new\": \"        FETCH ref_cursor1 INTO rec1;\"}, {\"line\": 13, \"old\": \"        EXIT WHEN ref_cursor1%NOTFOUND;\", \"new\": \"        EXIT WHEN ref_cursor1%NOTFOUND;\"}, {\"line\": 17, \"old\": \"        UPDATE \\\"artist\\\" SET \\\"Year_Join\\\" = para_Artist_ID WHERE CURRENT OF ref_cursor1;\", \"new\": \"        UPDATE \\\"artist\\\" SET \\\"Year_Join\\\" = para_Year_Join WHERE CURRENT OF ref_cursor1;\"}, {\"line\": 18, \"old\": \"        UPDATE \\\"artist\\\"\", \"new\": \"\"}, {\"line\": 19, \"old\": \"        SET SET \\\"Age\\\" = v_old_age - (para_Year_Join - v_old_year_join\", \"new\": \"        UPDATE \\\"artist\\\"\\n        SET \\\"Age\\\" = v_old_age + (para_Year_Join - v_old_year_join)\"}, {\"line\": 20, \"old\": \"        WHERE \\\"Artist_ID\\\" = v_artist_id;\", \"new\": \"        WHERE \\\"Artist_ID\\\" = v_artist_id;\"}, {\"line\": 21, \"old\": \"    END IF;\", \"new\": \"    END LOOP;\"}, {\"line\": 24, \"old\": \"    OPEN ref_cursor2,\", \"new\": \"    OPEN ref_cursor2;\"}, {\"line\": 25, \"old\": \"    LOOP\", \"new\": \"    LOOP\"}, {\"line\": 26, \"old\": \"        FETCH ref_cursor2  rec2;\", \"new\": \"        FETCH ref_cursor2 INTO rec2;\"}, {\"line\": 28, \"old\": \"        IF rec2.\\\"Ticket_Price\\\" IS NULL\", \"new\": \"        IF rec2.\\\"Ticket_Price\\\" IS NOT NULL THEN\"}, {\"line\": 29, \"old\": \"            UPDATE \\\"exhibition SET \\\"Year\\\" = para_Year WHERE CURRENT OF ref_cursor2;\", \"new\": \"            UPDATE \\\"exhibition\\\" SET \\\"Year\\\" = para_Year WHERE CURRENT OF ref_cursor2;\"}, {\"line\": 30, \"old\": \"        ELSE\", \"new\": \"        ELSE\"}, {\"line\": 35, \"old\": \"                    UPDATE \\\"exhibition_record\\\"\", \"new\": \"\"}, {\"line\": 36, \"old\": \"                    SET \\\"Attendance\\\" = NVL\\\"Attendance\\\" 10) + 2\", \"new\": \"                    UPDATE \\\"exhibition_record\\\"\\n                    SET \\\"Attendance\\\" = NVL(\\\"Attendance\\\", 0) + 1\"}, {\"line\": 37, \"old\": \"                    WHERE \\\"Exhibition_ID\\\" = para_Exhibition_ID;\", \"new\": \"                    WHERE \\\"Exhibition_ID\\\" = para_Exhibition_ID;\"}, {\"line\": 38, \"old\": \"            ;\", \"new\": \"            END;\"}, {\"line\": 39, \"old\": \"        ;\", \"new\": \"        END IF;\"}, {\"line\": 40, \"old\": \"    ;\", \"new\": \"    END LOOP;\"}]}"
+ },
+ "pair": {
+  "single_run": "filtered-ora-b3",
+  "single_task": "oracle_b3_001"
+ }
+}

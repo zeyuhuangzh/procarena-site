@@ -1,0 +1,411 @@
+{
+ "id": "pg_interact-loc_gemini-3.1_b6-2-3_20260828-1521--postgres_a4_015",
+ "run": "pg_interact-loc_gemini-3.1_b6-2-3_20260828-1521",
+ "task_id": "postgres_a4_015",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "a4",
+ "dialect": "postgres",
+ "model": "gemini-3.1",
+ "model_label": "Gemini-3.1 Pro",
+ "solver_id": "gemini-3.1",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 3,
+  "oracle_size": 4
+ },
+ "summary": {
+  "steps": 10,
+  "seconds": 204.6,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 4,
+   "gated": 0,
+   "ask_selector": 3,
+   "off_oracle": 1
+  },
+  "recovered": 3,
+  "oracle_size": 4,
+  "entries_per_question": 0.43,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "ask_selector": 3,
+   "ask_user": 4,
+   "compile_plsql": 1,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 17.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 15.5,
+   "by_tool": {
+    "get_schema": 1.0,
+    "ask_selector": 6.0,
+    "ask_user": 8.0,
+    "compile_plsql": 0.5,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 10,
+   "wasted_calls": 0,
+   "input_tokens": 47699,
+   "output_tokens": 1577,
+   "cached_input_tokens": 0,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 47699,
+   "max_input_tokens": 9275,
+   "cost_usd": 0.0,
+   "turns": 10,
+   "cache_sources": {
+    "reported": 25
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 15,
+    "wasted_calls": 0,
+    "input_tokens": 12472,
+    "output_tokens": 5909,
+    "cached_input_tokens": 2048,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 10424,
+    "max_input_tokens": 1784,
+    "cost_usd": 0.0034
+   },
+   "total": {
+    "calls": 25,
+    "wasted_calls": 0,
+    "input_tokens": 60171,
+    "output_tokens": 7486,
+    "cached_input_tokens": 2048,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 58123,
+    "max_input_tokens": 9275,
+    "cost_usd": 0.0034
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 1,
+   "blocked": 0,
+   "none": 0,
+   "items_used": [],
+   "inventory_size": 12
+  }
+ },
+ "task": {
+  "prompt": "Please fill in the attached template.sql to create the stored procedure `sp(arg1 integer, arg2 real, arg3 text, arg4 real)`.\n\nThis is for keeping the school budget records consistent after a budget review: it refreshes the affected investment percentages and amounts, or cleans out entries that are too small to keep, and it prevents zero investments from showing an invested share.\n\nUse the arguments by position: the first is the budgeted-amount limit for the review, the second is the invested-share percentage to apply, the third is the invested-against-budget percentage text used to identify the affected entries, and the fourth is the budget-share percentage cutoff.\n\nDo not alter the template structure: fill the slots only. Don’t add, remove, or reorder statements, and leave all code outside the slots exactly as it is. Return the complete stored procedure and nothing else.",
+  "materials": [
+   {
+    "file": "template.sql",
+    "kind": "template",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_Budgeted integer, para_total_budget_percent_invested real, para_Budget_invested_percent text, para_total_budget_percent_budgeted real) LANGUAGE plpgsql AS $$ DECLARE total_sum NUMERIC; BEGIN SELECT SUM(\"Budgeted\") INTO total_sum FROM \"budget\"; IF {SLOT_1} THEN UPDATE \"budget\" SET {SLOT_2} = {SLOT_3} WHERE {SLOT_4}; UPDATE \"budget\" SET {SLOT_5} = {SLOT_6} WHERE {SLOT_7}; UPDATE \"budget\" SET {SLOT_8} = {SLOT_9} WHERE {SLOT_10}; UPDATE \"budget\" SET {SLOT_11} = CASE WHEN \"Budgeted\" = {SLOT_12} WHERE {SLOT_13}; ELSE DELETE FROM \"budget\" WHERE {SLOT_14}; SELECT SUM(\"Budgeted\") INTO total_sum FROM \"budget\"; UPDATE \"budget\" SET {SLOT_15} = CASE WHEN total_sum IS NULL OR total_sum = {SLOT_16}; UPDATE \"budget\" SET {SLOT_17} = CASE WHEN \"Budgeted\" = {SLOT_18}; END IF; UPDATE \"budget\" SET {SLOT_19} = {SLOT_20} WHERE {SLOT_21}; END; $$;"
+   },
+   {
+    "file": "slots.md",
+    "kind": "slot dictionary",
+    "text": "## Slots\n\n### {SLOT_1}\nKind: condition\n\nThe Nacre sweep gate passes for the first argument.\n\n### {SLOT_2}\nKind: target\n\nThe entry’s stored invested share of the total spending_plan.\n\n### {SLOT_4}\nKind: predicate\n\nOnly entries whose current invested-against-spending_plan percentage text is the same as the third argument.\n\n### {SLOT_5}\nKind: target\n\nThe entry’s invested amount.\n\n### {SLOT_6}\nKind: value\n\nThe whole-number invested amount that comes from applying the second argument as a percentage to the entry’s current budgeted amount. Use 100 as the percent base, PostgreSQL numeric rounding to a whole number, then store it as an integer.\n\n### {SLOT_7}\nKind: predicate\n\nOnly entries whose current invested-against-spending_plan percentage text is the same as the third argument.\n\n### {SLOT_8}\nKind: target\n\nThe entry’s budgeted amount.\n\n### {SLOT_9}\nKind: value\n\nThe entry’s own current invested amount.\n\n### {SLOT_10}\nKind: predicate\n\nOnly entries whose current invested-against-spending_plan percentage text is the same as the third argument and whose invested amount is above their budgeted amount. Ties don’t count, and missing compared amounts don’t count.\n\n### {SLOT_11}\nKind: target\n\nThe entry’s Nacre sweep marker.\n\n### {SLOT_12}\nKind: value\n\nThe percentage-text rule for this entry: if its budgeted amount is 0, the result is the text 0.0. Otherwise, use its invested amount as a percentage of its budgeted amount, with 100 as the percent base, rounded to 1 decimal place using PostgreSQL numeric rounding, then converted to text normally. A missing budgeted amount doesn’t take the 0 case.\n\n### {SLOT_13}\nKind: predicate\n\nOnly entries whose current invested-against-spending_plan percentage text is the same as the third argument.\n\n### {SLOT_14}\nKind: predicate\n\nEntries whose stored budgeted share of the total spending_plan is below the fourth argument. Equal values stay, and missing comparison results stay.\n\n### {SLOT_15}\nKind: target\n\nThe entry’s stored budgeted share of the total spending_plan.\n\n### {SLOT_16}\nKind: value\n\nAfter the removals, use the remaining total of budgeted amounts. If that remaining total is missing or is 0, store the real-valued 0. Otherwise, store this entry’s budgeted amount as a percentage of that remaining total, with 100 as the percent base, rounded to 1 decimal place using PostgreSQL numeric rounding, then stored as a real value.\n\n### {SLOT_17}\nKind: target\n\nThe entry’s invested-against-spending_plan percentage text.\n\n### {SLOT_18}\nKind: value\n\nThe percentage-text rule for this remaining entry: if its budgeted amount is 0, the result is the text 0.0. Otherwise, use its invested amount as a percentage of its budgeted amount, with 100 as the percent base, rounded to 1 decimal place using PostgreSQL numeric rounding, then converted to text normally. A missing budgeted amount doesn’t take the 0 case.\n\n### {SLOT_19}\nKind: target\n\nThe entry’s stored invested share of the total spending_plan.\n\n### {SLOT_21}\nKind: predicate\n\nEntries that require the Nacre sweep cleanup."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": 2,
+   "via": "ask_selector",
+   "suppressed": 0,
+   "refuted": 1,
+   "key": "what is the Nacre sweep gate",
+   "answer": "The initial total of all current budgeted amounts is above the first argument. Missing budgeted amounts don’t contribute to that total, and a missing total doesn’t pass this test."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 3,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what value belongs in SLOT_3",
+   "answer": "### {SLOT_3}\nKind: value\n\nThe second argument."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": 3,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what value belongs in SLOT_20",
+   "answer": "### {SLOT_20}\nKind: value\n\nThe real-valued 0."
+  },
+  {
+   "id": "E1",
+   "op": "env_contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what object does spending_plan refer to",
+   "answer": "No such object exists; spending_plan is meant to refer to the budget table."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable School , columns = [ School_id ( text | primary key | values : 3 , 3 ) , School_name ( text | values : New Prairie 1 , New Prairie 1 ) , Location ( text | values : Bremen , Walkerton ) , Mascot ( text | values : Lancers , Cougars ) , Enrollment ( integer | values : 601 , 620 ) , IHSAA_Class ( text | values : AAA , A ) , IHSAA_Football_Class ( text | values : AA , A ) , County ( text | values : 46 LaPorte 71 St. Joseph , 50 Marshall ) ]\ntable budget , columns = [ School_id ( integer | primary key | values : 4 , 2 ) , Year ( integer | values : 2000 , 2006 ) , Budgeted ( integer | values : 6803 , 74849 ) , total_budget_percent_budgeted ( real | values : 2.4 , 1.3 ) , Invested ( integer | values : 5840 , 8335 ) , total_budget_percent_invested ( real | values : 2.7 , 2.2 ) , Budget_invested_percent ( text | values : 71.3 , 228.8 ) ]\ntable endowment , columns = [ endowment_id ( integer | primary key | values : 2 , 6 ) , School_id ( integer | values : 7 , 4 ) , donator_name ( text | values : Santo Domingo Este , Santo Domingo Este ) , amount ( real | values : 8.82 , 9.51 ) ]\nforeign keys : None",
+   "spent": 1.0
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "options": [
+     "total_sum > para_Budgeted",
+     "total_sum >= para_Budgeted",
+     "total_sum < para_Budgeted",
+     "total_sum <= para_Budgeted"
+    ],
+    "question": "What does \"The Nacre sweep gate passes for the first argument\" mean?"
+   },
+   "result": "2",
+   "spent": 3.0,
+   "index": 2,
+   "options": [
+    "None of the following are correct.",
+    "total_sum > para_Budgeted",
+    "total_sum >= para_Budgeted",
+    "total_sum < para_Budgeted",
+    "total_sum <= para_Budgeted"
+   ],
+   "entry": "J1",
+   "status": "revealed",
+   "conflict_noted": false
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "What values should be assigned in SLOT_3 and SLOT_20? And what is the exact predicate for SLOT_21 (Entries that require the Nacre sweep cleanup)?"
+   },
+   "result": "### {SLOT_3}\nKind: value\n\nThe second argument.\n\n### {SLOT_20}\nKind: value\n\nThe real-valued 0.\n\nThe initial total of all current budgeted amounts is above the first argument. Missing budgeted amounts don’t contribute to that total, and a missing total doesn’t pass this test.",
+   "spent": 5.0,
+   "revealed": [
+    "M1",
+    "M2",
+    "J1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "What is the exact predicate for SLOT_21 (Entries that require the Nacre sweep cleanup)?"
+   },
+   "result": "The initial total of all current budgeted amounts is above the first argument. Missing budgeted amounts don’t contribute to that total, and a missing total doesn’t pass this test.",
+   "spent": 7.0,
+   "revealed": [
+    "J1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "options": [
+     "\"Invested\" = 0",
+     "\"Invested\" IS NULL OR \"Invested\" = 0",
+     "\"Invested\" = 0 AND \"total_budget_percent_invested\" != 0"
+    ],
+    "question": "What is the predicate for SLOT_21 (Entries that require the Nacre sweep cleanup)?"
+   },
+   "result": "1",
+   "spent": 9.0,
+   "index": 1,
+   "options": [
+    "None of the following are correct.",
+    "\"Invested\" = 0",
+    "\"Invested\" IS NULL OR \"Invested\" = 0",
+    "\"Invested\" = 0 AND \"total_budget_percent_invested\" != 0"
+   ],
+   "entry": "J1",
+   "status": "refuted",
+   "conflict_noted": false
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "What condition defines entries that require the Nacre sweep cleanup (SLOT_21)? The specification says \"it prevents zero investments from showing an invested share.\" Does it mean something like \"Invested\" = 0 AND \"total_budget_percent_invested\" > 0?"
+   },
+   "result": "The initial total of all current budgeted amounts is above the first argument. Missing budgeted amounts don’t contribute to that total, and a missing total doesn’t pass this test.",
+   "spent": 11.0,
+   "revealed": [
+    "J1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "What is the WHERE condition for the very last UPDATE statement in the procedure (SLOT_21)?"
+   },
+   "result": "I can't do that part for you -- I can tell you what the requirements are, but writing the code and checking it is your side of the desk.",
+   "spent": 13.0,
+   "revealed": [],
+   "suppressed": [],
+   "unmatched": [
+    "What is the WHERE condition for the very last UPDATE statement in the procedure (SLOT_21)?"
+   ],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 1,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "ask_selector",
+   "args": {
+    "options": [
+     "\"Invested\" = 0 AND \"total_budget_percent_invested\" > 0",
+     "\"Invested\" = 0 AND \"total_budget_percent_invested\" IS NOT NULL",
+     "\"Invested\" = 0 OR \"Invested\" IS NULL",
+     "\"Invested\" = 0 OR \"total_budget_percent_invested\" IS NOT NULL"
+    ],
+    "question": "What is the WHERE condition for the very last UPDATE statement?"
+   },
+   "result": "1",
+   "spent": 15.0,
+   "index": 1,
+   "options": [
+    "None of the following are correct.",
+    "\"Invested\" = 0 AND \"total_budget_percent_invested\" > 0",
+    "\"Invested\" = 0 AND \"total_budget_percent_invested\" IS NOT NULL",
+    "\"Invested\" = 0 OR \"Invested\" IS NULL",
+    "\"Invested\" = 0 OR \"total_budget_percent_invested\" IS NOT NULL"
+   ],
+   "entry": null,
+   "status": "off_oracle",
+   "conflict_noted": false
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_Budgeted integer, para_total_budget_percent_invested real, para_Budget_invested_percent text, para_total_budget_percent_budgeted real)\nLANGUAGE plpgsql AS $$\nDECLARE total_sum NUMERIC;\nBEGIN\n    SELECT SUM(\"Budgeted\") INTO total_sum FROM \"budget\";\n    IF total_sum > para_Budgeted THEN\n        UPDATE \"budget\" SET \"total_budget_percent_invested\" = para_total_budget_percent_invested WHERE \"Budget_invested_percent\" = para_Budget_invested_percent;\n        UPDATE \"budget\" SET \"Invested\" = CAST(ROUND(\"Budgeted\" * (para_total_budget_percent_invested::numeric / 100.0)) AS integer) WHERE \"Budget_invested_percent\" = para_Budget_invested_percent;\n        UPDATE \"budget\" SET \"Budgeted\" = \"Invested\" WHERE \"Budget_invested_percent\" = para_Budget_invested_percent AND \"Invested\" > \"Budgeted\";\n        UPDATE \"budget\" SET \"Budget_invested_percent\" = CASE WHEN \"Budgeted\" = 0 THEN '0.0' ELSE CAST(ROUND((\"Invested\"::numeric / \"Budgeted\") * 100.0, 1) AS text) END WHERE \"Budget_invested_percent\" = para_Budget_invested_percent;\n    ELSE\n        DELETE FROM \"budget\" WHERE \"total_budget_percent_budgeted\" < para_total_budget_percent_budgeted;\n        SELECT SUM(\"Budgeted\") INTO total_sum FROM \"budget\";\n        UPDATE \"budget\" SET \"total_budget_percent_budgeted\" = CASE WHEN total_sum IS NULL OR total_sum = 0 THEN 0.0 ELSE CAST(ROUND((\"Budgeted\"::numeric / total_sum) * 100.0, 1) AS real) END;\n        UPDATE \"budget\" SET \"Budget_invested_percent\" = CASE WHEN \"Budgeted\" = 0 THEN '0.0' ELSE CAST(ROUND((\"Invested\"::numeric / \"Budgeted\") * 100.0, 1) AS text) END;\n    END IF;\n    UPDATE \"budget\" SET \"total_budget_percent_invested\" = 0.0 WHERE \"Invested\" = 0;\nEND;\n$$;"
+   },
+   "result": "compiled",
+   "spent": 15.5,
+   "compiled": true
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_Budgeted integer, para_total_budget_percent_invested real, para_Budget_invested_percent text, para_total_budget_percent_budgeted real) LANGUAGE plpgsql AS $$ DECLARE total_sum NUMERIC; BEGIN SELECT SUM(\"Budgeted\") INTO total_sum FROM \"budget\"; IF total_sum > para_Budgeted THEN UPDATE \"budget\" SET \"total_budget_percent_invested\" = para_total_budget_percent_invested WHERE \"Budget_invested_percent\" = para_Budget_invested_percent; UPDATE \"budget\" SET \"Invested\" = CAST(ROUND(\"Budgeted\" * (para_total_budget_percent_invested::numeric / 100.0)) AS integer) WHERE \"Budget_invested_percent\" = para_Budget_invested_percent; UPDATE \"budget\" SET \"Budgeted\" = \"Invested\" WHERE \"Budget_invested_percent\" = para_Budget_invested_percent AND \"Invested\" > \"Budgeted\"; UPDATE \"budget\" SET \"Budget_invested_percent\" = CASE WHEN \"Budgeted\" = 0 THEN '0.0' ELSE CAST(ROUND((\"Invested\"::numeric / \"Budgeted\") * 100.0, 1) AS text) END WHERE \"Budget_invested_percent\" = para_Budget_invested_percent; ELSE DELETE FROM \"budget\" WHERE \"total_budget_percent_budgeted\" < para_total_budget_percent_budgeted; SELECT SUM(\"Budgeted\") INTO total_sum FROM \"budget\"; UPDATE \"budget\" SET \"total_budget_percent_budgeted\" = CASE WHEN total_sum IS NULL OR total_sum = 0 THEN 0.0 ELSE CAST(ROUND((\"Budgeted\"::numeric / total_sum) * 100.0, 1) AS real) END; UPDATE \"budget\" SET \"Budget_invested_percent\" = CASE WHEN \"Budgeted\" = 0 THEN '0.0' ELSE CAST(ROUND((\"Invested\"::numeric / \"Budgeted\") * 100.0, 1) AS text) END; END IF; UPDATE \"budget\" SET \"total_budget_percent_invested\" = 0.0 WHERE \"Invested\" = 0; END; $$;"
+   },
+   "result": "received",
+   "spent": 15.5,
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_Budgeted integer, para_total_budget_percent_invested real, para_Budget_invested_percent text, para_total_budget_percent_budgeted real) LANGUAGE plpgsql AS $$ DECLARE total_sum NUMERIC; BEGIN SELECT SUM(\"Budgeted\") INTO total_sum FROM \"budget\"; IF total_sum > para_Budgeted THEN UPDATE \"budget\" SET \"total_budget_percent_invested\" = para_total_budget_percent_invested WHERE \"Budget_invested_percent\" = para_Budget_invested_percent; UPDATE \"budget\" SET \"Invested\" = CAST(ROUND(\"Budgeted\" * (para_total_budget_percent_invested::numeric / 100.0)) AS integer) WHERE \"Budget_invested_percent\" = para_Budget_invested_percent; UPDATE \"budget\" SET \"Budgeted\" = \"Invested\" WHERE \"Budget_invested_percent\" = para_Budget_invested_percent AND \"Invested\" > \"Budgeted\"; UPDATE \"budget\" SET \"Budget_invested_percent\" = CASE WHEN \"Budgeted\" = 0 THEN '0.0' ELSE CAST(ROUND((\"Invested\"::numeric / \"Budgeted\") * 100.0, 1) AS text) END WHERE \"Budget_invested_percent\" = para_Budget_invested_percent; ELSE DELETE FROM \"budget\" WHERE \"total_budget_percent_budgeted\" < para_total_budget_percent_budgeted; SELECT SUM(\"Budgeted\") INTO total_sum FROM \"budget\"; UPDATE \"budget\" SET \"total_budget_percent_budgeted\" = CASE WHEN total_sum IS NULL OR total_sum = 0 THEN 0.0 ELSE CAST(ROUND((\"Budgeted\"::numeric / total_sum) * 100.0, 1) AS real) END; UPDATE \"budget\" SET \"Budget_invested_percent\" = CASE WHEN \"Budgeted\" = 0 THEN '0.0' ELSE CAST(ROUND((\"Invested\"::numeric / \"Budgeted\") * 100.0, 1) AS text) END; END IF; UPDATE \"budget\" SET \"total_budget_percent_invested\" = 0.0 WHERE \"Invested\" = 0; END; $$;"
+ },
+ "pair": {
+  "single_run": "filtered-a4",
+  "single_task": "postgres_a4_015"
+ }
+}

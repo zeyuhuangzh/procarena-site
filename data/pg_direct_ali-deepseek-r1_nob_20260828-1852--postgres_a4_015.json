@@ -1,0 +1,144 @@
+{
+ "id": "pg_direct_ali-deepseek-r1_nob_20260828-1852--postgres_a4_015",
+ "run": "pg_direct_ali-deepseek-r1_nob_20260828-1852",
+ "task_id": "postgres_a4_015",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "a4",
+ "dialect": "postgres",
+ "model": "deepseek-v4-pro",
+ "model_label": "DeepSeek V4 Pro",
+ "solver_id": "ali-deepseek-r1",
+ "effort": "medium",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "database state differs after call 1",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "impl",
+  "diagnosis": {
+   "kind": "state_differs",
+   "message": "call 1/6 CALL sp(80000, 50.0, '71.3', 0.0); -- database state differs; differing table(s): budget"
+  },
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 276.2,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 1,
+   "wasted_calls": 0,
+   "input_tokens": 1660,
+   "output_tokens": 8718,
+   "cached_input_tokens": 0,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 1660,
+   "max_input_tokens": 1660,
+   "cost_usd": 0.0,
+   "turns": 1,
+   "cache_sources": {
+    "reported": 1
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 1,
+    "wasted_calls": 0,
+    "input_tokens": 1660,
+    "output_tokens": 8718,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 1660,
+    "max_input_tokens": 1660,
+    "cost_usd": 0.0
+   }
+  }
+ },
+ "task": {
+  "prompt": "Fill in the slots in template.sql to create the stored procedure `sp(arg1 integer, arg2 real, arg3 text, arg4 real)`.\n\nThis procedure applies a school budget review. arg1 is the budget total threshold, arg2 is the invested-share percentage to apply, arg3 is the invested-against-budget percentage text that identifies the affected entries, and arg4 is the budget-share cutoff. The review refreshes matching investment shares and amounts, removes entries below the cutoff, recalculates the remaining budget percentages, and clears invested share for zero investments.\n\nOnly fill the slots defined in slots.md. Leave the template structure and all non-slot code unchanged.\n\nReturn the complete stored procedure and nothing else.",
+  "materials": [
+   {
+    "file": "template.sql",
+    "kind": "template",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_Budgeted integer, para_total_budget_percent_invested real, para_Budget_invested_percent text, para_total_budget_percent_budgeted real) LANGUAGE plpgsql AS $$ DECLARE total_sum NUMERIC; BEGIN SELECT SUM(\"Budgeted\") INTO total_sum FROM \"budget\"; IF {SLOT_1} THEN UPDATE \"budget\" SET {SLOT_2} = {SLOT_3} WHERE {SLOT_4}; UPDATE \"budget\" SET {SLOT_5} = {SLOT_6} WHERE {SLOT_7}; UPDATE \"budget\" SET {SLOT_8} = {SLOT_9} WHERE {SLOT_10}; UPDATE \"budget\" SET {SLOT_11} = CASE WHEN \"Budgeted\" = {SLOT_12} WHERE {SLOT_13}; ELSE DELETE FROM \"budget\" WHERE {SLOT_14}; SELECT SUM(\"Budgeted\") INTO total_sum FROM \"budget\"; UPDATE \"budget\" SET {SLOT_15} = CASE WHEN total_sum IS NULL OR total_sum = {SLOT_16}; UPDATE \"budget\" SET {SLOT_17} = CASE WHEN \"Budgeted\" = {SLOT_18}; END IF; UPDATE \"budget\" SET {SLOT_19} = {SLOT_20} WHERE {SLOT_21}; END; $$;"
+   },
+   {
+    "file": "slots.md",
+    "kind": "slot dictionary",
+    "text": "## Slots\n\nUse these slots to express the budget review logic in the template.\n\n{SLOT_1} is the guard: the current total of all budgeted amounts is above arg1.\n\nFor entries whose invested-against-budget percentage text matches arg3, set {SLOT_2}, the stored invested share of the total budget, to {SLOT_3}, arg2, using {SLOT_4} as the match. Then set {SLOT_5}, the invested amount, to {SLOT_6}, arg2 percent of the entry’s current budgeted amount rounded to a whole integer, again using {SLOT_7} as the match.\n\nFor matching entries whose invested amount is above their budgeted amount, {SLOT_8} is the budgeted amount, {SLOT_9} is the invested amount, and {SLOT_10} is the overspent match. Then refresh {SLOT_11}, the invested-against-budget percentage text, with {SLOT_12}: invested amount as a percentage of budgeted amount, rounded to 1 decimal place as text, with budgeted amount 0 producing the text 0.0. {SLOT_13} is the arg3 match for that refresh.\n\n{SLOT_14} identifies entries whose stored budgeted share of the total budget is below arg4.\n\nAfter those removals, {SLOT_15} is the stored budgeted share of the total budget, and {SLOT_16} recomputes it from the remaining total budgeted amounts as a 1-decimal real percentage, or real 0 when there is no usable remaining total. {SLOT_17} is the invested-against-budget percentage text, and {SLOT_18} applies the same invested-over-budget text rule as above.\n\nFinally, for zero-invested entries, {SLOT_19} is the stored invested share of the total budget, {SLOT_20} is real 0, and {SLOT_21} finds entries whose invested amount is exactly 0 and whose stored invested share still needs clearing."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_Budgeted integer, para_total_budget_percent_invested real, para_Budget_invested_percent text, para_total_budget_percent_budgeted real) \nLANGUAGE plpgsql AS $$\nDECLARE total_sum NUMERIC;\nBEGIN\n    SELECT SUM(\"Budgeted\") INTO total_sum FROM \"budget\";\n\n    IF total_sum > para_Budgeted THEN\n        UPDATE \"budget\" \n        SET \"total_budget_percent_invested\" = para_total_budget_percent_invested\n        WHERE \"Budget_invested_percent\" = para_Budget_invested_percent;\n\n        UPDATE \"budget\" \n        SET \"Invested\" = ROUND(\"Budgeted\" * (para_total_budget_percent_invested / 100.0))::integer\n        WHERE \"Budget_invested_percent\" = para_Budget_invested_percent;\n\n        UPDATE \"budget\" \n        SET \"Budgeted\" = \"Invested\"\n        WHERE \"Budget_invested_percent\" = para_Budget_invested_percent AND \"Invested\" > \"Budgeted\";\n\n        UPDATE \"budget\" \n        SET \"Budget_invested_percent\" = CASE \n            WHEN \"Budgeted\" = 0 THEN '0.0' \n            ELSE ROUND((\"Invested\" * 100.0) / \"Budgeted\", 1)::text \n        END\n        WHERE \"Budget_invested_percent\" = para_Budget_invested_percent;\n\n        DELETE FROM \"budget\" WHERE \"total_budget_percent_budgeted\" < para_total_budget_percent_budgeted;\n\n        SELECT SUM(\"Budgeted\") INTO total_sum FROM \"budget\";\n\n        UPDATE \"budget\" \n        SET \"total_budget_percent_budgeted\" = CASE \n            WHEN total_sum IS NULL OR total_sum = 0 THEN 0.0 \n            ELSE ROUND((\"Budgeted\" * 100.0) / total_sum, 1) \n        END;\n\n        UPDATE \"budget\" \n        SET \"Budget_invested_percent\" = CASE \n            WHEN \"Budgeted\" = 0 THEN '0.0' \n            ELSE ROUND((\"Invested\" * 100.0) / \"Budgeted\", 1)::text \n        END;\n    END IF;\n\n    UPDATE \"budget\" \n    SET \"total_budget_percent_invested\" = 0.0 \n    WHERE \"Invested\" = 0;\nEND;\n$$;"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_Budgeted integer, para_total_budget_percent_invested real, para_Budget_invested_percent text, para_total_budget_percent_budgeted real) \nLANGUAGE plpgsql AS $$\nDECLARE total_sum NUMERIC;\nBEGIN\n    SELECT SUM(\"Budgeted\") INTO total_sum FROM \"budget\";\n\n    IF total_sum > para_Budgeted THEN\n        UPDATE \"budget\" \n        SET \"total_budget_percent_invested\" = para_total_budget_percent_invested\n        WHERE \"Budget_invested_percent\" = para_Budget_invested_percent;\n\n        UPDATE \"budget\" \n        SET \"Invested\" = ROUND(\"Budgeted\" * (para_total_budget_percent_invested / 100.0))::integer\n        WHERE \"Budget_invested_percent\" = para_Budget_invested_percent;\n\n        UPDATE \"budget\" \n        SET \"Budgeted\" = \"Invested\"\n        WHERE \"Budget_invested_percent\" = para_Budget_invested_percent AND \"Invested\" > \"Budgeted\";\n\n        UPDATE \"budget\" \n        SET \"Budget_invested_percent\" = CASE \n            WHEN \"Budgeted\" = 0 THEN '0.0' \n            ELSE ROUND((\"Invested\" * 100.0) / \"Budgeted\", 1)::text \n        END\n        WHERE \"Budget_invested_percent\" = para_Budget_invested_percent;\n\n        DELETE FROM \"budget\" WHERE \"total_budget_percent_budgeted\" < para_total_budget_percent_budgeted;\n\n        SELECT SUM(\"Budgeted\") INTO total_sum FROM \"budget\";\n\n        UPDATE \"budget\" \n        SET \"total_budget_percent_budgeted\" = CASE \n            WHEN total_sum IS NULL OR total_sum = 0 THEN 0.0 \n            ELSE ROUND((\"Budgeted\" * 100.0) / total_sum, 1) \n        END;\n\n        UPDATE \"budget\" \n        SET \"Budget_invested_percent\" = CASE \n            WHEN \"Budgeted\" = 0 THEN '0.0' \n            ELSE ROUND((\"Invested\" * 100.0) / \"Budgeted\", 1)::text \n        END;\n    END IF;\n\n    UPDATE \"budget\" \n    SET \"total_budget_percent_invested\" = 0.0 \n    WHERE \"Invested\" = 0;\nEND;\n$$;"
+ },
+ "pair": null
+}

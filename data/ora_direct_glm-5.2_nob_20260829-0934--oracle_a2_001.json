@@ -1,0 +1,139 @@
+{
+ "id": "ora_direct_glm-5.2_nob_20260829-0934--oracle_a2_001",
+ "run": "ora_direct_glm-5.2_nob_20260829-0934",
+ "task_id": "oracle_a2_001",
+ "stage": "single",
+ "condition": "submit-only",
+ "tier": "single-turn",
+ "scenario": "a2",
+ "dialect": "oracle",
+ "model": "glm-5.2",
+ "model_label": "GLM-5.2",
+ "solver_id": "glm-5.2",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "off",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "off",
+  "selector": "off",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": false,
+  "reason": "candidate did not create: line 17:52 PL/SQL: ORA-00942: table or view does not exist; line 17:5 PL/SQL: SQL Statement ignored; line 34:12 PL/SQL: ORA-00942: table or view does not exist; line 33:5 PL/SQL: SQL Statement ignored; line 37:12 PL/SQL: ORA-00942: table or view does not exist; line 37:5 PL/SQL: SQL Statement ignored",
+  "checks": {
+   "submission": true,
+   "ex": false
+  },
+  "metrics": {},
+  "attribution": "impl",
+  "diagnosis": {
+   "kind": "create_failed",
+   "message": "line 17:52 PL/SQL: ORA-00942: table or view does not exist; line 17:5 PL/SQL: SQL Statement ignored; line 34:12 PL/SQL: ORA-00942: table or view does not exist; line 33:5 PL/SQL: SQL Statement ignored; line 37:12 PL/SQL: ORA-00942: table or view does not exist; line 37:5 PL/SQL: SQL Statement ignored"
+  },
+  "recovered": 0,
+  "oracle_size": 0
+ },
+ "summary": {
+  "steps": 1,
+  "seconds": 10.5,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 0,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "submit": 1
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 1,
+   "wasted_calls": 0,
+   "input_tokens": 1300,
+   "output_tokens": 642,
+   "cached_input_tokens": 128,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 1172,
+   "max_input_tokens": 1300,
+   "cost_usd": 0.0,
+   "turns": 1,
+   "cache_sources": {
+    "reported": 1
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 1,
+    "wasted_calls": 0,
+    "input_tokens": 1300,
+    "output_tokens": 642,
+    "cached_input_tokens": 128,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 1172,
+    "max_input_tokens": 1300,
+    "cost_usd": 0.0
+   }
+  }
+ },
+ "task": {
+  "prompt": "Write the stored procedure sp(arg1 VARCHAR2, arg2 NUMBER, arg3 VARCHAR2, arg4 VARCHAR2), exactly as required by the attached design document. In business terms, it should set the percentage budgeted on budget rows that match the first argument and meet the document's conditions, and set the location on school rows that match the third argument and meet its conditions. The first argument is the budget-invested percentage to match against on budget rows; the second is the new percentage budgeted for those rows; the third is the mascot to match against on school rows; the fourth is the new location for those rows. The attached design document is the full set of requirements, including all thresholds, text values, and error handling. Return only the complete stored procedure.",
+  "materials": [
+   {
+    "file": "design_document.md",
+    "kind": "design document",
+    "text": "## 1. Overview\nThe sp procedure is an Oracle PL/SQL stored procedure with exactly four arguments. It updates budget percentage and school location when the usual checks pass, keeps one updated-row count across both parts, and uses `sp_savepoint`.\n\n## 2. Interface\n\n| Position | Type | Meaning |\n| --- | --- | --- |\n| 1 | VARCHAR2 | The exact budget-invested percentage text that makes a budget row eligible for the budget update. |\n| 2 | NUMBER | The new percentage budgeted assigned to eligible budget rows. |\n| 3 | VARCHAR2 | The exact mascot text that makes a school row eligible for the school update. |\n| 4 | VARCHAR2 | The new location assigned to eligible school rows. |\n\n## 3. Data\nUses the budget records and the school records: the budget-invested/budgeted fields and amount on one side, mascot/enrollment/location on the other.\n\n## 4. Rule catalogue\nText matches are exact. If the mascot side has no match for the third argument, raise application error -20002 with the exact message `No School record matches the mascot; budget updates skipped`. If the combined work changes nothing, raise application error -20001 with the exact message `No matching records were updated`.\n\n## 5. Processing specification\nCreate `sp_savepoint` first, check the mascot side early, and use the overall budgeted-amount and enrollment averages for the two passes. Do the budget pass before the school pass: set qualifying budget percentages to the second argument, then set qualifying school locations to the fourth. Count each qualifying update, including the already-same-value kind.\n\n## 6. Edge cases and error behaviour\nAfter the savepoint, every exception rolls back to `sp_savepoint` and re-raises the original exception. A successful finish issues no COMMIT; the caller deals with the transaction. That’s it."
+   }
+  ],
+  "available": true
+ },
+ "ledger": [],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp (\n    arg1 VARCHAR2,\n    arg2 NUMBER,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n)\nAS\n    v_mismatch_count NUMBER;\n    v_budget_avg     NUMBER;\n    v_enroll_avg     NUMBER;\n    v_budget_count   NUMBER := 0;\n    v_school_count   NUMBER := 0;\n    v_total_count    NUMBER := 0;\nBEGIN\n    SAVEPOINT sp_savepoint;\n\n    SELECT AVG(\"Budgeted\") INTO v_budget_avg FROM budget;\n\n    SELECT AVG(\"Enrollment\") INTO v_enroll_avg FROM \"School\";\n\n    IF v_budget_avg < v_enroll_avg THEN\n        NULL;\n    END IF;\n\n    SELECT COUNT(*) INTO v_mismatch_count\n      FROM \"School\"\n     WHERE \"Mascot\" = arg3;\n\n    IF v_mismatch_count = 0 THEN\n        RAISE_APPLICATION_ERROR(-20002, 'No School record matches the mascot; budget updates skipped');\n    END IF;\n\n    SELECT COUNT(*) INTO v_budget_count\n      FROM budget\n     WHERE \"Budget_invested_percent\" = arg1;\n\n    UPDATE budget\n       SET \"total_budget_percent_budgeted\" = arg2\n     WHERE \"Budget_invested_percent\" = arg1;\n\n    SELECT COUNT(*) INTO v_school_count\n      FROM \"School\"\n     WHERE \"Mascot\" = arg3;\n\n    UPDATE \"School\"\n       SET \"Location\" = arg4\n     WHERE \"Mascot\" = arg3;\n\n    v_total_count := v_budget_count + v_school_count;\n\n    IF v_total_count = 0 THEN\n        RAISE_APPLICATION_ERROR(-20001, 'No matching records were updated');\n    END IF;\n\nEXCEPTION\n    WHEN OTHERS THEN\n        ROLLBACK TO sp_savepoint;\n        RAISE;\nEND;\n/"
+   },
+   "result": "received",
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp (\n    arg1 VARCHAR2,\n    arg2 NUMBER,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n)\nAS\n    v_mismatch_count NUMBER;\n    v_budget_avg     NUMBER;\n    v_enroll_avg     NUMBER;\n    v_budget_count   NUMBER := 0;\n    v_school_count   NUMBER := 0;\n    v_total_count    NUMBER := 0;\nBEGIN\n    SAVEPOINT sp_savepoint;\n\n    SELECT AVG(\"Budgeted\") INTO v_budget_avg FROM budget;\n\n    SELECT AVG(\"Enrollment\") INTO v_enroll_avg FROM \"School\";\n\n    IF v_budget_avg < v_enroll_avg THEN\n        NULL;\n    END IF;\n\n    SELECT COUNT(*) INTO v_mismatch_count\n      FROM \"School\"\n     WHERE \"Mascot\" = arg3;\n\n    IF v_mismatch_count = 0 THEN\n        RAISE_APPLICATION_ERROR(-20002, 'No School record matches the mascot; budget updates skipped');\n    END IF;\n\n    SELECT COUNT(*) INTO v_budget_count\n      FROM budget\n     WHERE \"Budget_invested_percent\" = arg1;\n\n    UPDATE budget\n       SET \"total_budget_percent_budgeted\" = arg2\n     WHERE \"Budget_invested_percent\" = arg1;\n\n    SELECT COUNT(*) INTO v_school_count\n      FROM \"School\"\n     WHERE \"Mascot\" = arg3;\n\n    UPDATE \"School\"\n       SET \"Location\" = arg4\n     WHERE \"Mascot\" = arg3;\n\n    v_total_count := v_budget_count + v_school_count;\n\n    IF v_total_count = 0 THEN\n        RAISE_APPLICATION_ERROR(-20001, 'No matching records were updated');\n    END IF;\n\nEXCEPTION\n    WHEN OTHERS THEN\n        ROLLBACK TO sp_savepoint;\n        RAISE;\nEND;\n/"
+ },
+ "pair": null
+}

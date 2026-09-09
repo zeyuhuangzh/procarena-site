@@ -1,0 +1,343 @@
+{
+ "id": "pg_interact-loc_gemini-3.1_b6-2-3_20260828-1521--postgres_b4_000",
+ "run": "pg_interact-loc_gemini-3.1_b6-2-3_20260828-1521",
+ "task_id": "postgres_b4_000",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "b4",
+ "dialect": "postgres",
+ "model": "gemini-3.1",
+ "model_label": "Gemini-3.1 Pro",
+ "solver_id": "gemini-3.1",
+ "effort": "high",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 3,
+  "oracle_size": 5
+ },
+ "summary": {
+  "steps": 9,
+  "seconds": 197.2,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 3,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 3,
+  "oracle_size": 5,
+  "entries_per_question": 1.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "ask_user": 3,
+   "execute_scratch": 3,
+   "compile_plsql": 1,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 19.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 10.5,
+   "by_tool": {
+    "get_schema": 1.0,
+    "ask_user": 6.0,
+    "execute_scratch": 3.0,
+    "compile_plsql": 0.5,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 9,
+   "wasted_calls": 0,
+   "input_tokens": 70616,
+   "output_tokens": 2684,
+   "cached_input_tokens": 0,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 70616,
+   "max_input_tokens": 16116,
+   "cost_usd": 0.0,
+   "turns": 9,
+   "cache_sources": {
+    "reported": 15
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 6,
+    "wasted_calls": 0,
+    "input_tokens": 3599,
+    "output_tokens": 2134,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 3599,
+    "max_input_tokens": 890,
+    "cost_usd": 0.0011
+   },
+   "total": {
+    "calls": 15,
+    "wasted_calls": 0,
+    "input_tokens": 74215,
+    "output_tokens": 4818,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 74215,
+    "max_input_tokens": 16116,
+    "cost_usd": 0.0011
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 0,
+   "blocked": 0,
+   "none": 0,
+   "items_used": [],
+   "inventory_size": 7
+  }
+ },
+ "task": {
+  "prompt": "Please complete the attached incomplete_procedure.sql. Keep the interface fixed as sp(arg1 integer, arg2 text, arg3 integer, arg4 integer, arg5 integer, arg6 integer): the first argument is the engineer to use, the second is the visit-start/detail text to copy, the third is the skill value, the fourth is the part fault, the fifth is the maintenance contractor or supplier company value, and the sixth is the maintenance contract value. Change nothing outside the missing block.\n\nInside the hole, maintenance contract numbers must follow the Bramble cadence.\n\nEvery visit’s engineer is overwritten with the first argument only when the fourth argument is different from -1000 under SQL three-valued comparison semantics.\n\nWhen the fourth and third arguments are equal, the status on matching fault-log part entries for that part fault becomes Fixed; no visit status is meant here. If equality isn’t true because of NULL, leave them alone.\n\nWhen the sixth argument qualifies and the first argument is strictly below it, each asset covered by that contract and supplied by the fifth argument gets its other asset details set to the second argument. Non-true comparisons, including NULL, don’t match.\n\nWhen the second argument isn’t NULL and the third argument equals the fifth, every part that has the fourth argument as one of its faults gets its other part details set to the second argument.\n\nWhen the Calico trail latch is open, fault log entries get their other fault details set to the second argument. That is the fault log's other details, not its description or log text.\n\nDon’t add result output, commits, rollbacks, or custom error handling; let ordinary PostgreSQL errors propagate. Return the complete stored procedure, and nothing else.",
+  "materials": [
+   {
+    "file": "incomplete_procedure.sql",
+    "kind": "incomplete procedure",
+    "text": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\"; ref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text; DELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id; OPEN ref_cursor;-- TODO: after opening the visit cursor, walk visits with the nested required-skills cursor, adjust maintenance contracts based on the skill/warehouse relationship, then run the follow-up visit, fault, asset, part, and fault-log updates driven by the input params\n END; $$;"
+   }
+  ],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "S1",
+   "op": "commonsense",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "How does SQL three-valued comparison semantics treat a comparison with NULL in this condition?",
+   "answer": "A comparison involving NULL is not true, so NULL makes the comparison not qualify."
+  },
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": 2,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what the Bramble cadence is",
+   "answer": "The Bramble cadence means that maintenance contract numbers are reduced cumulatively once for each pairing of a visit present when the attached visit cursor is walked and a required-to-fix skill row still left at that point whose skill is strictly greater than the fifth argument. Each time, every maintenance contract number changes by subtracting the sixth argument and also subtracting 33 from its current value; if there are no such pairings, none of those numbers move, and NULL comparisons do not qualify."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": 2,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what the Calico trail latch is",
+   "answer": "The Calico trail latch is open when the second argument is not NULL and the fourth argument is at least 0, inclusive, and it applies only where the fault log entry's asset is on the sixth contract, supplied by the fifth company, has a fitted part, and that fitted part has the fourth argument as its fault. For those entries, set the fault log's other fault details to the second argument; NULL comparisons do not qualify."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": 6,
+   "via": "ask_user",
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "what makes the sixth argument qualify",
+   "answer": "The sixth argument qualifies when it is different from -1000."
+  },
+  {
+   "id": "C1",
+   "op": "contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "whether the skill relationship is with the company or the warehouse",
+   "answer": "The part-detail update is driven by the skill/company relationship: the third argument must equal the fifth argument."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable Asset_Parts , columns = [ asset_id ( integer | primary key | values : 2 , 15 ) , part_id ( integer | values : 3 , 3 ) ]\ntable Assets , columns = [ asset_id ( integer | primary key | values : 11 , 1 ) , maintenance_contract_id ( integer | values : 11 , 13 ) , supplier_company_id ( integer | values : 7 , 14 ) , asset_details ( text | values : machine4 , system1 ) , asset_make ( text | values : DE , FR ) , asset_model ( text | values : 07 yt , 08 yy ) , asset_acquired_integer ( text | values : 2017-09-26 14:05:46 , 2017-07-18 01:22:58 ) , asset_disposed_integer ( text | values : 2018-03-20 04:24:09 , 2018-03-07 20:35:19 ) , other_asset_details ( text | values : Bad condition , Bad condition ) ]\ntable Engineer_Skills , columns = [ engineer_id ( integer | primary key | values : 13 , 8 ) , skill_id ( integer | values : 3 , 2 ) ]\ntable Engineer_Visits , columns = [ engineer_visit_id ( integer | primary key | values : 8 , 2 ) , contact_staff_id ( integer | values : 8 , 4 ) , engineer_id ( integer | values : 6 , 15 ) , fault_log_entry_id ( integer | values : 14 , 4 ) , fault_status ( text | values : Reported , Fixed ) , visit_start_text ( text | values : 1991-05-02 01:39:59 , 1984-07-14 22:47:51 ) , visit_end_text ( text | values : 2007-11-12 04:24:01 , 1970-08-01 15:35:51 ) , other_visit_details ( text | values : nan , nan ) ]\ntable Fault_Log , columns = [ fault_log_entry_id ( integer | primary key | values : 7 , 12 ) , asset_id ( integer | values : 3 , 3 ) , recorded_by_staff_id ( integer | values : 4 , 9 ) , fault_log_entry_text ( text | values : 2018-03-06 15:52:54 , 2018-03-21 15:02:17 ) , fault_description ( text | values : system error , failed parts ) , other_fault_details ( text | values : nan , nan ) ]\ntable Parts , columns = [ part_id ( integer | primary key | values : 1 , 2 ) , part_name ( text | values : middle , package ) , chargeable_yn ( text | values : 1 , 1 ) , chargeable_amount ( text | values : 4 , 9 ) , other_part_details ( text | values : nan , nan ) ]\ntable Fault_Log_Parts , columns = [ fault_log_entry_id ( integer | primary key | values : 11 , 14 ) , part_fault_id ( integer | values : 2 , 6 ) , fault_status ( text | values : Fixed , Waiting ) ]\ntable Maintenance_Contracts , columns = [ maintenance_contract_id ( integer | primary key | values : 2 , 1 ) , maintenance_contract_company_id ( integer | values : 4 , 9 ) , contract_start_integer ( text | values : 2017-09-19 17:57:17 , 2017-12-06 20:09:39 ) , contract_end_integer ( text | values : 2018-03-05 21:24:36 , 2018-03-09 10:40:10 ) , other_contract_details ( text | values : nan , nan ) ]\ntable Maintenance_Engineers , columns = [ engineer_id ( integer | primary key | values : 11 , 15 ) , company_id ( integer | values : 6 , 3 ) , first_name ( text | values : Nellie , Nellie ) , last_name ( text | values : Hahn , Stamm ) , other_details ( text | values : Skilled , Skilled ) ]\ntable Part_Faults , columns = [ part_fault_id ( integer | primary key | values : 10 , 8 ) , part_id ( integer | values : 3 , 3 ) , fault_short_name ( text | values : PW , PW ) , fault_description ( text | values : Top Parts Wrong , Top Parts Wrong ) , other_fault_details ( text | values : nan , nan ) ]\ntable Skills_Required_To_Fix , columns = [ part_fault_id ( integer | primary key | values : 14 , 1 ) , skill_id ( integer | values : 2 , 1 ) ]\ntable Skills , columns = [ skill_id ( integer | primary key | values : 2 , 1 ) , skill_code ( text | values : MECH , MECH ) , skill_description ( text | values : Electrical , TV, Video ) ]\ntable Staff , columns = [ staff_id ( integer | primary key | values : 4 , 7 ) , staff_name ( text | values : Audreanne , Leola ) , gender ( text | values : 0 , 1 ) , other_staff_details ( text | values : Manager , Manager ) ]\ntable Third_Party_Companies , columns = [ company_id ( integer | primary key | values : 2 , 10 ) , company_type ( text | values : Maintenance Contractor , Maintenance Contractor ) , company_name ( text | values : Kuvalis, Bo... (+200)",
+   "spent": 1.0
+  },
+  {
+   "step": 2,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "What does \"maintenance contract numbers must follow the Bramble cadence\" mean? Also, what does \"the Calico trail latch is open\" mean?"
+   },
+   "result": "The Bramble cadence means that maintenance contract numbers are reduced cumulatively once for each pairing of a visit present when the attached visit cursor is walked and a required-to-fix skill row still left at that point whose skill is strictly greater than the fifth argument. Each time, every maintenance contract number changes by subtracting the sixth argument and also subtracting 33 from its current value; if there are no such pairings, none of those numbers move, and NULL comparisons do not qualify.\n\nThe Calico trail latch is open when the second argument is not NULL and the fourth argument is at least 0, inclusive, and it applies only where the fault log entry's asset is on the sixth contract, supplied by the fifth company, has a fitted part, and that fitted part has the fourth argument as its fault. For those entries, set the fault log's other fault details to the second argument; NULL comparisons do not qualify.",
+   "spent": 3.0,
+   "revealed": [
+    "J1",
+    "J2"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "For the Calico trail latch condition \"has a fitted part, and that fitted part has the fourth argument as its fault\": is the fitted part determined by a relationship in the `Asset_Parts` table matching the asset to a part, and that part matches the fourth argument (`para_part_fault_id`) via the `Part_Faults` table?"
+   },
+   "result": "The Calico trail latch is open when the second argument is not NULL and the fourth argument is at least 0, inclusive, and it applies only where the fault log entry's asset is on the sixth contract, supplied by the fifth company, has a fitted part, and that fitted part has the fourth argument as its fault. For those entries, set the fault log's other fault details to the second argument; NULL comparisons do not qualify.",
+   "spent": 5.0,
+   "revealed": [
+    "J2"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$\nDECLARE ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\";\nref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\";\nrec RECORD; rec2 RECORD;\nBEGIN\nUPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text;\nDELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id;\nOPEN ref_cursor;\n\n-- Walk visits with nested required-skills cursor\nLOOP\n    FETCH ref_cursor INTO rec;\n    EXIT WHEN NOT FOUND;\n    \n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        \n        IF rec2.skill_id > para_maintenance_contract_company_id THEN\n            UPDATE \"Maintenance_Contracts\"\n            SET maintenance_contract_id = maintenance_contract_id - para_maintenance_contract_id - 33;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\nEND LOOP;\nCLOSE ref_cursor;\n\n-- Follow-up updates\nIF para_part_fault_id <> -1000 THEN\n    UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id;\nEND IF;\n\nIF para_part_fault_id = para_skill_id THEN\n    UPDATE \"Fault_Log_Parts\"\n    SET fault_status = 'Fixed'\n    WHERE part_fault_id = para_part_fault_id;\nEND IF;\n\nIF para_engineer_id < para_maintenance_contract_id THEN\n    UPDATE \"Assets\"\n    SET other_asset_details = para_visit_start_text\n    WHERE maintenance_contract_id = para_maintenance_contract_id\n      AND supplier_company_id = para_maintenance_contract_company_id;\nEND IF;\n\nIF para_visit_start_text IS NOT NULL AND para_skill_id = para_maintenance_contract_company_id THEN\n    UPDATE \"Parts\"\n    SET other_part_details = para_visit_start_text\n    WHERE part_id IN (\n        SELECT part_id FROM \"Part_Faults\" WHERE part_fault_id = para_part_fault_id\n    );\nEND IF;\n\nIF para_visit_start_text IS NOT NULL AND para_part_fault_id >= 0 THEN\n    UPDATE \"Fault_Log\"\n    SET other_fault_details = para_visit_start_text\n    WHERE asset_id IN (\n        SELECT A.asset_id\n        FROM \"Assets\" A\n        JOIN \"Asset_Parts\" AP ON A.asset_id = AP.asset_id\n        JOIN \"Part_Faults\" PF ON AP.part_id = PF.part_id\n        WHERE A.maintenance_contract_id = para_maintenance_contract_id\n          AND A.supplier_company_id = para_maintenance_contract_company_id\n          AND PF.part_fault_id = para_part_fault_id\n    );\nEND IF;\n\nEND; $$;\n"
+   },
+   "result": "ok, -1 row(s) affected",
+   "spent": 6.0
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(1, 'test', 1, 1, 1, 1);"
+   },
+   "result": "ok, -1 row(s) affected",
+   "spent": 7.0
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "ask_user",
+   "args": {
+    "question": "What do you mean by \"When the sixth argument qualifies\" in the phrase \"When the sixth argument qualifies and the first argument is strictly below it\"? Does it just mean the comparison `para_engineer_id < para_maintenance_contract_id` is true, or is there another condition for the sixth argument to qualify?"
+   },
+   "result": "The sixth argument qualifies when it is different from -1000.",
+   "spent": 9.0,
+   "revealed": [
+    "M1"
+   ],
+   "suppressed": [],
+   "unmatched": [],
+   "fallback": 0,
+   "loc": {
+    "answers": 0,
+    "refused": 0,
+    "blocked": 0,
+    "none": 0,
+    "items": []
+   }
+  },
+  {
+   "step": 7,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "UPDATE \"Maintenance_Contracts\" SET maintenance_contract_id = maintenance_contract_id - NULL - 33;"
+   },
+   "result": "error: [23502] null value in column \"maintenance_contract_id\" violates not-null constraint -- Failing row contains (null, 15, 2017-09-13 11:51:29, 2018-03-16 21:21:50, null).",
+   "spent": 10.0
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$\nDECLARE ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\";\nref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\";\nrec RECORD; rec2 RECORD;\nBEGIN\nUPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text;\nDELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id;\nOPEN ref_cursor;\n\nLOOP\n    FETCH ref_cursor INTO rec;\n    EXIT WHEN NOT FOUND;\n    \n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        \n        IF rec2.skill_id > para_maintenance_contract_company_id THEN\n            UPDATE \"Maintenance_Contracts\"\n            SET maintenance_contract_id = maintenance_contract_id - para_maintenance_contract_id - 33;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\nEND LOOP;\nCLOSE ref_cursor;\n\nIF para_part_fault_id <> -1000 THEN\n    UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id;\nEND IF;\n\nIF para_part_fault_id = para_skill_id THEN\n    UPDATE \"Fault_Log_Parts\"\n    SET fault_status = 'Fixed'\n    WHERE part_fault_id = para_part_fault_id;\nEND IF;\n\nIF para_maintenance_contract_id <> -1000 AND para_engineer_id < para_maintenance_contract_id THEN\n    UPDATE \"Assets\"\n    SET other_asset_details = para_visit_start_text\n    WHERE maintenance_contract_id = para_maintenance_contract_id\n      AND supplier_company_id = para_maintenance_contract_company_id;\nEND IF;\n\nIF para_visit_start_text IS NOT NULL AND para_skill_id = para_maintenance_contract_company_id THEN\n    UPDATE \"Parts\"\n    SET other_part_details = para_visit_start_text\n    WHERE part_id IN (\n        SELECT part_id FROM \"Part_Faults\" WHERE part_fault_id = para_part_fault_id\n    );\nEND IF;\n\nIF para_visit_start_text IS NOT NULL AND para_part_fault_id >= 0 THEN\n    UPDATE \"Fault_Log\"\n    SET other_fault_details = para_visit_start_text\n    WHERE asset_id IN (\n        SELECT A.asset_id\n        FROM \"Assets\" A\n        JOIN \"Asset_Parts\" AP ON A.asset_id = AP.asset_id\n        JOIN \"Part_Faults\" PF ON AP.part_id = PF.part_id\n        WHERE A.maintenance_contract_id = para_maintenance_contract_id\n          AND A.supplier_company_id = para_maintenance_contract_company_id\n          AND PF.part_fault_id = para_part_fault_id\n    );\nEND IF;\n\nEND; $$;"
+   },
+   "result": "compiled",
+   "spent": 10.5,
+   "compiled": true
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\"; ref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text; DELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id; OPEN ref_cursor;\n\nLOOP\n    FETCH ref_cursor INTO rec;\n    EXIT WHEN NOT FOUND;\n    \n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        \n        IF rec2.skill_id > para_maintenance_contract_company_id THEN\n            UPDATE \"Maintenance_Contracts\"\n            SET maintenance_contract_id = maintenance_contract_id - para_maintenance_contract_id - 33;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\nEND LOOP;\nCLOSE ref_cursor;\n\nIF para_part_fault_id <> -1000 THEN\n    UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id;\nEND IF;\n\nIF para_part_fault_id = para_skill_id THEN\n    UPDATE \"Fault_Log_Parts\"\n    SET fault_status = 'Fixed'\n    WHERE part_fault_id = para_part_fault_id;\nEND IF;\n\nIF para_maintenance_contract_id <> -1000 AND para_engineer_id < para_maintenance_contract_id THEN\n    UPDATE \"Assets\"\n    SET other_asset_details = para_visit_start_text\n    WHERE maintenance_contract_id = para_maintenance_contract_id\n      AND supplier_company_id = para_maintenance_contract_company_id;\nEND IF;\n\nIF para_visit_start_text IS NOT NULL AND para_skill_id = para_maintenance_contract_company_id THEN\n    UPDATE \"Parts\"\n    SET other_part_details = para_visit_start_text\n    WHERE part_id IN (\n        SELECT part_id FROM \"Part_Faults\" WHERE part_fault_id = para_part_fault_id\n    );\nEND IF;\n\nIF para_visit_start_text IS NOT NULL AND para_part_fault_id >= 0 THEN\n    UPDATE \"Fault_Log\"\n    SET other_fault_details = para_visit_start_text\n    WHERE asset_id IN (\n        SELECT A.asset_id\n        FROM \"Assets\" A\n        JOIN \"Asset_Parts\" AP ON A.asset_id = AP.asset_id\n        JOIN \"Part_Faults\" PF ON AP.part_id = PF.part_id\n        WHERE A.maintenance_contract_id = para_maintenance_contract_id\n          AND A.supplier_company_id = para_maintenance_contract_company_id\n          AND PF.part_fault_id = para_part_fault_id\n    );\nEND IF;\n\n END; $$;"
+   },
+   "result": "received",
+   "spent": 10.5,
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(para_engineer_id integer, para_visit_start_text text, para_skill_id integer, para_part_fault_id integer, para_maintenance_contract_company_id integer, para_maintenance_contract_id integer) LANGUAGE plpgsql AS $$ DECLARE ref_cursor CURSOR FOR SELECT * FROM \"Engineer_Visits\"; ref_cursor2 CURSOR FOR SELECT * FROM \"Skills_Required_To_Fix\"; rec RECORD; rec2 RECORD; BEGIN UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id + 76, \"visit_start_text\" = para_visit_start_text; DELETE FROM \"Skills_Required_To_Fix\" WHERE \"skill_id\" < para_skill_id; OPEN ref_cursor;\n\nLOOP\n    FETCH ref_cursor INTO rec;\n    EXIT WHEN NOT FOUND;\n    \n    OPEN ref_cursor2;\n    LOOP\n        FETCH ref_cursor2 INTO rec2;\n        EXIT WHEN NOT FOUND;\n        \n        IF rec2.skill_id > para_maintenance_contract_company_id THEN\n            UPDATE \"Maintenance_Contracts\"\n            SET maintenance_contract_id = maintenance_contract_id - para_maintenance_contract_id - 33;\n        END IF;\n    END LOOP;\n    CLOSE ref_cursor2;\nEND LOOP;\nCLOSE ref_cursor;\n\nIF para_part_fault_id <> -1000 THEN\n    UPDATE \"Engineer_Visits\" SET \"engineer_id\" = para_engineer_id;\nEND IF;\n\nIF para_part_fault_id = para_skill_id THEN\n    UPDATE \"Fault_Log_Parts\"\n    SET fault_status = 'Fixed'\n    WHERE part_fault_id = para_part_fault_id;\nEND IF;\n\nIF para_maintenance_contract_id <> -1000 AND para_engineer_id < para_maintenance_contract_id THEN\n    UPDATE \"Assets\"\n    SET other_asset_details = para_visit_start_text\n    WHERE maintenance_contract_id = para_maintenance_contract_id\n      AND supplier_company_id = para_maintenance_contract_company_id;\nEND IF;\n\nIF para_visit_start_text IS NOT NULL AND para_skill_id = para_maintenance_contract_company_id THEN\n    UPDATE \"Parts\"\n    SET other_part_details = para_visit_start_text\n    WHERE part_id IN (\n        SELECT part_id FROM \"Part_Faults\" WHERE part_fault_id = para_part_fault_id\n    );\nEND IF;\n\nIF para_visit_start_text IS NOT NULL AND para_part_fault_id >= 0 THEN\n    UPDATE \"Fault_Log\"\n    SET other_fault_details = para_visit_start_text\n    WHERE asset_id IN (\n        SELECT A.asset_id\n        FROM \"Assets\" A\n        JOIN \"Asset_Parts\" AP ON A.asset_id = AP.asset_id\n        JOIN \"Part_Faults\" PF ON AP.part_id = PF.part_id\n        WHERE A.maintenance_contract_id = para_maintenance_contract_id\n          AND A.supplier_company_id = para_maintenance_contract_company_id\n          AND PF.part_fault_id = para_part_fault_id\n    );\nEND IF;\n\n END; $$;"
+ },
+ "pair": {
+  "single_run": "filtered-b4",
+  "single_task": "postgres_b4_000"
+ }
+}

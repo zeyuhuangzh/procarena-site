@@ -1,0 +1,439 @@
+{
+ "id": "ora_interact-loc_ali-deepseek-r1_b6-2-3_20260831-1832--oracle_a1_000",
+ "run": "ora_interact-loc_ali-deepseek-r1_b6-2-3_20260831-1832",
+ "task_id": "oracle_a1_000",
+ "stage": "multi",
+ "condition": "tools+ask+loc@B6+2L+3",
+ "tier": "full",
+ "scenario": "a1",
+ "dialect": "oracle",
+ "model": "deepseek-v4-pro",
+ "model_label": "DeepSeek V4 Pro",
+ "solver_id": "ali-deepseek-r1",
+ "effort": "medium",
+ "max_steps": 60,
+ "simulator": {
+  "asking": "on",
+  "gate": "on",
+  "match_model": "ds-flash",
+  "fallback": "loc",
+  "loc_mode": "generative",
+  "selector": "on",
+  "selector_options": 5
+ },
+ "grade": {
+  "correct": true,
+  "reason": "",
+  "checks": {
+   "submission": true,
+   "ex": true
+  },
+  "metrics": {},
+  "attribution": null,
+  "diagnosis": null,
+  "recovered": 0,
+  "oracle_size": 7
+ },
+ "summary": {
+  "steps": 22,
+  "seconds": 1579.6,
+  "termination": "submit",
+  "submitted": true,
+  "submission_malformed": false,
+  "submission_error": "",
+  "questions": {
+   "ask_user": 0,
+   "gated": 0,
+   "ask_selector": 0,
+   "off_oracle": 0
+  },
+  "recovered": 0,
+  "oracle_size": 7,
+  "entries_per_question": 0.0,
+  "fallback_answers": 0,
+  "tools": {
+   "get_schema": 1,
+   "describe_table": 2,
+   "compile_plsql": 2,
+   "reset_scratch": 1,
+   "execute_scratch": 12,
+   "submit": 1
+  },
+  "budget": {
+   "limit": 23.0,
+   "base": 6.0,
+   "per_entry": 2.0,
+   "patience": 3.0,
+   "rounding": 0,
+   "spent": 15.5,
+   "by_tool": {
+    "get_schema": 1.0,
+    "describe_table": 1.0,
+    "compile_plsql": 1.0,
+    "reset_scratch": 0.5,
+    "execute_scratch": 12.0,
+    "submit": 0.0
+   },
+   "wasted": {
+    "gated": 0.0,
+    "tool_error": 0.0
+   },
+   "exhausted": false
+  },
+  "final_warning": false,
+  "tokens": {
+   "calls": 16,
+   "wasted_calls": 0,
+   "input_tokens": 58909,
+   "output_tokens": 48492,
+   "cached_input_tokens": 51712,
+   "cache_write_tokens": 0,
+   "uncached_input_tokens": 7197,
+   "max_input_tokens": 6385,
+   "cost_usd": 0.0,
+   "turns": 16,
+   "cache_sources": {
+    "reported": 16
+   },
+   "wasted": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "harness": {
+    "calls": 0,
+    "wasted_calls": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 0,
+    "max_input_tokens": 0,
+    "cost_usd": 0.0
+   },
+   "total": {
+    "calls": 16,
+    "wasted_calls": 0,
+    "input_tokens": 58909,
+    "output_tokens": 48492,
+    "cached_input_tokens": 51712,
+    "cache_write_tokens": 0,
+    "uncached_input_tokens": 7197,
+    "max_input_tokens": 6385,
+    "cost_usd": 0.0
+   }
+  },
+  "loc": {
+   "answers": 0,
+   "refused": 0,
+   "blocked": 0,
+   "none": 0,
+   "items_used": [],
+   "inventory_size": 9
+  }
+ },
+ "task": {
+  "prompt": "Create an Oracle PL/SQL procedure named `sp` with exactly this signature: `sp(arg1 NUMBER, arg2 VARCHAR2, arg3 VARCHAR2, arg4 VARCHAR2)`. It returns nothing. The arguments follow the muster accord.\n\nBefore deleting anything, for every operator whose age is strictly greater than the first argument: set that operator's name to the second argument; for each school-bus record assigned to that operator, add 1 to years worked, treating a null years-worked as 0 before adding; and if the third argument is not null and that operator's party equals it, set that school-bus record's full-time flag to T. If the third argument is null, skip that flag update. This must be done before the deletion, so school-bus records for drivers who are later deleted still get those changes.\n\nThen delete every operator whose party is null. For all remaining drivers, set home city to the fourth argument. Even when the third argument is non-null, a operator whose party is null and whose age is greater than the first argument is deleted; the third-argument party assignment does not rescue such a operator.\n\nIf the third argument is not null, also do both of these: set party to the third argument for every remaining operator whose age is strictly greater than the first argument; and set the full-time flag to F for every school-bus record whose operator is one of the remaining drivers with party equal to the third argument and age less than or equal to the first argument. If the third argument is null, skip both. An update uses standard SQL UPDATE semantics.\n\nUse only operator records and school-bus records; do not read or change school records, and do not read or change the school-bus record's own ID. Observe the caller-leash rule. Return the complete stored procedure and nothing else.",
+  "materials": [],
+  "available": true
+ },
+ "ledger": [
+  {
+   "id": "S1",
+   "op": "commonsense",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What happens when an UPDATE matches no rows?",
+   "answer": "In standard SQL, an UPDATE that matches no rows simply changes no rows."
+  },
+  {
+   "id": "R1",
+   "op": "reasoning",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "When must the deletion of null-party drivers be performed relative to the party update?",
+   "answer": "Delete every driver whose party is null before performing the party update in the non-null third-argument branch. In particular, do not set party to the third argument for an above-threshold driver whose party is null before deleting it."
+  },
+  {
+   "id": "J1",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the muster accord?",
+   "answer": "The first argument is the age threshold; the second is the driver name to assign; the third is a party value, which may be null; the fourth is the home city to assign."
+  },
+  {
+   "id": "J2",
+   "op": "jargon",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is the caller-leash rule?",
+   "answer": "Do not commit or rollback, and do not define exception handlers."
+  },
+  {
+   "id": "M1",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "Besides the third argument being null, what other condition causes that flag update to be skipped?",
+   "answer": "The flag update is also skipped when the driver's party does not match the third argument."
+  },
+  {
+   "id": "M2",
+   "op": "mask",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What particular standard SQL UPDATE behavior is being called out?",
+   "answer": "The behavior is no-match semantics: if an UPDATE's search condition matches no rows, the UPDATE succeeds and changes no rows."
+  },
+  {
+   "id": "E1",
+   "op": "env_contradiction",
+   "revealed_at": null,
+   "via": null,
+   "suppressed": 0,
+   "refuted": 0,
+   "key": "What is 'operator'?",
+   "answer": "No object named operator exists in the schema; the intended table is driver."
+  }
+ ],
+ "timeline": [
+  {
+   "step": 1,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "First, I need to understand the schema to write the procedure correctly. The task mentions \"operator\" and \"school-bus\" tables, so I must get their exact structures. \n\nLet's start with the \"operator\" table description. \n"
+  },
+  {
+   "step": 2,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "Before writing the procedure, I need to confirm the exact table and column names for the \"operator\" and \"school-bus\" records, as specified. Let's first get the table names using `get_schema`.\n\nHere's the tool call: دايرهfunctionotion<｜tool▁calls▁end｜>get_schema\n```json\n{}\n```<｜tool▁call▁end｜><｜tool▁calls▁end｜>"
+  },
+  {
+   "step": 3,
+   "actor": "tool",
+   "tool": "get_schema",
+   "args": {},
+   "result": "database schema :\ntable driver , columns = [ Driver_ID ( NUMBER | primary key | values : 3 , 4 ) , Name ( VARCHAR2 | values : Douglas McCrory , Minnie Gonzalez ) , Party ( VARCHAR2 | values : Dem , Dem ) , Home_city ( VARCHAR2 | values : Hartford , Coventry ) , Age ( NUMBER | values : 52 , 38 ) ]\ntable school , columns = [ School_ID ( NUMBER | primary key | values : 2 , 3 ) , Grade ( VARCHAR2 | values : 1st-3rd grade , College ) , School ( VARCHAR2 | values : Harvard Law School , Harvard Law School ) , Location ( VARCHAR2 | values : Los Angeles, California , Jakarta, Indonesia ) , Type ( VARCHAR2 | values : Private , Public ) ]\ntable school_bus , columns = [ School_ID ( NUMBER | primary key | values : 7 , 1 ) , Driver_ID ( NUMBER | values : 3 , 9 ) , Years_Working ( NUMBER | values : 6 , 3 ) , If_full_time ( VARCHAR2 | values : F , F ) ]\nforeign keys : None",
+   "spent": 1.0
+  },
+  {
+   "step": 4,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "driver"
+   },
+   "result": "table driver , columns = [ Driver_ID ( NUMBER | primary key | values : 3 , 4 ) , Name ( VARCHAR2 | values : Douglas McCrory , Minnie Gonzalez ) , Party ( VARCHAR2 | values : Dem , Dem ) , Home_city ( VARCHAR2 | values : Hartford , Coventry ) , Age ( NUMBER | values : 52 , 38 ) ]",
+   "spent": 1.5
+  },
+  {
+   "step": 5,
+   "actor": "tool",
+   "tool": "describe_table",
+   "args": {
+    "table": "school_bus"
+   },
+   "result": "table school_bus , columns = [ School_ID ( NUMBER | primary key | values : 7 , 1 ) , Driver_ID ( NUMBER | values : 3 , 9 ) , Years_Working ( NUMBER | values : 6 , 3 ) , If_full_time ( VARCHAR2 | values : F , F ) ]",
+   "spent": 2.0
+  },
+  {
+   "step": 6,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 NUMBER,\n    arg2 VARCHAR2,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n) AS\nBEGIN\n    -- Step 1: For operators with age > arg1\n    UPDATE \"driver\" \n    SET \"Name\" = arg2\n    WHERE \"Age\" > arg1;\n    \n    UPDATE \"school_bus\" bus\n    SET \"Years_Working\" = NVL(\"Years_Working\", 0) + 1\n    WHERE EXISTS (\n        SELECT 1\n        FROM \"driver\" d\n        WHERE d.\"Driver_ID\" = bus.\"Driver_ID\"\n        AND d.\"Age\" > arg1\n    );\n    \n    IF arg3 IS NOT NULL THEN\n        UPDATE \"school_bus\" bus\n        SET \"If_full_time\" = 'T'\n        WHERE EXISTS (\n            SELECT 1\n            FROM \"driver\" d\n            WHERE d.\"Driver_ID\" = bus.\"Driver_ID\"\n            AND d.\"Age\" > arg1\n            AND d.\"Party\" = arg3\n        );\n    END IF;\n    \n    -- Step 2: Delete operators with null party\n    DELETE FROM \"driver\" \n    WHERE \"Party\" IS NULL;\n    \n    -- Step 3: Update home_city for remaining operators\n    UPDATE \"driver\" \n    SET \"Home_city\" = arg4;\n    \n    -- Step 4: If arg3 not null, handle party and bus flags\n    IF arg3 IS NOT NULL THEN\n        UPDATE \"driver\" \n        SET \"Party\" = arg3 \n        WHERE \"Age\" > arg1;\n        \n        UPDATE \"school_bus\" bus\n        SET \"If_full_time\" = 'F'\n        WHERE EXISTS (\n            SELECT 1\n            FROM \"driver\" d\n            WHERE d.\"Driver_ID\" = bus.\"Driver_ID\"\n            AND d.\"Party\" = arg3\n            AND d.\"Age\" <= arg1\n        );\n    END IF;\nEND;\n"
+   },
+   "result": "compiled",
+   "spent": 2.5,
+   "compiled": true
+  },
+  {
+   "step": 7,
+   "actor": "solver",
+   "tool": "",
+   "args": "",
+   "result": "The compiled successfully, but let me test it against sample data to ensure correctness. Here's how I'll proceed:\n\n1. Reset scratch database to initial state\n2. Insert test data into 'driver' and 'school_bus'\n3. Execute the procedure with sample arguments\n4. Verify results\n\nLet's reset first:"
+  },
+  {
+   "step": 8,
+   "actor": "tool",
+   "tool": "reset_scratch",
+   "args": {},
+   "result": "reset",
+   "spent": 3.0
+  },
+  {
+   "step": 9,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 NUMBER,\n    arg2 VARCHAR2,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n) AS\nBEGIN\n    -- Update operators with age > arg1\n    UPDATE \"driver\" \n    SET \"Name\" = arg2\n    WHERE \"Age\" > arg1;\n    \n    -- Update school bus records for these operators\n    UPDATE \"school_bus\" bus\n    SET \"Years_Working\" = NVL(\"Years_Working\", 0) + 1\n    WHERE EXISTS (\n        SELECT 1\n        FROM \"driver\" d\n        WHERE d.\"Driver_ID\" = bus.\"Driver_ID\"\n        AND d.\"Age\" > arg1\n    );\n    \n    -- Conditional full-time flag update\n    IF arg3 IS NOT NULL THEN\n        UPDATE \"school_bus\" bus\n        SET \"If_full_time\" = 'T'\n        WHERE EXISTS (\n            SELECT 1\n            FROM \"driver\" d\n            WHERE d.\"Driver_ID\" = bus.\"Driver_ID\"\n            AND d.\"Age\" > arg1\n            AND d.\"Party\" = arg3\n        );\n    END IF;\n    \n    -- Delete operators with null party\n    DELETE FROM \"driver\" \n    WHERE \"Party\" IS NULL;\n    \n    -- Update home city for remaining operators\n    UPDATE \"driver\" \n    SET \"Home_city\" = arg4;\n    \n    -- Additional conditional updates\n    IF arg3 IS NOT NULL THEN\n        -- Update party for drivers with age > arg1\n        UPDATE \"driver\" \n        SET \"Party\" = arg3 \n        WHERE \"Age\" > arg1;\n        \n        -- Update full-time flag for buses with party=arg3 and age<=arg1\n        UPDATE \"school_bus\" bus\n        SET \"If_full_time\" = 'F'\n        WHERE EXISTS (\n            SELECT 1\n            FROM \"driver\" d\n            WHERE d.\"Driver_ID\" = bus.\"Driver_ID\"\n            AND d.\"Party\" = arg3\n            AND d.\"Age\" <= arg1\n        );\n    END IF;\nEND sp;"
+   },
+   "result": "ok, 0 row(s) affected",
+   "spent": 4.0
+  },
+  {
+   "step": 10,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO \"driver\" (\"Driver_ID\", \"Name\", \"Party\", \"Home_city\", \"Age\") VALUES (1, 'Driver1', 'Rep', 'City1', 60);"
+   },
+   "result": "error: IntegrityError: ORA-00001: unique constraint (SCHOOL_BUS_EPBDE33D2A.SYS_C00162303) violated\nHelp: https://docs.oracle.com/error-help/db/ora-00001/",
+   "spent": 5.0
+  },
+  {
+   "step": 11,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO \"driver\" (\"Driver_ID\", \"Name\", \"Party\", \"Home_city\", \"Age\") VALUES (1, 'Driver1', 'Rep', 'City1', 60);"
+   },
+   "result": "error: IntegrityError: ORA-00001: unique constraint (SCHOOL_BUS_EPBDE33D2A.SYS_C00162303) violated\nHelp: https://docs.oracle.com/error-help/db/ora-00001/",
+   "spent": 6.0
+  },
+  {
+   "step": 12,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO \"driver\" (\"Driver_ID\", \"Name\", \"Party\", \"Home_city\", \"Age\") VALUES (10, 'Driver1', 'Rep', 'City1', 60);"
+   },
+   "result": "error: IntegrityError: ORA-00001: unique constraint (SCHOOL_BUS_EPBDE33D2A.SYS_C00162303) violated\nHelp: https://docs.oracle.com/error-help/db/ora-00001/",
+   "spent": 7.0
+  },
+  {
+   "step": 13,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO \"driver\" (\"Driver_ID\", \"Name\", \"Party\", \"Home_city\", \"Age\") VALUES (20, 'Driver2', NULL, 'City2', 60);"
+   },
+   "result": "ok, 1 row(s) affected",
+   "spent": 8.0
+  },
+  {
+   "step": 14,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO \"driver\" (\"Driver_ID\", \"Name\", \"Party\", \"Home_city\", \"Age\") VALUES (30, 'Driver3', 'Dem', 'City3', 40);"
+   },
+   "result": "ok, 1 row(s) affected",
+   "spent": 9.0
+  },
+  {
+   "step": 15,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO \"school_bus\" (\"School_ID\", \"Driver_ID\", \"Years_Working\", \"If_full_time\") VALUES (200, 20, NULL, NULL);"
+   },
+   "result": "ok, 1 row(s) affected",
+   "spent": 10.0
+  },
+  {
+   "step": 16,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO \"school_bus\" (\"School_ID\", \"Driver_ID\", \"Years_Working\", \"If_full_time\") VALUES (100, 10, 5, 'F');"
+   },
+   "result": "ok, 1 row(s) affected",
+   "spent": 11.0
+  },
+  {
+   "step": 17,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "INSERT INTO \"school_bus\" (\"School_ID\", \"Driver_ID\", \"Years_Working\", \"If_full_time\") VALUES (300, 30, 10, 'T');"
+   },
+   "result": "ok, 1 row(s) affected",
+   "spent": 12.0
+  },
+  {
+   "step": 18,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "CALL sp(50, 'NewName', 'Dem', 'NewCity');"
+   },
+   "result": "ok, 0 row(s) affected",
+   "spent": 13.0
+  },
+  {
+   "step": 19,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"driver\";"
+   },
+   "result": "Driver_ID | Name | Party | Home_city | Age\n1 | Matthew Ritter | Dem | NewCity | 40\n2 | Dan Carter | Rep | NewCity | 30\n3 | Minnie Gonzalez | Dem | NewCity | 46\n4 | Angel Acre | Dem | NewCity | 42\n5 | Brandon McGee | Dem | NewCity | 45\n6 | NewName | Dem | NewCity | 52\n7 | Douglas McCrory | Dem | NewCity | 36\n8 | Timothy Ackert | Rep | NewCity | 35\n9 | Jason Rojas | Dem | NewCity | 38\n10 | Henry Genga | Dem | NewCity | 37\n11 | Tim Larson | Dem | NewCity | 36\n12 | NewName | Dem | NewCity | 52\n30 | Driver3 | Dem | NewCity | 40",
+   "spent": 14.0
+  },
+  {
+   "step": 20,
+   "actor": "tool",
+   "tool": "execute_scratch",
+   "args": {
+    "sql": "SELECT * FROM \"school_bus\";"
+   },
+   "result": "School_ID | Driver_ID | Years_Working | If_full_time\n1 | 10 | 10 | F\n5 | 7 | 8 | F\n3 | 4 | 6 | F\n7 | 9 | 2 | F\n4 | 3 | 3 | F\n200 | 20 | 1 | NULL\n100 | 10 | 5 | F\n300 | 30 | 10 | F",
+   "spent": 15.0
+  },
+  {
+   "step": 21,
+   "actor": "tool",
+   "tool": "compile_plsql",
+   "args": {
+    "code": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 NUMBER,\n    arg2 VARCHAR2,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n) AS\nBEGIN\n    -- For operators with age > arg1: update name\n    UPDATE \"driver\" d\n    SET d.\"Name\" = arg2\n    WHERE d.\"Age\" > arg1;\n    \n    -- For each school-bus record assigned to such operators: update years_working\n    UPDATE \"school_bus\" bus\n    SET bus.\"Years_Working\" = NVL(bus.\"Years_Working\", 0) + 1\n    WHERE EXISTS (\n        SELECT 1\n        FROM \"driver\" d\n        WHERE d.\"Driver_ID\" = bus.\"Driver_ID\"\n        AND d.\"Age\" > arg1\n    );\n    \n    -- Conditional full-time flag update\n    IF arg3 IS NOT NULL THEN\n        UPDATE \"school_bus\" bus\n        SET bus.\"If_full_time\" = 'T'\n        WHERE EXISTS (\n            SELECT 1\n            FROM \"driver\" d\n            WHERE d.\"Driver_ID\" = bus.\"Driver_ID\"\n            AND d.\"Age\" > arg1\n            AND d.\"Party\" = arg3\n        );\n    END IF;\n    \n    -- Delete operators with null party\n    DELETE FROM \"driver\" \n    WHERE \"Party\" IS NULL;\n    \n    -- Update home city for remaining operators\n    UPDATE \"driver\" \n    SET \"Home_city\" = arg4;\n    \n    -- Additional conditional updates\n    IF arg3 IS NOT NULL THEN\n        -- Update party for remaining operators with age > arg1\n        UPDATE \"driver\" d\n        SET d.\"Party\" = arg3\n        WHERE d.\"Age\" > arg1;\n        \n        -- Update full-time flag for buses with party=arg3 and age<=arg1\n        UPDATE \"school_bus\" bus\n        SET bus.\"If_full_time\" = 'F'\n        WHERE EXISTS (\n            SELECT 1\n            FROM \"driver\" d\n            WHERE d.\"Driver_ID\" = bus.\"Driver_ID\"\n            AND d.\"Party\" = arg3\n            AND d.\"Age\" <= arg1\n        );\n    END IF;\nEND sp;"
+   },
+   "result": "compiled",
+   "spent": 15.5,
+   "compiled": true
+  },
+  {
+   "step": 22,
+   "actor": "tool",
+   "tool": "submit",
+   "args": {
+    "answer": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 NUMBER,\n    arg2 VARCHAR2,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n) AS\nBEGIN\n    -- For operators with age > arg1: set name to arg2\n    UPDATE \"driver\" d\n    SET d.\"Name\" = arg2\n    WHERE d.\"Age\" > arg1;\n    \n    -- For school-bus records of these operators: add 1 to years_worked\n    UPDATE \"school_bus\" bus\n    SET bus.\"Years_Working\" = NVL(bus.\"Years_Working\", 0) + 1\n    WHERE bus.\"Driver_ID\" IN (\n        SELECT \"Driver_ID\"\n        FROM \"driver\"\n        WHERE \"Age\" > arg1\n    );\n    \n    -- If arg3 not null, update bus full-time flag\n    IF arg3 IS NOT NULL THEN\n        UPDATE \"school_bus\" bus\n        SET bus.\"If_full_time\" = 'T'\n        WHERE EXISTS (\n            SELECT 1\n            FROM \"driver\" d\n            WHERE d.\"Driver_ID\" = bus.\"Driver_ID\"\n            AND d.\"Age\" > arg1\n            AND d.\"Party\" = arg3\n        );\n    END IF;\n    \n    -- Delete operators with null party\n    DELETE FROM \"driver\" \n    WHERE \"Party\" IS NULL;\n    \n    -- Update home city for remaining operators\n    UPDATE \"driver\" \n    SET \"Home_city\" = arg4;\n    \n    -- Additional updates if arg3 not null\n    IF arg3 IS NOT NULL THEN\n        -- Set party to arg3 for drivers > arg1\n        UPDATE \"driver\"\n        SET \"Party\" = arg3\n        WHERE \"Age\" > arg1;\n        \n        -- Set full-time flag to F for specific buses\n        UPDATE \"school_bus\" bus\n        SET bus.\"If_full_time\" = 'F'\n        WHERE EXISTS (\n            SELECT 1\n            FROM \"driver\" d\n            WHERE d.\"Driver_ID\" = bus.\"Driver_ID\"\n            AND d.\"Party\" = arg3\n            AND d.\"Age\" <= arg1\n        );\n    END IF;\nEND;\n"
+   },
+   "result": "received",
+   "spent": 15.5,
+   "submitted": true,
+   "malformed": false
+  }
+ ],
+ "submission": {
+  "form": "procedure",
+  "text": "CREATE OR REPLACE PROCEDURE sp(\n    arg1 NUMBER,\n    arg2 VARCHAR2,\n    arg3 VARCHAR2,\n    arg4 VARCHAR2\n) AS\nBEGIN\n    -- For operators with age > arg1: set name to arg2\n    UPDATE \"driver\" d\n    SET d.\"Name\" = arg2\n    WHERE d.\"Age\" > arg1;\n    \n    -- For school-bus records of these operators: add 1 to years_worked\n    UPDATE \"school_bus\" bus\n    SET bus.\"Years_Working\" = NVL(bus.\"Years_Working\", 0) + 1\n    WHERE bus.\"Driver_ID\" IN (\n        SELECT \"Driver_ID\"\n        FROM \"driver\"\n        WHERE \"Age\" > arg1\n    );\n    \n    -- If arg3 not null, update bus full-time flag\n    IF arg3 IS NOT NULL THEN\n        UPDATE \"school_bus\" bus\n        SET bus.\"If_full_time\" = 'T'\n        WHERE EXISTS (\n            SELECT 1\n            FROM \"driver\" d\n            WHERE d.\"Driver_ID\" = bus.\"Driver_ID\"\n            AND d.\"Age\" > arg1\n            AND d.\"Party\" = arg3\n        );\n    END IF;\n    \n    -- Delete operators with null party\n    DELETE FROM \"driver\" \n    WHERE \"Party\" IS NULL;\n    \n    -- Update home city for remaining operators\n    UPDATE \"driver\" \n    SET \"Home_city\" = arg4;\n    \n    -- Additional updates if arg3 not null\n    IF arg3 IS NOT NULL THEN\n        -- Set party to arg3 for drivers > arg1\n        UPDATE \"driver\"\n        SET \"Party\" = arg3\n        WHERE \"Age\" > arg1;\n        \n        -- Set full-time flag to F for specific buses\n        UPDATE \"school_bus\" bus\n        SET bus.\"If_full_time\" = 'F'\n        WHERE EXISTS (\n            SELECT 1\n            FROM \"driver\" d\n            WHERE d.\"Driver_ID\" = bus.\"Driver_ID\"\n            AND d.\"Party\" = arg3\n            AND d.\"Age\" <= arg1\n        );\n    END IF;\nEND;\n"
+ },
+ "pair": {
+  "single_run": "filtered-ora-a1",
+  "single_task": "oracle_a1_000"
+ }
+}

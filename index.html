@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Cellipse cx=%2716%27 cy=%277%27 rx=%2712%27 ry=%275%27 fill=%27%234f7cff%27/%3E%3Cpath d=%27M4 7v18c0 2.8 5.4 5 12 5s12-2.2 12-5V7c0 2.8-5.4 5-12 5S4 9.8 4 7z%27 fill=%27%233b5fd9%27/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ProcArena — NL-to-PL/SQL benchmark results</title>
+<title>ProcArena — LLMs on Direct and Interactive PL/SQL Development</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 
@@ -17,6 +18,7 @@
   <nav class="topnav">
     <a href="#leaderboard">Leaderboard</a>
     <a href="#results">Results</a>
+    <a href="#figures">Analysis</a>
     <a href="#cite">Cite</a>
   </nav>
   <div class="topbar-right">
@@ -28,22 +30,23 @@
 
   <!-- ── hero ─────────────────────────────────────────────────────── -->
   <section class="hero">
-    <p class="hero-kicker">11 lifecycle scenarios · 2 dialects · single &amp; multi-turn</p>
+    <p class="hero-kicker">9 development sub-scenarios · PostgreSQL &amp; Oracle · Direct &amp; Interactive</p>
     <h2 class="hero-title">ProcArena</h2>
-    <p class="hero-sub">A Lifecycle-Oriented Interactive Benchmark for NL-to-PL/SQL</p>
+    <p class="hero-sub">A Multi-Scenario Benchmark for LLMs on Direct and Interactive
+      PL/SQL Development from Natural Language</p>
     <p class="hero-blurb">
-      Real database development is not one prompt and one answer. ProcArena spans the
-      whole PL/SQL lifecycle — synthesis, evolution, transformation — and plays every
-      task in two modes: <b>single-turn</b>, with the full specification up front, and
-      <b>multi-turn</b>, where the model must interrogate a simulated user and the live
-      database to earn the specification back. One criterion throughout:
-      execution-state equivalence (EX). Every cell below opens the full trace of a real
-      episode.
+      Real database development is not one prompt and one answer. ProcArena spans
+      synthesis (A1–A5) and evolution (B1–B4) of stored procedures, and plays every
+      task in two modes: <b>Direct</b>, with the full requirement up front, and
+      <b>Interactive</b>, where the model must interrogate a simulated user and the
+      live database to earn the requirement back — under a question budget, with a
+      library-of-context fallback. One criterion throughout: execution-state
+      equivalence (EX). <b>Every cell below opens the full trace of a real
+      episode.</b> Accepted at <b>VLDB 2027</b>.
     </p>
     <p class="hero-btns">
-      <a class="btn-hero is-soon" href="#" title="link coming soon">Read the Paper</a>
-      <a class="btn-hero btn-hero-ghost is-soon" href="#" title="link coming soon">GitHub</a>
-      <a class="btn-hero btn-hero-ghost is-soon" href="#" title="link coming soon">Data</a>
+      <a class="btn-hero" href="https://arxiv.org/abs/2609.06527">Read the Paper</a>
+      <a class="btn-hero btn-hero-ghost" href="https://github.com/ZhanGHanG9991/PLBench">GitHub</a>
     </p>
   </section>
 
@@ -55,98 +58,105 @@
     <section class="paper-block" id="leaderboard">
       <h3>Overall EX across the benchmark</h3>
       <p class="muted small">Episodes passed over episodes played, aggregated over both
-        dialects, all sub-scenarios and both interaction modes. Lowest to highest.</p>
+        dialects, all eight EX sub-scenarios and both modes. Lowest to highest.</p>
       <div class="fig" id="lb"></div>
     </section>
 
-    <!-- single-turn EX -->
+    <!-- the paper's Table 6: Direct + Interactive EX -->
     <section class="paper-block" id="results">
-      <h3>Single-turn EX
-        <span class="muted small" id="t4-cond"></span></h3>
-      <p class="muted small">Each cell is <b>passed / graded</b> episodes, copied from
-        grades.json. <b>Click a cell</b> to replay the full trace of that cell's
-        representative episode. “not run” means the experiment has not happened —
-        it is never a zero.</p>
-      <div class="table-tools" id="t4-tools"></div>
-      <div class="scroll-x"><table class="grid ptable ctable" id="t4"></table></div>
+      <h3>Execution accuracy <span class="muted small">· the paper's main results
+        (Table&nbsp;6)</span></h3>
+      <p class="muted small">EX (%) per sub-scenario; each cell's percentage stands on
+        <b>passed / played</b> counts copied from grades.json (hover for the counts).
+        <b>Bold</b> is the column's best within its block, <u>underline</u> the runner-up.
+        <b>Click a cell</b> to replay the full trace of that cell's representative
+        episode — the question turns, database calls, budget spend and final submission.
+        “not run” means the experiment has not happened; it is never a zero.
+        Oracle Direct is counted over the 939 tasks shared with the Interactive corpus,
+        as in the paper.</p>
+      <div class="scroll-x"><table class="grid ptable ctable t6" id="t6"></table></div>
+      <p class="muted small" id="t6-note"></p>
     </section>
 
-    <!-- multi-turn EX -->
-    <section class="paper-block">
-      <h3>Multi-turn EX
-        <span class="muted small" id="t5-cond"></span></h3>
-      <p class="muted small">Same tasks as the single-turn table with the specification withheld:
-        the solver must ask the simulated user and query the database, then submit.
-        Cells link to traces; where both modes ran, the trace pages cross-link the
-        same task's other mode.</p>
-      <div class="table-tools" id="t5-tools"></div>
-      <div class="scroll-x"><table class="grid ptable ctable" id="t5"></table></div>
+    <!-- paper figures, verbatim -->
+    <section class="paper-block" id="figures">
+      <h3>Performance optimization <span class="muted small">· B2, the paper's
+        Figure&nbsp;4</span></h3>
+      <p class="muted small">B2 asks the model to speed up a working procedure and is
+        judged on runtime under a semantic-equivalence gate, so it is reported apart
+        from the EX tables. Panel (a) stacks speedup bins (faster above the axis,
+        slower below); (b) shows acceleration and database-work means on a log axis
+        where 1.0 matches the gold procedure; (c) counts EX-gate rejections.</p>
+      <figure class="paperfig"><img src="figures/b2.svg"
+        alt="B2 performance optimization: speedup bins, acceleration vs work, rejections"></figure>
     </section>
 
-    <!-- interaction ability: retention vs turns (paper Fig. 2) -->
     <section class="paper-block">
-      <h3>Interaction ability</h3>
-      <p class="muted small">What interaction buys, and what it costs. Vertical:
-        <b>retention</b> — multi-turn EX as a share of the same model's single-turn EX
-        (how much capability survives having to elicit the spec). Horizontal: mean steps
-        a multi-turn episode consumes. Point size gives single-turn EX; dashed lines mark
-        the medians. Upper-left asks well; lower-right spends without gaining.</p>
-      <div class="fig" id="fig2"></div>
+      <h3>What interaction costs <span class="muted small">· Figure&nbsp;5</span></h3>
+      <p class="muted small">(a) Direct vs Interactive EX per model, with the retention
+        line — Interactive EX as a share of the same model's Direct EX. (b) Mean turns
+        and mean tokens an Interactive episode consumes.</p>
+      <figure class="paperfig"><img src="figures/interaction_retention.svg"
+        alt="Direct vs Interactive EX with retention; mean turns and tokens"></figure>
     </section>
 
-    <!-- action distribution (paper Fig. 3) -->
     <section class="paper-block">
-      <h3>Action distribution</h3>
-      <p class="muted small">How each model spends its multi-turn actions, as a share of
-        all its tool calls — with multi-turn EX alongside on a shared row axis, so one
-        horizontal scan connects a model's habits to its score.</p>
-      <div class="fig" id="fig3"></div>
+      <h3>How models spend their actions <span class="muted small">· Figure&nbsp;6</span></h3>
+      <p class="muted small">Share of each action type in Interactive episodes, per
+        model — asking the user, querying the database, compiling, executing scratch
+        runs, submitting.</p>
+      <figure class="paperfig"><img src="figures/action_analysis.svg"
+        alt="Action distribution per model in the Interactive mode"></figure>
     </section>
 
-    <!-- failure attribution (stands in for paper Fig. 5) -->
     <section class="paper-block">
-      <h3>Failure attribution</h3>
-      <p class="muted small">Share of episodes lost to each cause. A <b>specification
-        error</b> means the solver never recovered the full oracle — it wrote against
-        wrong or missing requirements; an <b>implementation error</b> means information
-        was complete and the code is still wrong. The paper's finer five-way taxonomy
-        slots in here once it is run.</p>
-      <div class="fig" id="fig5"></div>
+      <h3>Turn dynamics <span class="muted small">· Figure&nbsp;7</span></h3>
+      <p class="muted small">What each step of an Interactive episode is spent on, as
+        episodes progress — action mix per recorded step, with the survival contour of
+        episodes still running.</p>
+      <figure class="paperfig"><img src="figures/turn_dynamics.svg"
+        alt="Per-step action composition over the course of Interactive episodes"></figure>
     </section>
 
-    <!-- B2 performance -->
     <section class="paper-block">
-      <h3>Performance optimisation (the B2 scenario)</h3>
-      <p class="muted small">B2 is graded on runtime, not just EX: the numbers below are
-        copied from each run's grades.json performance summary.</p>
-      <div class="scroll-x"><table class="grid ptable" id="t6"></table></div>
+      <h3>Where submissions go wrong <span class="muted small">· Figure&nbsp;8</span></h3>
+      <p class="muted small">Failures by error type in the Interactive mode, as a share
+        of the tasks each model played. Control flow and persistent state dominate —
+        and neither exists in declarative SQL.</p>
+      <figure class="paperfig"><img src="figures/error_analysis.svg"
+        alt="Failure taxonomy per model: schema, control flow, state effect, exception, contract"></figure>
     </section>
 
-    <!-- hardening ablation -->
     <section class="paper-block">
-      <h3>Hardening ablation</h3>
-      <p class="muted small">The same episodes replayed on the un-hardened corpus
-        (contradictions removed). Pairs are matched full-tier vs ablated runs.</p>
-      <div class="scroll-x"><table class="grid ptable" id="t7"></table></div>
+      <h3>Is the simulated user reliable? <span class="muted small">· human audit</span></h3>
+      <p class="muted small">A human audit of 180 sampled <code>ask_user</code> replies,
+        stratified over models and sub-scenarios: 85.6% acceptable, residual failures
+        scattered with no dominant mode, and 3.3% answer leakage in the LOC pool.</p>
+      <figure class="paperfig"><img src="figures/human.svg"
+        alt="Human audit of simulator replies: acceptability and leakage"></figure>
     </section>
 
-    <!-- extra conditions: everything kept out of the main tables -->
+    <!-- experiments kept out of the main table -->
     <section class="paper-block">
-      <h3>Appendix · runs outside the main tables</h3>
-      <p class="muted small">Budgeted (@B), submit-only, ablated-tier and one-off variant
-        runs — exported, viewable, but not mixed into the EX tables above.</p>
+      <h3>Appendix · experiments outside the main table</h3>
+      <p class="muted small">Runs whose mode or model is not part of the paper's
+        Table&nbsp;6 — still exported and viewable, never mixed into the cells above.</p>
       <div class="scroll-x"><table class="grid ptable" id="extra"></table></div>
     </section>
 
-    <!-- team + bibtex -->
+    <!-- bibtex -->
     <section class="paper-block" id="cite">
       <h3>BibTeX</h3>
-      <p class="muted small">Author list will appear with the paper release.</p>
-      <pre class="block wrap" id="bibtex">@misc{procarena2026,
-  title  = {ProcArena: A Lifecycle-Oriented Interactive Benchmark for NL-to-PL/SQL},
-  author = {(to appear with the paper)},
-  year   = {2026},
-  note   = {Preprint. Links on this page will be populated on release.}
+      <pre class="block wrap" id="bibtex">@article{zhang2026procarena,
+  title   = {ProcArena: A Multi-Scenario Benchmark for {LLMs} on Direct and
+             Interactive {PL/SQL} Development from Natural Language},
+  author  = {Zhang, Hang and Wang, Chaokun and Pan, Yuzhi and Zhong, Ziyao and
+             Cao, Shuo and Xue, Yue and Huang, Zeyu and Zhou, Xingwei and
+             Niu, Fang and Xie, Bofan and Ge, Guanchen and Zheng, Leqi and
+             Liu, Ziyang and Cao, Xiannian and Ge, Pengcheng},
+  journal = {arXiv preprint arXiv:2609.06527},
+  year    = {2026},
+  note    = {Accepted at VLDB 2027}
 }</pre>
       <p><button class="btn" id="copy-bib">copy BibTeX</button></p>
     </section>
@@ -155,6 +165,6 @@
   </div>
 </main>
 
-<script src="stats.js?v=6"></script>
+<script src="stats.js?v=7"></script>
 </body>
 </html>
