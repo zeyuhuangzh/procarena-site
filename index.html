@@ -9,13 +9,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 
 <header class="topbar">
   <h1 class="brand">ProcArena</h1>
   <nav class="topnav">
+    <a href="#overview">Overview</a>
     <a href="#leaderboard">Leaderboard</a>
     <a href="#results">Results</a>
     <a href="#figures">Analysis</a>
@@ -30,19 +31,18 @@
 
   <!-- ── hero ─────────────────────────────────────────────────────── -->
   <section class="hero">
-    <p class="hero-kicker">9 development sub-scenarios · PostgreSQL &amp; Oracle · Direct &amp; Interactive</p>
+    <p class="hero-kicker">VLDB 2027 · PostgreSQL &amp; Oracle · Direct &amp; Interactive</p>
     <h2 class="hero-title">ProcArena</h2>
-    <p class="hero-sub">A Multi-Scenario Benchmark for LLMs on Direct and Interactive
-      PL/SQL Development from Natural Language</p>
+    <p class="hero-sub">The first benchmark to evaluate LLMs on NL-to-PL/SQL across
+      multiple development scenarios in both Direct and Interactive modes,
+      across PostgreSQL and Oracle.</p>
     <p class="hero-blurb">
-      Real database development is not one prompt and one answer. ProcArena spans
-      synthesis (A1–A5) and evolution (B1–B4) of stored procedures, and plays every
-      task in two modes: <b>Direct</b>, with the full requirement up front, and
-      <b>Interactive</b>, where the model must interrogate a simulated user and the
-      live database to earn the requirement back — under a question budget, with a
-      library-of-context fallback. One criterion throughout: execution-state
-      equivalence (EX). <b>Every cell below opens the full trace of a real
-      episode.</b> Accepted at <b>VLDB 2027</b>.
+      Nine sub-scenarios spanning the database development lifecycle — synthesis
+      (A1–A5) and evolution (B1–B4) of stored procedures — every task played twice:
+      <b>Direct</b>, with the full requirement up front, and <b>Interactive</b>,
+      where the model must question a simulated user and probe the live database to
+      earn the requirement back. One criterion throughout: execution-state
+      equivalence (EX). <b>Every cell on this page replays a real episode.</b>
     </p>
     <p class="hero-btns">
       <a class="btn-hero" href="https://arxiv.org/abs/2609.06527">Read the Paper</a>
@@ -54,94 +54,96 @@
 
   <div id="content" hidden>
 
-    <!-- overall leaderboard -->
-    <section class="paper-block" id="leaderboard">
-      <h3>Overall EX across the benchmark</h3>
-      <p class="muted small">Episodes passed over episodes played, aggregated over both
-        dialects, all eight EX sub-scenarios and both modes. Lowest to highest.</p>
-      <div class="fig" id="lb"></div>
+    <!-- what ProcArena is (the paper's Figure 1) -->
+    <section class="paper-block" id="overview">
+      <h3>What ProcArena evaluates</h3>
+      <figure class="paperfig"><img src="figures/intro.svg"
+        alt="ProcArena overview: development scenarios, Direct and Interactive modes, execution-state grading"></figure>
+      <p class="figcap">The benchmark at a glance — the development sub-scenarios, the
+        two interaction modes, and execution-state grading against a gold procedure
+        (the paper's Figure&nbsp;1).</p>
     </section>
 
-    <!-- the paper's Table 6: Direct + Interactive EX -->
+    <!-- overall leaderboard -->
+    <section class="paper-block" id="leaderboard">
+      <h3>Leaderboard</h3>
+      <div class="fig lbwrap" id="lb"></div>
+      <p class="figcap">Overall EX under the current filter — episodes passed over
+        episodes played. The gear filters by mode, dialect and sub-scenario;
+        hover a bar for the counts.</p>
+    </section>
+
+    <!-- main results with mode / dialect switches -->
     <section class="paper-block" id="results">
-      <h3>Execution accuracy <span class="muted small">· the paper's main results
-        (Table&nbsp;6)</span></h3>
-      <p class="muted small">EX (%) per sub-scenario; each cell's percentage stands on
-        <b>passed / played</b> counts copied from grades.json (hover for the counts).
-        <b>Bold</b> is the column's best within its block, <u>underline</u> the runner-up.
-        <b>Click a cell</b> to replay the full trace of that cell's representative
-        episode — the question turns, database calls, budget spend and final submission.
-        “not run” means the experiment has not happened; it is never a zero.
-        Oracle Direct is counted over the 939 tasks shared with the Interactive corpus,
-        as in the paper.</p>
-      <div class="scroll-x"><table class="grid ptable ctable t6" id="t6"></table></div>
-      <p class="muted small" id="t6-note"></p>
+      <h3>Results by sub-scenario</h3>
+      <div class="table-tools" id="t6-tools"></div>
+      <div class="scroll-x"><table class="grid t6" id="t6"></table></div>
+      <div class="rampbar" id="t6-ramp"></div>
+      <p class="figcap" id="t6-note">EX (%) per sub-scenario; deeper green = higher.
+        Hover a cell for passed / played counts; <b>click it</b> to replay that cell's
+        representative episode — question turns, database calls, budget spend, final
+        submission. The numbers match the paper's Table&nbsp;6 exactly (Oracle Direct
+        counted over the 939 tasks shared with the Interactive corpus).</p>
     </section>
 
     <!-- paper figures, verbatim -->
     <section class="paper-block" id="figures">
-      <h3>Performance optimization <span class="muted small">· B2, the paper's
-        Figure&nbsp;4</span></h3>
-      <p class="muted small">B2 asks the model to speed up a working procedure and is
-        judged on runtime under a semantic-equivalence gate, so it is reported apart
-        from the EX tables. Panel (a) stacks speedup bins (faster above the axis,
-        slower below); (b) shows acceleration and database-work means on a log axis
-        where 1.0 matches the gold procedure; (c) counts EX-gate rejections.</p>
+      <h3>Performance optimization</h3>
       <figure class="paperfig"><img src="figures/b2.svg"
         alt="B2 performance optimization: speedup bins, acceleration vs work, rejections"></figure>
+      <p class="figcap">The B2 scenario asks the model to speed up a working procedure
+        and is judged on runtime under a semantic-equivalence gate (the paper's
+        Figure&nbsp;4).</p>
     </section>
 
     <section class="paper-block">
-      <h3>What interaction costs <span class="muted small">· Figure&nbsp;5</span></h3>
-      <p class="muted small">(a) Direct vs Interactive EX per model, with the retention
-        line — Interactive EX as a share of the same model's Direct EX. (b) Mean turns
-        and mean tokens an Interactive episode consumes.</p>
+      <h3>What interaction costs</h3>
       <figure class="paperfig"><img src="figures/interaction_retention.svg"
         alt="Direct vs Interactive EX with retention; mean turns and tokens"></figure>
+      <p class="figcap">Direct vs Interactive EX with the retention line, and the
+        turns and tokens an Interactive episode consumes (Figure&nbsp;5).</p>
     </section>
 
     <section class="paper-block">
-      <h3>How models spend their actions <span class="muted small">· Figure&nbsp;6</span></h3>
-      <p class="muted small">Share of each action type in Interactive episodes, per
-        model — asking the user, querying the database, compiling, executing scratch
-        runs, submitting.</p>
+      <h3>How models spend their actions</h3>
       <figure class="paperfig"><img src="figures/action_analysis.svg"
         alt="Action distribution per model in the Interactive mode"></figure>
+      <p class="figcap">Share of each action type in Interactive episodes, per model
+        (Figure&nbsp;6).</p>
     </section>
 
     <section class="paper-block">
-      <h3>Turn dynamics <span class="muted small">· Figure&nbsp;7</span></h3>
-      <p class="muted small">What each step of an Interactive episode is spent on, as
-        episodes progress — action mix per recorded step, with the survival contour of
-        episodes still running.</p>
+      <h3>Turn dynamics</h3>
       <figure class="paperfig"><img src="figures/turn_dynamics.svg"
         alt="Per-step action composition over the course of Interactive episodes"></figure>
+      <p class="figcap">What each step of an Interactive episode is spent on as
+        episodes progress (Figure&nbsp;7).</p>
     </section>
 
     <section class="paper-block">
-      <h3>Where submissions go wrong <span class="muted small">· Figure&nbsp;8</span></h3>
-      <p class="muted small">Failures by error type in the Interactive mode, as a share
-        of the tasks each model played. Control flow and persistent state dominate —
-        and neither exists in declarative SQL.</p>
+      <h3>Where submissions go wrong</h3>
       <figure class="paperfig"><img src="figures/error_analysis.svg"
         alt="Failure taxonomy per model: schema, control flow, state effect, exception, contract"></figure>
+      <p class="figcap">Failures by error type in the Interactive mode — control flow
+        and persistent state dominate, and neither exists in declarative SQL
+        (Figure&nbsp;8).</p>
     </section>
 
     <section class="paper-block">
-      <h3>Is the simulated user reliable? <span class="muted small">· human audit</span></h3>
-      <p class="muted small">A human audit of 180 sampled <code>ask_user</code> replies,
-        stratified over models and sub-scenarios: 85.6% acceptable, residual failures
-        scattered with no dominant mode, and 3.3% answer leakage in the LOC pool.</p>
+      <h3>Is the simulated user reliable?</h3>
       <figure class="paperfig"><img src="figures/human.svg"
         alt="Human audit of simulator replies: acceptability and leakage"></figure>
+      <p class="figcap">A human audit of 180 sampled <code>ask_user</code> replies:
+        85.6% acceptable, no dominant failure mode, 3.3% answer leakage in the LOC
+        pool.</p>
     </section>
 
     <!-- experiments kept out of the main table -->
     <section class="paper-block">
       <h3>Appendix · experiments outside the main table</h3>
-      <p class="muted small">Runs whose mode or model is not part of the paper's
-        Table&nbsp;6 — still exported and viewable, never mixed into the cells above.</p>
       <div class="scroll-x"><table class="grid ptable" id="extra"></table></div>
+      <p class="figcap">Runs whose mode or model is not part of the paper's main
+        results — exported and viewable, never mixed into the numbers above.</p>
     </section>
 
     <!-- bibtex -->
@@ -165,6 +167,7 @@
   </div>
 </main>
 
-<script src="stats.js?v=7"></script>
+<div class="viztip" id="viztip" hidden></div>
+<script src="stats.js?v=9"></script>
 </body>
 </html>
