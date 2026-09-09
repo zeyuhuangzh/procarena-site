@@ -7,7 +7,7 @@
  *   EX retention      F12 Dumbbell Queue   aggregated from tables.json, exactly
  *                                          like the leaderboard (passed / played)
  *   action share      L16 Matrix Heat      cell labels printed in the paper's Figure 6
- *   failure types     L4  Arc Matrix       cell labels printed in the paper's Figure 8
+ *   failure types     L16 Matrix Heat      cell labels printed in the paper's Figure 8
  *   human audit       L14 Hundred Field    counts printed in the paper's Figure 9
  *
  * The transcribed numbers live in paper_figures.json (with provenance); nothing
@@ -49,6 +49,8 @@ window.PaperCharts = (() => {
       RAMP: ['#D0E3FF', '#BAD6EB', '#7096D1', '#334EAC', '#081F5C'],
       onRamp: ['#081F5C', '#081F5C', '#ffffff', '#ffffff', '#ffffff'],
       CAT: ['#c0392b', '#b3730b', '#7a3fb5', '#0d7c8a', '#1a7f4b', '#6b7280'],
+      FAILRAMP: ['#fdf0ec', '#f6cfc3', '#ec9a86', '#d95a44', '#a52a1c'],
+      onFail: ['#1c2128', '#1c2128', '#1c2128', '#ffffff', '#ffffff'],
     },
     dark: {
       BG: '#171a21', TXT: '#e3e6eb', INK: '#EDEFF1',
@@ -60,6 +62,9 @@ window.PaperCharts = (() => {
         'rgba(237,239,241,.74)', '#7096D1'],
       onRamp: ['#EDEFF1', '#EDEFF1', '#171a21', '#171a21', '#F7F2EB'],
       CAT: ['#ff7b72', '#e3b341', '#b283f7', '#4ec5d4', '#4cc38a', '#98a0ad'],
+      FAILRAMP: ['rgba(255,123,114,.12)', 'rgba(255,123,114,.28)', 'rgba(255,123,114,.48)',
+        'rgba(255,123,114,.72)', '#ff7b72'],
+      onFail: ['#e3e6eb', '#e3e6eb', '#e3e6eb', '#171a21', '#171a21'],
     },
   };
   const isDark = () => {
@@ -214,43 +219,40 @@ window.PaperCharts = (() => {
     });
   }
 
-  /* ════ L4 · arc matrix — failures by type, model × type, bubble area = % ════ */
+  /* ════ L16 · matrix heat — failures by type, model × type, the paper's own layout ════ */
   function drawFailures(s, P) {
     const E = F.failure_types, rows = F.models, cols = E.types;
-    const rowY = (i) => 104 + i * 48, colX = (j) => 240 + j * 94;
-    const dy = (j) => -18 * Math.sin(Math.PI * j / (cols.length - 1));
-    const R = (v) => Math.sqrt(v) * 3.6;
-    const shade = (v) => P.RAMP[Math.min(4, Math.floor(v / 7))];
+    const X0 = 200, Y0 = 56, STEP = 86, C = 78, RH = 50;   // wide cells like the paper's Figure 8
+    const bucket = (t) => (t >= 25 ? 4 : t >= 15 ? 3 : t >= 8 ? 2 : t >= 3 ? 1 : 0);
     rows.forEach((m, i) => {
-      const d = 'M' + cols.map((_, j) => `${colX(j)} ${rowY(i) + dy(j)}`).join(' L ');
-      el(s, 'path', { d, fill: 'none', stroke: P.QUIET, 'stroke-width': 1.4, pathLength: 1, class: 'draw',
-        style: `animation-delay:${i * .08}s` });
-      txt(s, { x: 206, y: rowY(i) + 5, 'font-size': FS.label, 'font-weight': 700, fill: P.LAB, 'text-anchor': 'end',
-        class: 'fade', style: `animation-delay:${i * .08}s` }, label(m));
-      E.rows[m].forEach((v, j) => {
-        const x = colX(j), y = rowY(i) + dy(j);
-        if (!v) {
-          el(s, 'circle', { cx: x, cy: y, r: 1.6, fill: P.FLOOR, class: 'pop',
-            style: `animation-delay:${.2 + i * .08 + j * .02}s` });
-          return;
-        }
-        const dot = el(s, 'circle', { cx: x, cy: y, r: R(v), fill: shade(v), class: 'pop',
-          style: `animation-delay:${.2 + i * .08 + j * .02}s` });
-        tip(dot, `${label(m)} · ${cols[j]} — ${v.toFixed(1)}% of tasks run`);
-        txt(s, { x: x + R(v) + 5, y: y + 5, 'font-size': FS.head, 'font-weight': 800, fill: P.TXT,
-          class: 'fade', style: `animation-delay:${.6 + i * .06}s` }, v.toFixed(1));
-      });
+      txt(s, { x: X0 - 14, y: Y0 + i * RH + RH / 2 + 5, 'font-size': FS.label, 'font-weight': 700, fill: P.LAB,
+        'text-anchor': 'end', class: 'fade', style: `animation-delay:${i * .04}s` }, label(m));
     });
     cols.forEach((c, j) => {
-      const x = colX(j), y = 104 + dy(j) - (j % 2 ? 60 : 40);   // staggered so neighbours never touch
-      txt(s, { x, y, 'font-size': FS.head, 'font-weight': 700, fill: P.LAB, 'letter-spacing': '.06em',
-        'text-anchor': 'middle', class: 'fade', style: `animation-delay:${j * .05}s` }, c.toUpperCase());
-      el(s, 'line', { x1: x, y1: y + 6, x2: x, y2: 104 + dy(j) - 22, stroke: P.QUIET, 'stroke-width': 1,
-        class: 'fade' });
+      txt(s, { x: X0 + j * STEP + C / 2, y: Y0 - 14, 'font-size': FS.head, 'font-weight': 700, fill: P.LAB,
+        'text-anchor': 'middle', class: 'fade', style: `animation-delay:${j * .04}s` }, c);
     });
-    txt(s, { x: 350, y: 448, 'font-size': FS.note, 'font-weight': 600, fill: P.MUT, 'text-anchor': 'middle',
-      'letter-spacing': '.08em', class: 'fade', style: 'animation-delay:1s' },
-      'BUBBLE AREA = FAILURES AS % OF THE TASKS THE MODEL RAN');
+    rows.forEach((m, i) => E.rows[m].forEach((t, j) => {
+      const x = X0 + j * STEP, y = Y0 + i * RH, d = (i + j) * .02, b = bucket(t);
+      const cell = el(s, 'rect', { x, y: y + 3, width: C, height: RH - 6, rx: 7, fill: P.FAILRAMP[b], class: 'pop',
+        style: `animation-delay:${d}s` });
+      tip(cell, `${label(m)} · ${cols[j]} — ${t.toFixed(1)}% of the tasks it ran`);
+      txt(s, { x: x + C / 2, y: y + RH / 2 + 5, 'font-size': FS.label, 'font-weight': 700, fill: P.onFail[b],
+        'text-anchor': 'middle', class: 'fade', style: `animation-delay:${.4 + d}s;pointer-events:none` },
+        t.toFixed(1));
+    }));
+    // shade legend, countable buckets
+    const ly = Y0 + rows.length * RH + 26;
+    txt(s, { x: X0 - 14, y: ly + 12, 'font-size': FS.small, 'font-weight': 700, fill: P.MUT, 'text-anchor': 'end',
+      'letter-spacing': '.08em', class: 'fade', style: 'animation-delay:1s' }, 'SHADE = %');
+    const LG = [[0, '<3'], [1, '3–8'], [2, '8–15'], [3, '15–25'], [4, '25+']];
+    LG.forEach(([b, lab], k) => {
+      const x = X0 + k * 88;
+      el(s, 'rect', { x, y: ly, width: 16, height: 16, rx: 4, fill: P.FAILRAMP[b], class: 'fade',
+        style: `animation-delay:${1 + k * .05}s` });
+      txt(s, { x: x + 22, y: ly + 13, 'font-size': FS.small, 'font-weight': 600, fill: P.LAB, class: 'fade',
+        style: `animation-delay:${1 + k * .05}s` }, lab + '%');
+    });
   }
 
   /* ════ L14 · hundred field — 180 audited replies, one dot each; reason = color ════ */
@@ -268,7 +270,7 @@ window.PaperCharts = (() => {
     H.reasons.forEach((name, r) => key(P.CAT[r], name));
 
     const panel = (title, data, pos, failPos) => {
-      txt(s, { x: pos[0], y: 78, 'font-size': FS.head, 'font-weight': 700, fill: P.MUT, 'letter-spacing': '.1em',
+      txt(s, { x: pos[0], y: 78, 'font-size': FS.head, 'font-weight': 700, fill: P.LAB, 'letter-spacing': '.1em',
         'text-anchor': 'middle', class: 'fade' }, title);
       const cluster = (cx, cy, n, fill, name, seed, big) => {
         let edge = 0;
@@ -288,13 +290,12 @@ window.PaperCharts = (() => {
         return edge;
       };
       const edge = cluster(pos[0], pos[1], data.pass, P.DATA2, 'Acceptable', 1, true);
-      txt(s, { x: pos[0], y: pos[1] + edge + 24, 'font-size': FS.value, 'font-weight': 800, fill: P.TXT,
-        'text-anchor': 'middle', class: 'fade', style: 'animation-delay:.6s' },
-        `Pass · ${data.pass} (${data.pass_pct}%)`);
+      txt(s, { x: pos[0], y: pos[1] + edge + 22, 'font-size': FS.small, 'font-weight': 700, fill: P.DATA2,
+        'text-anchor': 'middle', class: 'fade', style: 'animation-delay:.6s' }, 'Acceptable');
+      txt(s, { x: pos[0], y: pos[1] + edge + 39, 'font-size': FS.value, 'font-weight': 800, fill: P.TXT,
+        'text-anchor': 'middle', class: 'fade', style: 'animation-delay:.7s' }, data.pass);
       H.reasons.forEach((name, r) => {
         const [cx, cy] = failPos[r], n = data.fail[r];
-        el(s, 'line', { x1: pos[0], y1: pos[1], x2: cx, y2: cy, stroke: P.GRID, 'stroke-width': 1,
-          'stroke-dasharray': '3 7', class: 'fade', style: `animation-delay:${.9 + r * .06}s` });
         const e = n ? cluster(cx, cy, n, P.CAT[r], name, 3 + r, false) : 0;
         if (!n) el(s, 'rect', { x: cx - 5, y: cy - 1, width: 10, height: 2, fill: P.FLOOR, class: 'fade' });
         const ly = cy + Math.max(e, 10) + 18;
@@ -305,13 +306,12 @@ window.PaperCharts = (() => {
       });
     };
     const grid = (x0) => [[x0, 130], [x0 + 150, 130], [x0, 262], [x0 + 150, 262], [x0, 394], [x0 + 150, 394]];
-    panel(`ALL ${H.all.n} AUDITED REPLIES`, H.all, [220, 268], grid(470));
+    panel(`ALL ${H.all.n} AUDITED REPLIES · ${H.all.pass_pct}% ACCEPTABLE`, H.all, [220, 268], grid(470));
     el(s, 'line', { x1: 710, y1: 60, x2: 710, y2: 470, stroke: P.GRID, 'stroke-width': 1, class: 'fade' });
-    panel(`THE ${H.loc.n} FROM THE LOC POOL`, H.loc, [920, 268], grid(1170));
+    panel(`THE ${H.loc.n} FROM THE LOC POOL · ${H.loc.pass_pct}% ACCEPTABLE`, H.loc, [920, 268], grid(1170));
     txt(s, { x: 710, y: 500, 'font-size': FS.note, 'font-weight': 600, fill: P.MUT, 'text-anchor': 'middle',
       'letter-spacing': '.08em', class: 'fade', style: 'animation-delay:1.3s' },
-      `ONE DOT = ONE REPLY · ${H.all.pass} + ${H.all.fail.reduce((a, b) => a + b, 0)} = ${H.all.n}` +
-      ` · ${H.loc.pass} + ${H.loc.fail.reduce((a, b) => a + b, 0)} = ${H.loc.n}`);
+      'ONE DOT = ONE REPLY');
   }
 
   const CHARTS = [
