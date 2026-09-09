@@ -94,7 +94,6 @@ const LB = {
 };
 
 const LB_ROW_H = 64;
-const LB_BAR = { light: '#2a78d6', dark: '#3987e5' };   // dataviz slot 1
 
 function lbFilterText() {
   const parts = [
@@ -155,7 +154,6 @@ function buildLeaderboard() {
 }
 
 function updateLeaderboard(animate = true) {
-  const mode = isDark() ? 'dark' : 'light';
   const rows = lbData();
   const max = Math.max(1, ...rows.map((r) => pct(r.a) ?? 0));
   const top = Math.min(100, Math.ceil(max / 10) * 10);
@@ -178,7 +176,6 @@ function updateLeaderboard(animate = true) {
     const p = pct(r.a);
     const bar = row.querySelector('.lb3-bar');
     bar.querySelector('i').style.width = p === null ? '0%' : `${100 * p / top}%`;
-    bar.querySelector('i').style.background = LB_BAR[mode];
     bar.querySelector('.lb3-val').textContent =
       p === null ? '—' : `${p.toFixed(1)}%`;
     if (!animate) requestAnimationFrame(() => row.classList.remove('no-anim'));

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
 
@@ -111,14 +111,14 @@
         <div class="pc-card">
           <h2>GLM-5.3 keeps 98% of its Direct EX under interaction; DeepSeek V4 Pro keeps 65%</h2>
           <div class="sub">hollow dot = Direct EX · solid dot = Interactive EX · beads = EX points given up · retention = Interactive ÷ Direct · both dialects pooled, 1,879 episodes per mode</div>
-          <svg id="pc-retention" viewBox="0 0 430 320" preserveAspectRatio="xMidYMid meet"></svg>
+          <svg id="pc-retention" viewBox="0 0 700 470" preserveAspectRatio="xMidYMid meet"></svg>
           <div class="src">F12 Dumbbell queue · tables.json · same counts as the leaderboard</div>
         </div>
 
         <div class="pc-card">
           <h2>Models split between iterating against the database and inspecting it</h2>
           <div class="sub">share of all recorded Interactive actions per model · shade = % · tool names verbatim from the traces, names outside the protocol grouped as malformed/other · both dialects pooled</div>
-          <svg id="pc-actions" viewBox="0 0 430 320" preserveAspectRatio="xMidYMid meet"></svg>
+          <svg id="pc-actions" viewBox="0 0 700 520" preserveAspectRatio="xMidYMid meet"></svg>
           <div class="src">L16 Matrix heat · paper figure 6 · cell labels as printed</div>
         </div>
 
@@ -133,14 +133,14 @@
         <div class="pc-card">
           <h2>Control flow and persistent state dominate, and neither exists in declarative SQL</h2>
           <div class="sub">Interactive failures by classified type · bubble area = failures as % of the tasks each model ran, so a row reads against the Interactive columns of the table · both dialects pooled</div>
-          <svg id="pc-failures" viewBox="0 0 430 320" preserveAspectRatio="xMidYMid meet"></svg>
+          <svg id="pc-failures" viewBox="0 0 700 470" preserveAspectRatio="xMidYMid meet"></svg>
           <div class="src">L4 Arc matrix · paper figure 8 · cell labels as printed</div>
         </div>
 
         <div class="pc-card wide">
           <h2>85.6% of simulated-user replies pass a blind human audit, and the failures scatter with no dominant mode</h2>
           <div class="sub">one dot = one audited <code>ask_user</code> reply · 180 turns stratified over solver models and sub-scenarios, one third from the LOC pool · auditors blind to model identity judged each reply against the task's oracle evidence · only 3.3% of LOC-pool replies leaked answer content</div>
-          <svg id="pc-audit" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet"></svg>
+          <svg id="pc-audit" viewBox="0 0 1420 520" preserveAspectRatio="xMidYMid meet"></svg>
           <div class="src">L14 Hundred field · paper figure 9 · counts as printed</div>
         </div>
 
@@ -168,7 +168,7 @@
 </main>
 
 <div class="viztip" id="viztip" hidden></div>
-<script src="charts.js?v=13"></script>
-<script src="stats.js?v=13"></script>
+<script src="charts.js?v=14"></script>
+<script src="stats.js?v=14"></script>
 </body>
 </html>
