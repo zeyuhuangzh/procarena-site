@@ -829,8 +829,8 @@ td.ovcell b { font-size: 13px; }
 .ov-options li { margin: 3px 0; }
 .ov-options li.is-chosen { font-weight: 700; }
 .ov-options li.is-chosen::after { content: " ✓"; color: #2e8b46; }
-.ov-intro { margin-top: 20px; font-size: 16px; line-height: 1.75;
-  color: var(--text); max-width: 900px; }
+.ov-intro { margin-top: 22px; font-size: 16.5px; line-height: 1.8;
+  color: var(--text); }
 
 /* SQL keyword tint inside the rebuilt figure's code blocks */
 .ov-code .sql-kw { color: #7f3fbf; font-weight: 600; }
@@ -858,3 +858,13 @@ td.ovcell b { font-size: 13px; }
 .ov-inter .ov-arrow { justify-content: center; }
 .ov-inter .ov-code-mini { margin: 0 auto; }
 .ov-inter .ov-step { justify-content: flex-start; }
+
+/* ── v12: Figure 1 as the provided artwork, blended into the page ── */
+.ov-figure { margin: 4px auto 0; max-width: 1080px; }
+.ov-figure img { display: block; width: 100%; height: auto; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ov-figure { background: #fbfbf9;
+    border-radius: 18px; padding: 22px 24px; }
+}
+:root[data-theme="dark"] .ov-figure { background: #fbfbf9;
+  border-radius: 18px; padding: 22px 24px; }
