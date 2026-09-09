@@ -1,0 +1,40 @@
+{
+ "note": "Numbers transcribed verbatim from the published paper (arXiv:2609.06527, camera-ready v5). Nothing here is recomputed from the results tree: the action-share and failure-type matrices are the per-cell labels printed in Figures 6 and 8; the human-audit counts are the labels printed in Figure 9 (counts = printed percentage x n). The EX / retention chart on the page does NOT read this file - it aggregates tables.json exactly as the leaderboard does.",
+ "source": "PLArena_VLDB_2027_v5.pdf",
+ "models": ["gemini-3.1", "gpt-5.5", "glm-5.3", "gpt-5.2", "gpt-5.4-mini", "glm-5.2", "deepseek-v4-pro"],
+ "action_share": {
+  "figure": "Figure 6",
+  "unit": "% of all recorded Interactive actions per model, PostgreSQL and Oracle pooled",
+  "tools": ["get_schema", "describe_table", "sample_rows", "compile_plsql", "execute_scratch", "reset_scratch", "ask_user", "ask_selector", "submit", "malformed/other"],
+  "rows": {
+   "gemini-3.1":      [9.30, 2.13, 2.97, 9.82, 39.05, 1.11, 14.40, 12.02, 9.20, 0.00],
+   "gpt-5.5":         [13.54, 5.32, 17.97, 18.14, 7.22, 0.08, 15.08, 8.36, 14.30, 0.00],
+   "glm-5.3":         [6.60, 1.32, 9.67, 5.58, 54.45, 3.26, 7.95, 4.49, 6.63, 0.07],
+   "gpt-5.2":         [6.26, 9.25, 17.42, 14.35, 33.31, 4.10, 6.80, 2.43, 6.08, 0.00],
+   "gpt-5.4-mini":    [9.68, 5.44, 22.14, 20.56, 13.76, 0.56, 12.40, 4.83, 10.63, 0.00],
+   "glm-5.2":         [4.99, 11.45, 14.51, 6.97, 40.04, 3.08, 6.46, 7.13, 5.08, 0.29],
+   "deepseek-v4-pro": [9.99, 12.06, 3.59, 15.54, 18.23, 2.48, 19.19, 2.51, 16.01, 0.39]
+  }
+ },
+ "failure_types": {
+  "figure": "Figure 8",
+  "unit": "Interactive failures by classified type, as % of the tasks each model ran, PostgreSQL and Oracle pooled",
+  "types": ["Schema", "Control flow", "State effect", "Exception", "Contract"],
+  "rows": {
+   "gemini-3.1":      [5.7, 18.9, 10.1, 1.1, 6.4],
+   "gpt-5.5":         [7.1, 18.3, 10.1, 0.7, 6.9],
+   "glm-5.3":         [0.3, 22.4, 13.7, 1.6, 11.7],
+   "gpt-5.2":         [1.4, 25.1, 11.6, 0.7, 11.8],
+   "gpt-5.4-mini":    [4.4, 26.7, 14.6, 1.2, 11.9],
+   "glm-5.2":         [3.5, 31.2, 15.4, 2.9, 12.3],
+   "deepseek-v4-pro": [20.1, 17.6, 7.9, 2.8, 27.9]
+  }
+ },
+ "human_audit": {
+  "figure": "Figure 9",
+  "unit": "one audited ask_user reply; 180 sampled turns stratified over solver models and sub-scenarios, one third from the LOC pool",
+  "reasons": ["Wrong fact", "Incomplete answer", "Unsupported assertion", "Wrong boundary", "Irrelevant answer", "Other"],
+  "all":  { "n": 180, "pass": 154, "pass_pct": 85.6, "fail_pct": [2.8, 1.7, 2.8, 3.3, 2.8, 1.1], "fail": [5, 3, 5, 6, 5, 2] },
+  "loc":  { "n": 61,  "pass": 53,  "pass_pct": 86.9, "fail_pct_of_fails": [0, 12.5, 12.5, 50.0, 12.5, 12.5], "fail": [0, 1, 1, 4, 1, 1], "leak_pct": 3.3 }
+ }
+}

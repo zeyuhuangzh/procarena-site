@@ -3,7 +3,7 @@
  * Renders tables.json (written by viz/export.py) and nothing else.  Every number
  * shown stands on passed/played counts copied from grades.json — the page formats
  * them as percentages but invents nothing.  A cell without data renders "not run",
- * never 0.  Analysis figures are the paper's own figures (static SVG).
+ * never 0.  The analysis charts under the table live in charts.js.
  */
 
 'use strict';
@@ -370,6 +370,7 @@ function renderAll() {
   tintOverviewCode();
   buildLeaderboard();
   renderTable6();
+  if (window.PaperCharts) PaperCharts.render(T);
   const updated = (() => {
     try {
       return new Date(T.generated).toLocaleDateString('en-US',
@@ -413,6 +414,7 @@ themeBtn.addEventListener('click', () => {
   root.dataset.theme = dark ? 'light' : 'dark';
   try { localStorage.setItem('procarena-theme', root.dataset.theme); } catch { /* ok */ }
   if (T) { updateLeaderboard(false); renderTable6(); }
+  if (window.PaperCharts) PaperCharts.rerender();
 });
 try {
   const saved = localStorage.getItem('procarena-theme');

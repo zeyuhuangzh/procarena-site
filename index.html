@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=12">
+<link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 
@@ -89,56 +89,62 @@
         counted over the 939 tasks shared with the Interactive corpus).</p>
     </section>
 
-    <!-- paper figures, verbatim -->
+    <!-- analysis: the paper's figures, redrawn as cards where their numbers are printed -->
     <section class="paper-block" id="figures">
-      <h3>Performance optimization</h3>
-      <figure class="paperfig"><img src="figures/b2.svg"
-        alt="B2 performance optimization: speedup bins, acceleration vs work, rejections"></figure>
-      <p class="figcap">The B2 scenario asks the model to speed up a working procedure
-        and is judged on runtime under a semantic-equivalence gate (the paper's
-        Figure&nbsp;4).</p>
-    </section>
+      <h3>Analysis</h3>
+      <p class="figcap pc-intro">The paper's analysis beyond the table. The retention
+        chart sums the same passed / played counts as the leaderboard; the action, failure
+        and audit charts carry the numbers printed in the paper's Figures 6, 8 and 9,
+        one label per cell. Two figures whose numbers are not printed are shown as the
+        paper drew them. Hover any mark for its value; click a chart to replay it.</p>
 
-    <section class="paper-block">
-      <h3>What interaction costs</h3>
-      <figure class="paperfig"><img src="figures/interaction_retention.svg"
-        alt="Direct vs Interactive EX with retention; mean turns and tokens"></figure>
-      <p class="figcap">Direct vs Interactive EX with the retention line, and the
-        turns and tokens an Interactive episode consumes (Figure&nbsp;5).</p>
-    </section>
+      <div class="pc-grid">
 
-    <section class="paper-block">
-      <h3>How models spend their actions</h3>
-      <figure class="paperfig"><img src="figures/action_analysis.svg"
-        alt="Action distribution per model in the Interactive mode"></figure>
-      <p class="figcap">Share of each action type in Interactive episodes, per model
-        (Figure&nbsp;6).</p>
-    </section>
+        <div class="pc-card wide">
+          <h2>Most candidates match or beat the gold procedure, but two models buy their speed with far more database work</h2>
+          <div class="sub">B2 performance optimization · one bar or marker pair per model and dialect, PostgreSQL then Oracle · (a) speedup bins, faster above the axis · (b) acceleration and work as harmonic means, 1.0 = gold · (c) tasks rejected by the EX gate</div>
+          <figure class="pc-paperfig"><img src="figures/b2.svg"
+            alt="B2 performance optimization: speedup bins, acceleration vs work, rejections"></figure>
+          <div class="src">Paper figure 4 · as printed · PostgreSQL + Oracle</div>
+        </div>
 
-    <section class="paper-block">
-      <h3>Turn dynamics</h3>
-      <figure class="paperfig"><img src="figures/turn_dynamics.svg"
-        alt="Per-step action composition over the course of Interactive episodes"></figure>
-      <p class="figcap">What each step of an Interactive episode is spent on as
-        episodes progress (Figure&nbsp;7).</p>
-    </section>
+        <div class="pc-card">
+          <h2>GLM-5.3 keeps 98% of its Direct EX under interaction; DeepSeek V4 Pro keeps 65%</h2>
+          <div class="sub">hollow dot = Direct EX · solid dot = Interactive EX · beads = EX points given up · retention = Interactive ÷ Direct · both dialects pooled, 1,879 episodes per mode</div>
+          <svg id="pc-retention" viewBox="0 0 430 320" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="src">F12 Dumbbell queue · tables.json · same counts as the leaderboard</div>
+        </div>
 
-    <section class="paper-block">
-      <h3>Where submissions go wrong</h3>
-      <figure class="paperfig"><img src="figures/error_analysis.svg"
-        alt="Failure taxonomy per model: schema, control flow, state effect, exception, contract"></figure>
-      <p class="figcap">Failures by error type in the Interactive mode — control flow
-        and persistent state dominate, and neither exists in declarative SQL
-        (Figure&nbsp;8).</p>
-    </section>
+        <div class="pc-card">
+          <h2>Models split between iterating against the database and inspecting it</h2>
+          <div class="sub">share of all recorded Interactive actions per model · shade = % · tool names verbatim from the traces, names outside the protocol grouped as malformed/other · both dialects pooled</div>
+          <svg id="pc-actions" viewBox="0 0 430 320" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="src">L16 Matrix heat · paper figure 6 · cell labels as printed</div>
+        </div>
 
-    <section class="paper-block">
-      <h3>Is the simulated user reliable?</h3>
-      <figure class="paperfig"><img src="figures/human.svg"
-        alt="Human audit of simulator replies: acceptability and leakage"></figure>
-      <p class="figcap">A human audit of 180 sampled <code>ask_user</code> replies:
-        85.6% acceptable, no dominant failure mode, 3.3% answer leakage in the LOC
-        pool.</p>
+        <div class="pc-card">
+          <h2>Models follow visibly different interaction trajectories</h2>
+          <div class="sub">action counts by recorded step for four models spanning the Interactive EX range · the outline of each stack is that model's episode attrition · bands use the tool names above</div>
+          <figure class="pc-paperfig"><img src="figures/turn_dynamics.svg"
+            alt="Per-step action composition over the course of Interactive episodes"></figure>
+          <div class="src">Paper figure 7 · as printed · PostgreSQL + Oracle</div>
+        </div>
+
+        <div class="pc-card">
+          <h2>Control flow and persistent state dominate, and neither exists in declarative SQL</h2>
+          <div class="sub">Interactive failures by classified type · bubble area = failures as % of the tasks each model ran, so a row reads against the Interactive columns of the table · both dialects pooled</div>
+          <svg id="pc-failures" viewBox="0 0 430 320" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="src">L4 Arc matrix · paper figure 8 · cell labels as printed</div>
+        </div>
+
+        <div class="pc-card wide">
+          <h2>85.6% of simulated-user replies pass a blind human audit, and the failures scatter with no dominant mode</h2>
+          <div class="sub">one dot = one audited <code>ask_user</code> reply · 180 turns stratified over solver models and sub-scenarios, one third from the LOC pool · auditors blind to model identity judged each reply against the task's oracle evidence · only 3.3% of LOC-pool replies leaked answer content</div>
+          <svg id="pc-audit" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="src">L14 Hundred field · paper figure 9 · counts as printed</div>
+        </div>
+
+      </div>
     </section>
 
     <!-- bibtex -->
@@ -162,6 +168,7 @@
 </main>
 
 <div class="viztip" id="viztip" hidden></div>
-<script src="stats.js?v=12"></script>
+<script src="charts.js?v=13"></script>
+<script src="stats.js?v=13"></script>
 </body>
 </html>

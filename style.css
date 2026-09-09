@@ -868,3 +868,38 @@ td.ovcell b { font-size: 13px; }
 }
 :root[data-theme="dark"] .ov-figure { background: #fbfbf9;
   border-radius: 18px; padding: 22px 24px; }
+
+/* ── v13: analysis charts as lieflat cards (porcelain), two-column grid ── */
+.pc-intro { max-width: 1180px; margin: -6px auto 0; }
+.pc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+  max-width: 1180px; margin: 18px auto 0; }
+.pc-card { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 22px 24px 16px; min-width: 0;
+  display: flex; flex-direction: column; }
+.pc-card.wide { grid-column: 1 / -1; }
+.pc-card h2 { font-size: 16.5px; font-weight: 700; letter-spacing: -.02em;
+  line-height: 1.3; margin: 0 0 4px; }
+.pc-card .sub { font-size: 12px; line-height: 1.5; color: var(--text-dim); margin: 0 0 14px; }
+.pc-card .sub code { font-size: 11px; }
+.pc-card svg { display: block; width: 100%; height: auto; margin: auto 0; }
+.pc-card svg text { font-family: var(--sans); }
+.pc-card .src { font-size: 9.5px; font-weight: 500; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-dim); opacity: .75; margin-top: 12px; }
+.pc-paperfig { margin: auto 0; background: #fff; border-radius: 8px; padding: 10px 12px; }
+.pc-paperfig img { display: block; width: 100%; height: auto; }
+.pc-card.wide .pc-paperfig { max-width: 980px; margin: auto; width: 100%; }
+@media (max-width: 900px) { .pc-grid { grid-template-columns: 1fr; } }
+
+/* lieflat reveal animations */
+.pc-card .pop { transform-box: fill-box; transform-origin: center;
+  animation: pc-pop .5s cubic-bezier(.2,.7,.3,1.3) both; }
+@keyframes pc-pop { from { transform: scale(0); } to { transform: none; } }
+.pc-card .fade { animation: pc-fade .9s ease both; }
+@keyframes pc-fade { from { opacity: 0; } }
+.pc-card .draw { stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: pc-draw 1s cubic-bezier(.4,0,.2,1) both; }
+@keyframes pc-draw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .pc-card .pop, .pc-card .fade { animation: none; }
+  .pc-card .draw { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
+}
