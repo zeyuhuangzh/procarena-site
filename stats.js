@@ -350,43 +350,26 @@ function renderTable6() {
     el('span', { class: 'rampbar-lab' }, '100%'));
 }
 
-/* ── appendix: experiments kept out of the main table ─────────────── */
-
-function renderExtra() {
-  const table = $('#extra');
-  table.textContent = '';
-  const cols = ['experiment', 'why it is outside', 'mode', 'solver', 'dialect',
-    'EX (passed/graded)'];
-  table.append(el('thead', {}, el('tr', {}, cols.map((c) => el('th', {}, c)))));
-  const body = el('tbody');
-  const outside = (T.experiments || []).filter((e) => !e.in_main);
-  if (!outside.length) {
-    body.append(el('tr', {}, el('td', {
-      colspan: String(cols.length), class: 'muted',
-    }, 'none — every finished experiment is in the main results')));
-  }
-  for (const e of outside) {
-    let passed = 0, graded = 0;
-    for (const s of Object.values(e.scenarios || {})) {
-      passed += s.passed; graded += s.graded;
-    }
-    body.append(el('tr', {},
-      el('td', {}, e.name),
-      el('td', {}, T.excluded[e.name] || '—'),
-      el('td', {}, e.mode),
-      el('td', {}, e.solver),
-      el('td', {}, DIALECT_LABEL[e.dialect] || e.dialect),
-      el('td', { class: 'n' }, graded ? `${passed} / ${graded}` : 'not graded')));
-  }
-  table.append(body);
-}
-
 /* ── boot ─────────────────────────────────────────────────────────── */
 
+/* tint SQL keywords inside the rebuilt Figure-1 code blocks (presentation only) */
+function tintOverviewCode() {
+  const words = ['CREATE', 'OR', 'REPLACE', 'PROCEDURE', 'LANGUAGE', 'DECLARE',
+    'BEGIN', 'END', 'SELECT', 'INTO', 'FROM', 'WHERE', 'INSERT', 'VALUES',
+    'RETURNING', 'FOR', 'IN', 'JOIN', 'ON', 'LOOP', 'UPDATE', 'SET', 'DELETE',
+    'IF', 'THEN', 'IS', 'AS', 'COUNT'];
+  const re = new RegExp(`\\b(${words.join('|')})\\b`, 'g');
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  for (const pre of document.querySelectorAll('.ov-code')) {
+    pre.innerHTML = esc(pre.textContent)
+      .replace(re, '<span class="sql-kw">$1</span>');
+  }
+}
+
 function renderAll() {
+  tintOverviewCode();
   buildLeaderboard();
   renderTable6();
-  renderExtra();
   const updated = (() => {
     try {
       return new Date(T.generated).toLocaleDateString('en-US',

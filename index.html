@@ -9,15 +9,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
 
 <header class="topbar">
   <h1 class="brand">ProcArena</h1>
   <nav class="topnav">
-    <a href="#overview">Overview</a>
     <a href="#leaderboard">Leaderboard</a>
+    <a href="#overview">Overview</a>
     <a href="#results">Results</a>
     <a href="#figures">Analysis</a>
     <a href="#cite">Cite</a>
@@ -31,19 +31,11 @@
 
   <!-- ── hero ─────────────────────────────────────────────────────── -->
   <section class="hero">
-    <p class="hero-kicker">VLDB 2027 · PostgreSQL &amp; Oracle · Direct &amp; Interactive</p>
+    <p class="hero-kicker">PostgreSQL &amp; Oracle · Direct &amp; Interactive</p>
     <h2 class="hero-title">ProcArena</h2>
     <p class="hero-sub">The first benchmark to evaluate LLMs on NL-to-PL/SQL across
       multiple development scenarios in both Direct and Interactive modes,
       across PostgreSQL and Oracle.</p>
-    <p class="hero-blurb">
-      Nine sub-scenarios spanning the database development lifecycle — synthesis
-      (A1–A5) and evolution (B1–B4) of stored procedures — every task played twice:
-      <b>Direct</b>, with the full requirement up front, and <b>Interactive</b>,
-      where the model must question a simulated user and probe the live database to
-      earn the requirement back. One criterion throughout: execution-state
-      equivalence (EX). <b>Every cell on this page replays a real episode.</b>
-    </p>
     <p class="hero-btns">
       <a class="btn-hero" href="https://arxiv.org/abs/2609.06527">Read the Paper</a>
       <a class="btn-hero btn-hero-ghost" href="https://github.com/ZhanGHanG9991/PLBench">GitHub</a>
@@ -54,16 +46,6 @@
 
   <div id="content" hidden>
 
-    <!-- what ProcArena is (the paper's Figure 1) -->
-    <section class="paper-block" id="overview">
-      <h3>What ProcArena evaluates</h3>
-      <figure class="paperfig"><img src="figures/intro.svg"
-        alt="ProcArena overview: development scenarios, Direct and Interactive modes, execution-state grading"></figure>
-      <p class="figcap">The benchmark at a glance — the development sub-scenarios, the
-        two interaction modes, and execution-state grading against a gold procedure
-        (the paper's Figure&nbsp;1).</p>
-    </section>
-
     <!-- overall leaderboard -->
     <section class="paper-block" id="leaderboard">
       <h3>Leaderboard</h3>
@@ -71,6 +53,169 @@
       <p class="figcap">Overall EX under the current filter — episodes passed over
         episodes played. The gear filters by mode, dialect and sub-scenario;
         hover a bar for the counts.</p>
+    </section>
+
+    <!-- what ProcArena is (the paper's Figure 1, rebuilt for the web) -->
+    <section class="paper-block" id="overview">
+      <h3>What ProcArena evaluates</h3>
+      <div class="ov">
+
+        <!-- nine sub-scenarios, two families -->
+        <div class="ov-scen">
+          <div class="ov-group ov-group-syn">
+            <div class="ov-group-name">Synthesis <span>(5)</span></div>
+            <div class="ov-chips">
+              <span class="ov-chip"><img class="ov-ci" src="figures/fig1/ic-scratch.png" alt="">From Scratch</span>
+              <span class="ov-chip"><img class="ov-ci" src="figures/fig1/ic-example.png" alt="">Example-Guided</span>
+              <span class="ov-chip"><img class="ov-ci" src="figures/fig1/ic-compose.png" alt="">Code Composition</span>
+              <span class="ov-chip"><img class="ov-ci" src="figures/fig1/ic-doc.png" alt="">Document-Grounded</span>
+              <span class="ov-chip"><img class="ov-ci" src="figures/fig1/ic-template.png" alt="">Template Instantiation</span>
+            </div>
+          </div>
+          <div class="ov-group ov-group-edit">
+            <div class="ov-group-name">Editing <span>(4)</span></div>
+            <div class="ov-chips">
+              <span class="ov-chip"><img class="ov-ci" src="figures/fig1/ic-funcmod.png" alt="">Functional Modification</span>
+              <span class="ov-chip"><img class="ov-ci" src="figures/fig1/ic-perf.png" alt="">Performance Optimization</span>
+              <span class="ov-chip"><img class="ov-ci" src="figures/fig1/ic-repair.png" alt="">Code Repair</span>
+              <span class="ov-chip"><img class="ov-ci" src="figures/fig1/ic-complete.png" alt="">Code Completion</span>
+            </div>
+          </div>
+          <img class="ov-person" src="figures/fig1/person.png" alt="a developer writing a natural-language request at a laptop">
+        </div>
+
+        <!-- the two modes, side by side -->
+        <div class="ov-modes">
+
+          <!-- Direct -->
+          <div class="ov-panel ov-direct">
+            <div class="ov-panel-head">Direct (Single-Turn)
+              <span class="ov-panel-tag">From Scratch</span></div>
+            <div class="ov-flow">
+            <div class="ov-flow-col">
+            <div class="ov-step"><i class="ov-num">1</i> Complete Requirement <img class="ov-ic" src="figures/fig1/ic-req.png" alt=""></div>
+            <div class="ov-req">Create an Oracle PL/SQL stored procedure that
+              terminates employment for transportation staff whose years of service
+              exceed twice the target service duration, but only proceed with
+              terminations if the department maintains adequate staffing levels
+              above the minimum requirement.</div>
+            </div>
+            <div class="ov-arrow ov-arrow-mid"><img class="ov-ic" src="figures/fig1/ic-robot.svg" alt="LLM solver"> <b>LLM Solver</b> <span class="ov-arr">→</span></div>
+            <div class="ov-flow-col">
+            <div class="ov-step"><i class="ov-num">2</i> PL/SQL code</div>
+            <pre class="ov-code">CREATE OR REPLACE PROCEDURE
+sp(para_Years_Working NUMBER,
+para_Min_Staff NUMBER)
+IS staff_count NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO staff_count
+FROM "transportation_staff" WHERE
+"Employment_Status" = 'Active';
+    IF staff_count > para_Min_Staff
+THEN
+        DELETE FROM
+"transportation_staff" WHERE
+"Years_Working" > para_Years_Working * 2;
+    END IF;
+END;</pre>
+            </div>
+            </div>
+            <div class="ov-tagline">Complete requirement → PL/SQL code</div>
+          </div>
+
+          <!-- Interactive -->
+          <div class="ov-panel ov-inter">
+            <div class="ov-panel-head">Interactive (Multi-Turn)
+              <span class="ov-panel-tag">From Scratch</span></div>
+            <div class="ov-step"><i class="ov-num">1</i> Initial Request <img class="ov-ic" src="figures/fig1/ic-request.png" alt="">
+              <span class="ov-under">(Underspecified)</span></div>
+            <div class="ov-req">I need a stored procedure to handle the checkout
+              flow. Basically, when a user with a specific user ID wants to buy
+              something, the system needs to grab everything from their shopping
+              cart, check the inventory to make sure we have enough stock, and then
+              generate a new order. We also need to figure out the total amount
+              correctly and make sure the cart is empty afterwards. The current
+              process is a bit messy and I want to make sure the data stays
+              consistent.</div>
+            <div class="ov-step"><i class="ov-num">2</i> Multi-Turn Interaction</div>
+            <div class="ov-turns">
+              <div class="ov-turn">
+                <div class="ov-turn-head">Interaction 1 <code>get_schema</code></div>
+                <div class="ov-bubble ov-call"><img class="ov-ic" src="figures/fig1/ic-robot.svg" alt="LLM solver"> <span class="mono">get_schema()</span>
+                  — what tables am I working with?</div>
+                <div class="ov-bubble ov-result"><img class="ov-ic" src="figures/fig1/ic-db.png" alt="database"> <span class="mono">table carts,
+                  columns=[cart_id(int|PK), user_id(int)] | table carts_item,
+                  columns=[cart_id, product_id, cart_item_quantity] | …</span></div>
+              </div>
+              <div class="ov-turn">
+                <div class="ov-turn-head">Interaction 2 <code>ask_user</code></div>
+                <div class="ov-bubble ov-call"><img class="ov-ic" src="figures/fig1/ic-robot.svg" alt="LLM solver"> I need to join the cart data with
+                  product details. Could you provide the specific foreign key
+                  relationship between the carts_item table and the products
+                  table?</div>
+                <div class="ov-bubble ov-reply"><img class="ov-ic" src="figures/fig1/ic-user.png" alt="simulated user"> They are connected by the
+                  productID. The products table contains the price information, and
+                  the shopping cart table contains the quantity for each item.</div>
+              </div>
+              <div class="ov-turn">
+                <div class="ov-turn-head">Interaction 3 <code>ask_selector</code></div>
+                <div class="ov-bubble ov-call"><img class="ov-ic" src="figures/fig1/ic-robot.svg" alt="LLM solver"> Which reading of the input scope is
+                  correct?
+                  <ol class="ov-options">
+                    <li>None of the following are correct.</li>
+                    <li class="is-chosen">The procedure takes only user_id; the
+                      active cart is looked up internally.</li>
+                    <li>The procedure takes both user_id and an explicit cart_id.</li>
+                    <li>A list of product_ids and quantities, without reading the
+                      cart.</li>
+                  </ol></div>
+                <div class="ov-bubble ov-reply"><img class="ov-ic" src="figures/fig1/ic-user.png" alt="simulated user"> 2. Only user_id; the active cart
+                  is inferred.</div>
+              </div>
+              <div class="ov-turn">
+                <div class="ov-turn-head">Interaction 4 <code>execute_scratch</code></div>
+                <div class="ov-bubble ov-call"><img class="ov-ic" src="figures/fig1/ic-robot.svg" alt="LLM solver"> <span class="mono">UPDATE products
+                  SET stk_num = stk_num - 2 WHERE product_id = 101; SELECT stk_num
+                  FROM products WHERE product_id = 101;</span></div>
+                <div class="ov-bubble ov-result"><img class="ov-ic" src="figures/fig1/ic-db.png" alt="database"> <span class="mono">Ok, 1 row
+                  affected: stk_num | 8</span></div>
+              </div>
+            </div>
+            <div class="ov-arrow"><img class="ov-ic" src="figures/fig1/ic-robot.svg" alt="LLM solver"> <b>LLM Solver</b> · submit
+              <span class="ov-arr">→</span></div>
+            <div class="ov-step"><i class="ov-num">3</i> PL/SQL code</div>
+            <pre class="ov-code ov-code-mini">CREATE OR REPLACE PROCEDURE
+create_order(uid_in INT)
+LANGUAGE plpgsql AS $procedure$
+DECLARE
+    user_cart_id INT;
+    new_order_id INT;
+    order_amount DECIMAL := 0;
+BEGIN
+    SELECT cart_id INTO user_cart_id
+        FROM carts WHERE user_id = uid_in;
+    INSERT INTO orders (user_id, total_amount)
+        VALUES (uid_in, order_amount)
+        RETURNING order_id INTO new_order_id;
+    FOR rec IN SELECT * FROM carts_item JOIN products ON …
+⋯    ⋯    ⋯</pre>
+            <div class="ov-tagline">Underspecified requirement → Interaction → PL/SQL code</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="ov-intro">These are ProcArena's two arenas, drawn from one real pair
+        of tasks. Nine sub-scenarios span the database development lifecycle — five
+        kinds of PL/SQL synthesis (A1–A5) and four kinds of PL/SQL editing (B1–B4). Every task is
+        played twice: in the <b>Direct</b> mode the solver receives the complete
+        requirement and answers in one shot; in the <b>Interactive</b> mode the
+        requirement arrives underspecified, and the solver must inspect the schema,
+        question a simulated user, settle ambiguities through a selector, and
+        rehearse SQL in a scratch database before submitting — all under a question
+        budget. Both modes are graded the same way: the submitted procedure must
+        leave the database in exactly the state the gold procedure leaves it in
+        (execution-state equivalence, <b>EX</b>). Every number above and below
+        stands on such episodes, and every cell links to a full replay of one.</p>
     </section>
 
     <!-- main results with mode / dialect switches -->
@@ -138,14 +283,6 @@
         pool.</p>
     </section>
 
-    <!-- experiments kept out of the main table -->
-    <section class="paper-block">
-      <h3>Appendix · experiments outside the main table</h3>
-      <div class="scroll-x"><table class="grid ptable" id="extra"></table></div>
-      <p class="figcap">Runs whose mode or model is not part of the paper's main
-        results — exported and viewable, never mixed into the numbers above.</p>
-    </section>
-
     <!-- bibtex -->
     <section class="paper-block" id="cite">
       <h3>BibTeX</h3>
@@ -157,8 +294,7 @@
              Niu, Fang and Xie, Bofan and Ge, Guanchen and Zheng, Leqi and
              Liu, Ziyang and Cao, Xiannian and Ge, Pengcheng},
   journal = {arXiv preprint arXiv:2609.06527},
-  year    = {2026},
-  note    = {Accepted at VLDB 2027}
+  year    = {2026}
 }</pre>
       <p><button class="btn" id="copy-bib">copy BibTeX</button></p>
     </section>
@@ -168,6 +304,6 @@
 </main>
 
 <div class="viztip" id="viztip" hidden></div>
-<script src="stats.js?v=9"></script>
+<script src="stats.js?v=11"></script>
 </body>
 </html>

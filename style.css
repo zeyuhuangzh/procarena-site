@@ -742,3 +742,119 @@ td.ovcell b { font-size: 13px; }
 .rampbar { display: flex; align-items: center; gap: 10px; margin: 14px 2px 0; }
 .rampbar i { flex: 0 1 260px; height: 10px; border-radius: 5px; display: block; }
 .rampbar-lab { font-size: 11.5px; color: var(--text-dim); }
+
+/* ── v10: bigger type, rebuilt Figure-1 overview, calm bars ───────── */
+
+.paper-block h3 { font-size: 40px; font-weight: 800; letter-spacing: -0.6px;
+  line-height: 1.15; margin: 0 0 20px; }
+.topbar { min-height: 66px; }
+.brand { font-size: 24px; }
+.topnav { gap: 26px; }
+.topnav a { font-size: 16px; font-weight: 600; }
+.hero-sub { font-size: 21px; line-height: 1.5; }
+.hero-kicker { font-size: 13.5px; }
+
+/* leaderboard bars: quiet by default, saturate on hover */
+:root { --lb-bar: #a9cdf5; --lb-bar-hover: #2a78d6; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --lb-bar: #25578f; --lb-bar-hover: #3987e5; }
+}
+:root[data-theme="dark"] { --lb-bar: #25578f; --lb-bar-hover: #3987e5; }
+.lb3-bar i { background: var(--lb-bar) !important; }
+.lb3-row:hover .lb3-bar i { background: var(--lb-bar-hover) !important; }
+
+/* the rebuilt Figure 1 */
+.ov { display: flex; flex-direction: column; gap: 18px; }
+.ov-scen { display: grid;
+  grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: center; }
+.ov-group { border: 2px solid #3d9950; border-radius: 16px; padding: 16px 18px;
+  background: color-mix(in srgb, #3d9950 5%, var(--surface)); }
+.ov-group-name { font-size: 20px; font-weight: 800; margin-bottom: 12px; }
+.ov-group-name span { font-weight: 600; color: var(--text-dim); font-size: 16px; }
+.ov-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.ov-chip { border: 1.5px solid #3d9950; border-radius: 10px; padding: 7px 12px;
+  font-size: 14.5px; font-weight: 600; background: var(--surface); }
+.ov-person { font-size: 58px; padding: 0 10px; align-self: center; }
+
+.ov-modes { display: grid; grid-template-columns: 2fr 3fr; gap: 16px;
+  align-items: start; }
+@media (max-width: 980px) { .ov-modes { grid-template-columns: 1fr; }
+  .ov-scen { grid-template-columns: 1fr; } }
+.ov-panel { border-radius: 16px; padding: 18px 20px; }
+.ov-direct { border: 2px solid #3457c4;
+  background: color-mix(in srgb, #3457c4 4%, var(--surface)); }
+.ov-inter { border: 2px solid #e2711d;
+  background: color-mix(in srgb, #e2711d 4%, var(--surface)); }
+.ov-panel-head { font-size: 22px; font-weight: 800; margin-bottom: 14px; }
+.ov-direct .ov-panel-head { color: #3457c4; }
+.ov-inter .ov-panel-head { color: #cf5f0e; }
+:root[data-theme="dark"] .ov-direct .ov-panel-head { color: #7ea4f2; }
+:root[data-theme="dark"] .ov-inter .ov-panel-head { color: #f09a52; }
+.ov-panel-tag { font-size: 12.5px; font-style: italic; font-weight: 600;
+  color: var(--text-dim); margin-left: 8px; }
+.ov-step { font-size: 15.5px; font-weight: 700; margin: 12px 0 8px;
+  display: flex; align-items: center; gap: 8px; }
+.ov-num { display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%; background: var(--text);
+  color: var(--bg); font-size: 13px; font-weight: 700; font-style: normal; }
+.ov-under { font-weight: 600; color: #cf5f0e; font-size: 13px; }
+.ov-req { border: 1.5px solid var(--border); border-radius: 10px;
+  background: var(--surface); padding: 12px 14px; font-size: 14px;
+  line-height: 1.6; font-style: italic; color: var(--text); }
+.ov-arrow { display: flex; align-items: center; gap: 8px; margin: 14px 0;
+  font-size: 15px; }
+.ov-arr { font-size: 22px; font-weight: 800; }
+.ov-code { background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 12px 14px; font-family: "JetBrains Mono", ui-monospace,
+  monospace; font-size: 12px; line-height: 1.55; overflow-x: auto; margin: 0; }
+.ov-tagline { margin-top: 14px; text-align: center; font-size: 15px;
+  font-weight: 700; font-style: italic; border-top: 1.5px solid var(--border);
+  padding-top: 12px; }
+.ov-turns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 720px) { .ov-turns { grid-template-columns: 1fr; } }
+.ov-turn { border: 1.5px dashed color-mix(in srgb, #e2711d 45%, var(--border));
+  border-radius: 12px; padding: 10px 12px; }
+.ov-turn-head { font-size: 13.5px; font-weight: 800; margin-bottom: 8px; }
+.ov-turn-head code { font-weight: 600; color: #c2403c; font-size: 12.5px; }
+.ov-bubble { border-radius: 9px; padding: 8px 11px; font-size: 13px;
+  line-height: 1.55; margin-top: 6px; }
+.ov-call { border: 1.5px solid color-mix(in srgb, #c2403c 55%, var(--border));
+  background: var(--surface); }
+.ov-result { background: var(--surface-2); border: 1.5px solid var(--border); }
+.ov-reply { border: 1.5px solid color-mix(in srgb, #e2711d 60%, var(--border));
+  background: color-mix(in srgb, #e2711d 6%, var(--surface)); }
+.ov-bubble .mono { font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px; }
+.ov-options { margin: 8px 0 0 0; padding-left: 20px; }
+.ov-options li { margin: 3px 0; }
+.ov-options li.is-chosen { font-weight: 700; }
+.ov-options li.is-chosen::after { content: " ✓"; color: #2e8b46; }
+.ov-intro { margin-top: 20px; font-size: 16px; line-height: 1.75;
+  color: var(--text); max-width: 900px; }
+
+/* SQL keyword tint inside the rebuilt figure's code blocks */
+.ov-code .sql-kw { color: #7f3fbf; font-weight: 600; }
+:root[data-theme="dark"] .ov-code .sql-kw { color: #c193ee; }
+
+/* ── v11: Figure 1 stacked vertically, original artwork ───────────── */
+
+.ov-modes { grid-template-columns: 1fr; }
+.ov-person { width: 240px; max-width: 30vw; height: auto; align-self: center;
+  border-radius: 14px; }
+.ov-ci { width: 20px; height: 20px; vertical-align: -4px; margin-right: 7px; }
+.ov-ic { width: 26px; height: 26px; vertical-align: middle; }
+.ov-bubble .ov-ic { width: 20px; height: 20px; vertical-align: -4px;
+  margin-right: 4px; }
+.ov-step .ov-ic { margin-left: 6px; }
+.ov-flow { display: grid; grid-template-columns: 1.1fr auto 1.3fr; gap: 18px;
+  align-items: center; }
+@media (max-width: 900px) { .ov-flow { grid-template-columns: 1fr; } }
+.ov-arrow-mid { margin: 0; flex-direction: column; text-align: center;
+  display: flex; align-items: center; gap: 4px; }
+.ov-arrow-mid .ov-arr { font-size: 30px; }
+.ov-turns { grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 1200px) { .ov-turns { grid-template-columns: repeat(4, 1fr); } }
+.ov-code-mini { max-width: 720px; }
+.ov-inter .ov-arrow { justify-content: center; }
+.ov-inter .ov-code-mini { margin: 0 auto; }
+.ov-inter .ov-step { justify-content: flex-start; }
